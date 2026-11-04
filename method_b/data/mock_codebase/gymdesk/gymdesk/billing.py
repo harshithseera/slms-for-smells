@@ -1,0 +1,51 @@
+"""Membership fees, invoices and late fees."""
+from __future__ import annotations
+
+from datetime import date
+
+from gymdesk.models import Payment
+
+PLAN_PRICES = {"basic": 29.0, "plus": 49.0, "premium": 79.0}
+EUR_RATES = {"EUR": 1.0, "GBP": 0.86, "USD": 1.08}
+
+
+def monthly_fee(plan: str) -> float:
+    try:
+        return PLAN_PRICES[plan]
+    except KeyError:
+        raise ValueError(f"unknown plan {plan!r}") from None
+
+
+def invoice_total(payments_due: list[Payment], discount_rate: float, tax_rate: float) -> float:
+    total = 0.0
+    for item in payments_due:
+        if item.amount <= 0:
+            continue
+        total += item.amount * (1 - discount_rate)
+    total = total * (1 + tax_rate)
+    return round(total, 2)
+
+
+def format_amount(amount: float, currency: str) -> str:
+    code = currency.strip().upper()
+    if code not in EUR_RATES:
+        raise ValueError(f"unsupported currency {currency!r}")
+    return f"{round(amount, 2):.2f} {code}"
+
+
+def convert_amount(amount: float, from_currency: str, to_currency: str) -> float:
+    src, dst = from_currency.strip().upper(), to_currency.strip().upper()
+    if src not in EUR_RATES or dst not in EUR_RATES:
+        raise ValueError(f"unsupported currency {from_currency!r} or {to_currency!r}")
+    return round(amount / EUR_RATES[src] * EUR_RATES[dst], 2)
+
+
+def days_overdue(due_date: date, paid_date: date, grace_days: int) -> int:
+    return max(0, (paid_date - due_date).days - grace_days)
+
+
+def compute_late_fee(member_id: str, amount: float, due_date: date, paid_date: date, daily_rate: float,
+                     grace_days: int, cap: float, currency: str) -> dict:
+    days_late = days_overdue(due_date, paid_date, grace_days)
+    fee = 0.0 if days_late <= 0 else min(days_late * daily_rate * amount, cap)
+    return {"member_id": member_id, "fee": round(fee, 2), "currency": currency}

@@ -1,0 +1,79 @@
+# Ground truth for data/mock_codebase/gymdesk. NEVER shown to any model: the scanner only
+# reads the gymdesk/ directory; this file lives outside it.
+#
+# smells:     injected smells (positives)
+# negatives:  candidates a gate flags although the smell is absent (traps / hard negatives)
+# borderline: defensible either way; excluded from scoring
+# Every candidate of an enabled smell is listed in exactly one section (tests/test_scan.py
+# enforces this).
+project: gymdesk
+
+smells:
+  - {id: C1, smell: duplicated_logic, file: gymdesk/reports.py,
+     target: "gymdesk/billing.py::invoice_total|gymdesk/reports.py::revenue_for_member",
+     note: "cross-file copy with renamed variables"}
+  - {id: C2, smell: duplicated_logic, file: gymdesk/notifications.py,
+     target: "gymdesk/notifications.py::booking_email|gymdesk/notifications.py::cancellation_email",
+     note: "same e-mail assembly, only the wording differs"}
+  - {id: C3, smell: long_method, file: gymdesk/scheduling.py, target: Scheduler.plan_week,
+     note: "seven separable validation steps in one 50-line, CC 18 method"}
+  - {id: C4, smell: long_parameter_list, file: gymdesk/billing.py, target: compute_late_fee,
+     note: "8 parameters; amount/due/paid and rate/grace/cap are two parameter objects"}
+  - {id: C5, smell: long_parameter_list, file: gymdesk/club.py, target: GymClub.schedule_class,
+     note: "7 parameters that are exactly the fields of GymClass"}
+  - {id: C6, smell: magic_numbers, file: gymdesk/club.py, target: GymClub.charge_monthly_fees,
+     note: "unnamed loyalty rule: more than 20 visits gives 10% off (20, 0.9)"}
+  - {id: C7, smell: magic_numbers, file: gymdesk/reports.py, target: MonthlyReport.loyalty_score,
+     note: "unnamed scoring weights and tier bonuses (0.5, 5, 10, penalty 5)"}
+  - {id: C8, smell: primitive_obsession, file: gymdesk/billing.py, target: format_amount,
+     note: "currency as raw str: normalised and validated here and again in convert_amount"}
+  - {id: C9, smell: primitive_obsession, file: gymdesk/billing.py, target: convert_amount,
+     note: "same currency normalisation/validation repeated; amount+currency travel together"}
+  - {id: C10, smell: data_clumps, file: gymdesk/billing.py,
+     target: "gymdesk/billing.py::compute_late_fee|gymdesk/billing.py::days_overdue",
+     note: "due_date, paid_date, grace_days form one payment-window concept"}
+  - {id: C11, smell: data_clumps, file: gymdesk/club.py,
+     target: "gymdesk/club.py::schedule_class|gymdesk/scheduling.py::room_free",
+     note: "room, start, duration_min describe one booked slot"}
+  - {id: C12, smell: message_chains, file: gymdesk/checkin.py, target: CheckInDesk.room_for,
+     note: "navigates club -> bookings -> class_id -> classes -> room"}
+  - {id: C13, smell: message_chains, file: gymdesk/checkin.py, target: CheckInDesk.trainer_name_for,
+     note: "navigates club -> bookings -> classes -> trainers -> name; repeats room_for's navigation"}
+  - {id: C14, smell: flag_argument, file: gymdesk/club.py, target: GymClub.apply_charge,
+     note: "refund=True turns a charge into a refund: two jobs, different audit messages"}
+  - {id: C15, smell: flag_argument, file: gymdesk/stats.py, target: session_summary,
+     note: "as_text switches the return type between dict and str"}
+
+negatives:
+  - {id: N2, smell: duplicated_logic, file: gymdesk/stats.py,
+     target: "gymdesk/stats.py::mean_session_minutes|gymdesk/stats.py::geometric_mean_session_minutes",
+     note: "same shape, different maths (sum vs product)"}
+  - {id: N3, smell: duplicated_logic, file: gymdesk/billing.py,
+     target: "gymdesk/billing.py::monthly_fee|gymdesk/club.py::find_member",
+     note: "only the try/except-KeyError lookup boilerplate is shared"}
+  - {id: N9, smell: magic_numbers, file: gymdesk/club.py, target: GymClub.send_reminders,
+     note: "timedelta(hours=24): the keyword names the unit"}
+  - {id: N10, smell: magic_numbers, file: gymdesk/scheduling.py, target: Scheduler.plan_week,
+     note: "timedelta(days=7): a week"}
+  - {id: N11, smell: magic_numbers, file: gymdesk/timeslot.py, target: TimeSlot.minutes,
+     note: "// 60: seconds to minutes"}
+  - {id: N12, smell: magic_numbers, file: gymdesk/timeslot.py, target: TimeSlot.gap_to,
+     note: "// 60: seconds to minutes"}
+  - {id: N13, smell: primitive_obsession, file: gymdesk/club.py, target: GymClub.find_by_email,
+     note: "e-mail only compared for equality in a lookup; no rules applied"}
+  - {id: N14, smell: primitive_obsession, file: gymdesk/checkin.py, target: normalise_email,
+     note: "the single dedicated normaliser at the boundary"}
+  - {id: N15, smell: message_chains, file: gymdesk/checkin.py, target: class_day,
+     note: "datetime value-object API (start.date().isoformat())"}
+  - {id: N16, smell: message_chains, file: gymdesk/checkin.py, target: email_domain,
+     note: "str method chain"}
+  - {id: N17, smell: message_chains, file: gymdesk/reports.py, target: report_filename,
+     note: "pathlib fluent API"}
+  - {id: N18, smell: message_chains, file: gymdesk/reports.py, target: MonthlyReport.lines,
+     note: "one level into its collaborator plus a dict method (self.club.members.values())"}
+  - {id: N19, smell: flag_argument, file: gymdesk/club.py, target: GymClub.send_reminders,
+     note: "dry_run only skips the side effect of the same job"}
+
+borderline:
+  - {id: B3, smell: primitive_obsession, file: gymdesk/checkin.py, target: email_domain,
+     note: "repeats normalise_email's strip().lower(): arguably an Email type is due"}

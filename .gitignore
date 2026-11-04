@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+.venv/
+.venvs/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.DS_Store
+
+# secrets and personal configs
+.env
+**/configs/dev.yaml
+
+# large / external data
+method_b/data/external/
+
+# run outputs: generated projects and full repaired copies are regenerable;
+# summaries, diffs and JSON results stay tracked
+method_b/results/runs/
+method_b/results/logs/
+method_b/results/repair/*/code/
+
+# never pushed
+docs/progress_report.md
+
+# --- TEMPORARY: kept out of git for now (remove a line to commit that part) ---
+method_b/results/
+docs/ai_usage.md

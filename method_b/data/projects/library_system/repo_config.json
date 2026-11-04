@@ -1,0 +1,18 @@
+{
+    "language": "python",
+    "PRD": "docs/PRD.md",
+    "UML_class": "docs/UML_class.md",
+    "UML_sequence": "docs/UML_sequence.md",
+    "architecture_design": "docs/architecture_design.md",
+    "unit_tests": "unit_tests",
+    "required_files": [],
+    "unit_test_script": "pytest unit_tests",
+    "code_file_DAG": {
+        "library/errors.py": [],
+        "library/models.py": ["library/errors.py"],
+        "library/catalog.py": ["library/errors.py", "library/models.py"],
+        "library/fines.py": ["library/models.py"],
+        "library/loans.py": ["library/errors.py", "library/models.py", "library/catalog.py", "library/fines.py"],
+        "library/reports.py": ["library/loans.py"]
+    }
+}

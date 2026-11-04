@@ -1,0 +1,69 @@
+"""Weekly class planning."""
+from __future__ import annotations
+
+from dataclasses import replace
+from datetime import datetime, timedelta
+
+from gymdesk.models import GymClass, Trainer
+from gymdesk.timeslot import TimeSlot
+
+
+class Scheduler:
+    def __init__(self, rooms: dict[str, int]) -> None:
+        self.rooms = rooms  # room name -> capacity
+
+    def room_free(self, room: str, start: datetime, duration_min: int, classes: list[GymClass]) -> bool:
+        slot = TimeSlot.of(start, duration_min)
+        return all(not slot.overlaps(TimeSlot.of(c.start, c.duration_min)) for c in classes if c.room == room)
+
+    def plan_week(self, classes: list[GymClass], trainers: dict[str, Trainer],
+                  week_start: datetime) -> tuple[list[GymClass], list[str]]:
+        """Check a week's proposed classes. Returns (accepted classes, warnings)."""
+        accepted: list[GymClass] = []
+        warnings: list[str] = []
+        per_trainer: dict[str, int] = {}
+        by_room: dict[str, list[GymClass]] = {}
+        week_end = week_start + timedelta(days=7)
+        for gc in sorted(classes, key=lambda c: c.start):
+            if gc.start < week_start or gc.start >= week_end:
+                warnings.append(f"{gc.class_id}: outside week")
+                continue
+            trainer = trainers.get(gc.trainer_id)
+            if trainer is None:
+                warnings.append(f"{gc.class_id}: unknown trainer {gc.trainer_id}")
+                continue
+            if gc.room not in self.rooms:
+                warnings.append(f"{gc.class_id}: unknown room {gc.room}")
+                continue
+            room_cap = self.rooms[gc.room]
+            if gc.capacity > room_cap:
+                warnings.append(f"{gc.class_id}: capacity {gc.capacity} > room {room_cap}, capped")
+                gc = replace(gc, capacity=room_cap)
+            slot = TimeSlot.of(gc.start, gc.duration_min)
+            clash = None
+            for other in by_room.get(gc.room, []):
+                if slot.overlaps(TimeSlot.of(other.start, other.duration_min)):
+                    clash = other
+                    break
+            if clash is not None:
+                warnings.append(f"{gc.class_id}: room {gc.room} taken by {clash.class_id}")
+                continue
+            busy = False
+            for other in accepted:
+                if other.trainer_id == gc.trainer_id:
+                    if slot.overlaps(TimeSlot.of(other.start, other.duration_min)):
+                        busy = True
+                        break
+            if busy:
+                warnings.append(f"{gc.class_id}: trainer {trainer.name} double-booked")
+                continue
+            count = per_trainer.get(gc.trainer_id, 0)
+            if count >= trainer.max_classes_per_week:
+                warnings.append(f"{gc.class_id}: trainer {trainer.name} over weekly limit")
+                continue
+            if trainer.specialties and gc.title.lower() not in [s.lower() for s in trainer.specialties]:
+                warnings.append(f"{gc.class_id}: {trainer.name} does not usually teach {gc.title}")
+            per_trainer[gc.trainer_id] = count + 1
+            by_room.setdefault(gc.room, []).append(gc)
+            accepted.append(gc)
+        return accepted, warnings

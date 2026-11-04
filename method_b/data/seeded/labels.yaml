@@ -1,0 +1,13 @@
+# Seeded smell TEST set for detection quality (precision/recall). Never used for tuning
+# prompts or for generation. Labels are snippet-level: the smells truly present.
+# "hard_negative" marks snippets designed so the static gate fires although the smell
+# is absent; the SLM's job there is to reject.
+# Written by the team (with AI assistance, see docs/ai_usage.md) and reviewed by hand.
+
+dup_renamed.py:          {smells: [duplicated_logic]}
+dup_parsers.py:          {smells: [duplicated_logic]}
+dup_validators.py:       {smells: [duplicated_logic]}
+dupn_different_math.py:  {smells: [], hard_negative: duplicated_logic}
+dupn_walkers.py:         {smells: [], hard_negative: duplicated_logic}
+clean_temperature.py:    {smells: []}
+clean_inventory.py:      {smells: []}

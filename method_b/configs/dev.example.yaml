@@ -1,0 +1,60 @@
+# Copy to configs/dev.yaml (git-ignored) and set your own models.
+# Dev configs are for development only; reported numbers come from benchmark.yaml.
+#
+# Every model goes through one OpenAI-compatible client. `base_url` points at:
+#   - Ollama:      http://localhost:11434/v1
+#   - OpenAI:      https://api.openai.com/v1
+#   - OpenRouter:  https://openrouter.ai/api/v1
+#   - Gemini (AI Studio): https://generativelanguage.googleapis.com/v1beta/openai
+# Optional `extra_body:` adds provider-specific request fields (e.g. reasoning_effort).
+# `api_key_env` names the environment variable (from .env) that holds the key.
+
+models:
+  codegen:
+    base_url: http://localhost:11434/v1
+    model: qwen3:8b
+    api_key_env: null
+    temperature: 0
+    seed: 42
+    max_tokens: 4096
+    use_tools: true          # write_file tool; falls back to fenced code blocks
+    timeout_s: 600
+  judge_code:
+    base_url: http://localhost:11434/v1
+    model: qwen2.5-coder:1.5b
+    api_key_env: null
+    temperature: 0
+    seed: 42
+    max_tokens: 1024
+    json_mode: false         # Ollama's forced-JSON mode makes small models answer {"findings": []} every time
+    timeout_s: 300
+
+in_loop:
+  max_fix_rounds: 2          # per unit: at most 2 revisions after the first write
+  final_pass_fix_rounds: 1
+  report_severities: [medium, high]
+  # Scope: design and code smells; each has src/smells/common/skills/<smell>/SKILL.md.
+  # judges = SLM-judged smells, static_only_smells = decided by rules. Remove an id to disable it.
+  # Code smells only.
+  judges: [duplicated_logic, magic_numbers, primitive_obsession, data_clumps, message_chains, flag_argument]
+  static_only_smells: [long_method, long_parameter_list]   # decided by rules alone
+
+judge:                       # how SLM judge prompts are built (ablation switches)
+  show_gate_reason: false    # true = tell the judge why the gate fired (it tends to just agree)
+  show_gate_reason_for: [duplicated_logic]   # exception: the AST similarity score helps here
+  reject_checklist: true     # judge must answer each "Reject when" rule; any true -> no finding
+
+gates:
+  dup_similarity: 0.8
+  dup_min_lines: 4
+  long_method_loc: 50
+  long_method_cc: 10
+  long_parameter_list: 5
+
+eval:
+  python: null               # interpreter for hidden tests; null = a per-project venv
+  test_timeout_s: 300
+
+paths:
+  projects: data/projects   # self-made design projects, in DevBench's layout
+  runs: results/runs

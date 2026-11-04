@@ -1,0 +1,29 @@
+[project]
+name = "slms-for-smells"
+version = "0.1.0"
+description = "Design-time and in-loop code smell detection with small language models"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "radon>=6.0",
+    "python-dotenv>=1.0",
+    "pylint>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+smells = "smells.eval.run:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/smells"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

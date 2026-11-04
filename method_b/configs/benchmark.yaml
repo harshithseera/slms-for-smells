@@ -1,0 +1,63 @@
+# FROZEN benchmark configuration. Reported numbers come only from this file.
+# Status: NOT YET FROZEN (Phase 2). Fill the TODOs, then tag the commit
+# (e.g. `git tag bench-v1`) before collecting any reported numbers.
+# Record the API run date of every run in the run log (done automatically).
+
+frozen: false
+
+models:
+  codegen:
+    base_url: TODO            # API endpoint of the chosen code-gen LLM
+    model: TODO               # exact versioned model id
+    api_key_env: TODO
+    temperature: 0
+    seed: 42
+    max_tokens: 4096
+    use_tools: true
+    timeout_s: 600
+  judge_code:
+    base_url: http://localhost:11434/v1
+    model: TODO               # exact Ollama tag + digest, e.g. qwen2.5-coder:7b@sha256:...
+    quantization: TODO        # e.g. q4_K_M
+    api_key_env: null
+    temperature: 0
+    seed: 42
+    max_tokens: 1024
+    json_mode: false         # Ollama's forced-JSON mode makes small models answer {"findings": []} every time
+    timeout_s: 300
+
+in_loop:
+  max_fix_rounds: 2
+  final_pass_fix_rounds: 1
+  report_severities: [medium, high]
+  # Scope: design and code smells; each has src/smells/common/skills/<smell>/SKILL.md.
+  # judges = SLM-judged smells, static_only_smells = decided by rules. Remove an id to disable it.
+  # Code smells only.
+  judges: [duplicated_logic, magic_numbers, primitive_obsession, data_clumps, message_chains, flag_argument]
+  static_only_smells: [long_method, long_parameter_list]   # decided by rules alone
+
+judge:                       # how SLM judge prompts are built (ablation switches)
+  show_gate_reason: false    # true = tell the judge why the gate fired (it tends to just agree)
+  show_gate_reason_for: [duplicated_logic]   # exception: the AST similarity score helps here
+  reject_checklist: true     # judge must answer each "Reject when" rule; any true -> no finding
+
+gates:
+  dup_similarity: 0.8
+  dup_min_lines: 4
+  long_method_loc: 50
+  long_method_cc: 10
+  long_parameter_list: 5
+
+eval:
+  python: null
+  test_timeout_s: 300
+  repeats: 3
+
+# Project split (data/projects): tune prompts/thresholds on dev only; report on test only.
+split:
+  dev: [library_system]
+  test: [shop_orders, event_scheduler]
+
+paths:
+  projects: data/projects   # self-made design projects, in DevBench's layout
+  runs: results/runs

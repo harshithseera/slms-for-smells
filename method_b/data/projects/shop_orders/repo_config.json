@@ -1,0 +1,19 @@
+{
+    "language": "python",
+    "PRD": "docs/PRD.md",
+    "UML_class": "docs/UML_class.md",
+    "UML_sequence": "docs/UML_sequence.md",
+    "architecture_design": "docs/architecture_design.md",
+    "unit_tests": "unit_tests",
+    "required_files": [],
+    "unit_test_script": "pytest unit_tests",
+    "code_file_DAG": {
+        "shop/errors.py": [],
+        "shop/products.py": ["shop/errors.py"],
+        "shop/orders.py": ["shop/errors.py", "shop/products.py"],
+        "shop/pricing.py": ["shop/orders.py"],
+        "shop/shipping.py": [],
+        "shop/checkout.py": ["shop/errors.py", "shop/products.py", "shop/orders.py", "shop/pricing.py", "shop/shipping.py"],
+        "shop/invoices.py": ["shop/orders.py", "shop/checkout.py"]
+    }
+}
