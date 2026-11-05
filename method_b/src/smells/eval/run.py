@@ -186,6 +186,18 @@ def cmd_repair(a) -> None:
     print(f"\nfull results: {Path(a.out) / 'repair.json'}")
 
 
+def cmd_attribute(a) -> None:
+    import shlex
+
+    from smells.eval.repair import attribute
+
+    r = attribute(Path(a.run_dir), Path(a.path), a.python, shlex.split(a.test_args))
+    print(f"{r['files_safe']}/{len(r['files'])} repaired files break no tests on their own")
+    for x in r["files"]:
+        if x["broken"]:
+            print(f"  {x['file']}: breaks {x['broken']} tests{'' if x['loads'] else ' (suite fails to load)'}")
+
+
 def cmd_stats(a) -> None:
     from smells.eval.report_stats import write
 
@@ -248,6 +260,12 @@ def main(argv: list[str] | None = None) -> None:
     rp.add_argument("--recheck", choices=["static", "slm", "none"], default="static",
                     help="after repair: static = gates/rules only (default), slm = full SLM scan, none = tests only")
     rp.set_defaults(fn=cmd_repair)
+    at = sub.add_parser("attribute", help="apply each repaired file alone to the original code and run the tests")
+    at.add_argument("run_dir", help="a repair output dir (results/repair/<name>)")
+    at.add_argument("path", help="the original codebase root")
+    at.add_argument("--python", required=True)
+    at.add_argument("--test-args", required=True)
+    at.set_defaults(fn=cmd_attribute)
     stp = sub.add_parser("stats", help="collect report-ready statistics from all results into one Markdown file")
     stp.add_argument("--out", default=None)
     stp.set_defaults(fn=cmd_stats)
