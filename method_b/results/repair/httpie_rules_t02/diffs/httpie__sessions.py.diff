@@ -1,0 +1,58 @@
+--- a/httpie/sessions.py
++++ b/httpie/sessions.py
+@@ -197,33 +197,38 @@
+ 
+         return data
+ 
++    def _is_ignored_header(self, name: str) -> bool:
++        return any(name.lower().startswith(prefix.lower()) for prefix in SESSION_IGNORED_HEADER_PREFIXES)
++
++    def _handle_cookie_header(self, name: str, value: Any, request_headers: HTTPHeadersDict) -> bool:
++        if name.lower() != 'cookie':
++            return False
++        for cookie_name, morsel in SimpleCookie(value).items():
++            if not morsel['path']:
++                morsel['path'] = DEFAULT_COOKIE_PATH
++            self.cookie_jar.set(cookie_name, morsel)
++        request_headers.remove_item(name, value)
++        return True
++
+     def _compute_new_headers(self, request_headers: HTTPHeadersDict) -> HTTPHeadersDict:
+         new_headers = HTTPHeadersDict()
+         for name, value in request_headers.copy().items():
+             if value is None:
+-                continue  # Ignore explicitly unset headers
+-
+-            original_value = value
++                continue
++
+             if type(value) is not str:
+                 value = value.decode()
+ 
+             if name.lower() == 'user-agent' and value.startswith('HTTPie/'):
+                 continue
+ 
+-            if name.lower() == 'cookie':
+-                for cookie_name, morsel in SimpleCookie(value).items():
+-                    if not morsel['path']:
+-                        morsel['path'] = DEFAULT_COOKIE_PATH
+-                    self.cookie_jar.set(cookie_name, morsel)
+-
+-                request_headers.remove_item(name, original_value)
+-                continue
+-
+-            for prefix in SESSION_IGNORED_HEADER_PREFIXES:
+-                if name.lower().startswith(prefix.lower()):
+-                    break
+-            else:
+-                new_headers.add(name, value)
++            if self._handle_cookie_header(name, value, request_headers):
++                continue
++
++            if self._is_ignored_header(name):
++                continue
++
++            new_headers.add(name, value)
+ 
+         return new_headers
+ 

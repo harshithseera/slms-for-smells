@@ -1,0 +1,308 @@
+--- a/httpie/client.py
++++ b/httpie/client.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ from contextlib import contextmanager
++from dataclasses import dataclass
+ from time import monotonic
+ from typing import Any, Dict, Callable, Iterable
+ from urllib.parse import urlparse, urlunparse
+@@ -40,67 +41,119 @@
+ IGNORE_CONTENT_LENGTH_METHODS = frozenset([HTTP_OPTIONS])
+ 
+ 
++@dataclass
++class RequestContext:
++    env: Environment
++    args: argparse.Namespace
++    request_body_read_callback: Callable[[bytes], None] = None
++
++
++@dataclass
++class SSLContextConfig:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
++@dataclass
++class URLPair:
++    orig_url: str
++    prepped_url: str
++
++    def get_path_as_is(self) -> str:
++        parsed_orig, parsed_prepped = urlparse(self.orig_url), urlparse(self.prepped_url)
++        final_dict = {
++            # noinspection PyProtectedMember
++            **parsed_prepped._asdict(),
++            'path': parsed_orig.path,
++        }
++        return urlunparse(tuple(final_dict.values()))
++
++
+ def collect_messages(
+     env: Environment,
+     args: argparse.Namespace,
+     request_body_read_callback: Callable[[bytes], None] = None,
+ ) -> Iterable[RequestsMessage]:
+-    httpie_session = None
+-    httpie_session_headers = None
++    context = RequestContext(
++        env=env,
++        args=args,
++        request_body_read_callback=request_body_read_callback
++    )
++    
++    httpie_session = _init_httpie_session(context)
++    httpie_session_headers = httpie_session.headers if httpie_session else None
++
++    request_kwargs = make_request_kwargs(
++        context.env,
++        args=context.args,
++        base_headers=httpie_session_headers,
++        request_body_read_callback=context.request_body_read_callback
++    )
++    send_kwargs = make_send_kwargs(context.args)
++    send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(context.args)
++    
++    verify_val = send_kwargs_mergeable_from_env.get('verify')
++    verify_bool = verify_val if isinstance(verify_val, bool) else bool(verify_val)
++    ssl_config = SSLContextConfig(
++        verify=verify_bool,
++        ssl_version=context.args.ssl_version,
++        ciphers=context.args.ciphers,
++    )
++    requests_session = build_requests_session_from_config(ssl_config)
++
++    if httpie_session:
++        _apply_httpie_session(httpie_session, requests_session, request_kwargs, context.args)
++
++    if context.args.debug:
++        dump_request(request_kwargs)
++
++    request = requests.Request(**request_kwargs)
++    prepared_request = requests_session.prepare_request(request)
++    transform_headers(request, prepared_request)
++    
++    if context.args.path_as_is:
++        url_pair = URLPair(orig_url=context.args.url, prepped_url=prepared_request.url)
++        prepared_request.url = url_pair.get_path_as_is()
++        
++    if context.args.compress and prepared_request.body:
++        compress_request(
++            request=prepared_request,
++            always=context.args.compress > 1,
++        )
++        
++    yield from _send_loop(requests_session, prepared_request, send_kwargs_mergeable_from_env, send_kwargs, context.args)
++
++    if httpie_session:
++        _finalize_httpie_session(httpie_session, requests_session, context.args)
++
++
++def _init_httpie_session(context: RequestContext):
++    args = context.args
+     if args.session or args.session_read_only:
+-        httpie_session = get_httpie_session(
+-            env=env,
+-            config_dir=env.config.directory,
++        return get_httpie_session(
++            env=context.env,
++            config_dir=context.env.config.directory,
+             session_name=args.session or args.session_read_only,
+             host=args.headers.get('Host'),
+             url=args.url,
+         )
+-        httpie_session_headers = httpie_session.headers
+-
+-    request_kwargs = make_request_kwargs(
+-        env,
+-        args=args,
+-        base_headers=httpie_session_headers,
+-        request_body_read_callback=request_body_read_callback
+-    )
+-    send_kwargs = make_send_kwargs(args)
+-    send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+-    requests_session = build_requests_session(
+-        ssl_version=args.ssl_version,
+-        ciphers=args.ciphers,
+-        verify=bool(send_kwargs_mergeable_from_env['verify'])
+-    )
+-
+-    if httpie_session:
+-        httpie_session.update_headers(request_kwargs['headers'])
+-        requests_session.cookies = httpie_session.cookies
+-        if args.auth_plugin:
+-            # Save auth from CLI to HTTPie session.
+-            httpie_session.auth = {
+-                'type': args.auth_plugin.auth_type,
+-                'raw_auth': args.auth_plugin.raw_auth,
+-            }
+-        elif httpie_session.auth:
+-            # Apply auth from HTTPie session
+-            request_kwargs['auth'] = httpie_session.auth
+-
+-    if args.debug:
+-        # TODO: reflect the split between request and send kwargs.
+-        dump_request(request_kwargs)
+-
+-    request = requests.Request(**request_kwargs)
+-    prepared_request = requests_session.prepare_request(request)
+-    transform_headers(request, prepared_request)
+-    if args.path_as_is:
+-        prepared_request.url = ensure_path_as_is(
+-            orig_url=args.url,
+-            prepped_url=prepared_request.url,
+-        )
+-    if args.compress and prepared_request.body:
+-        compress_request(
+-            request=prepared_request,
+-            always=args.compress > 1,
+-        )
++    return None
++
++
++def _apply_httpie_session(httpie_session, requests_session, request_kwargs, args):
++    httpie_session.update_headers(request_kwargs['headers'])
++    requests_session.cookies = httpie_session.cookies
++    if args.auth_plugin:
++        httpie_session.auth = {
++            'type': args.auth_plugin.auth_type,
++            'raw_auth': args.auth_plugin.raw_auth,
++        }
++    elif httpie_session.auth:
++        request_kwargs['auth'] = httpie_session.auth
++
++
++def _send_loop(requests_session, prepared_request, send_kwargs_mergeable_from_env, send_kwargs, args):
+     response_count = 0
+     expired_cookies = []
+     while prepared_request:
+@@ -133,11 +186,12 @@
+             yield response
+         break
+ 
+-    if httpie_session:
+-        if httpie_session.is_new() or not args.session_read_only:
+-            httpie_session.cookies = requests_session.cookies
+-            httpie_session.remove_cookies(expired_cookies)
+-            httpie_session.save()
++
++def _finalize_httpie_session(httpie_session, requests_session, args):
++    if httpie_session.is_new() or not args.session_read_only:
++        httpie_session.cookies = requests_session.cookies
++        httpie_session.remove_cookies([])
++        httpie_session.save()
+ 
+ 
+ # noinspection PyProtectedMember
+@@ -158,16 +212,22 @@
+     ssl_version: str = None,
+     ciphers: str = None,
+ ) -> requests.Session:
++    return build_requests_session_from_config(
++        SSLContextConfig(verify=verify, ssl_version=ssl_version, ciphers=ciphers)
++    )
++
++
++def build_requests_session_from_config(config: SSLContextConfig) -> requests.Session:
+     requests_session = requests.Session()
+ 
+     # Install our adapter.
+     http_adapter = HTTPieHTTPAdapter()
+     https_adapter = HTTPieHTTPSAdapter(
+-        ciphers=ciphers,
+-        verify=verify,
++        ciphers=config.ciphers,
++        verify=config.verify,
+         ssl_version=(
+-            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+-            if ssl_version else None
++            AVAILABLE_SSL_VERSION_ARG_MAPPING[config.ssl_version]
++            if config.ssl_version else None
+         ),
+     )
+     requests_session.mount('http://', http_adapter)
+@@ -332,30 +392,9 @@
+     Translate our `args` into `requests.Request` keyword arguments.
+ 
+     """
+-    files = args.files
+-    # Serialize JSON data, if needed.
+-    data = args.data
+-    auto_json = data and not args.form
+-    if (args.json or auto_json) and isinstance(data, dict):
+-        data = json_dict_to_request_body(data)
+-
+-    # Finalize headers.
+-    headers = make_default_headers(args)
+-    if base_headers:
+-        headers.update(base_headers)
+-    headers.update(args.headers)
+-    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
+-        # When online, we let requests set the header instead to be able more
+-        # easily verify chunking is taking place.
+-        headers['Transfer-Encoding'] = 'chunked'
+-    headers = finalize_headers(headers)
+-
+-    if (args.form and files) or args.multipart:
+-        data, headers['Content-Type'] = get_multipart_data_and_content_type(
+-            data=args.multipart_data,
+-            boundary=args.boundary,
+-            content_type=args.headers.get('Content-Type'),
+-        )
++    data = _prepare_request_data_payload(args)
++    headers = _prepare_request_headers(args, base_headers)
++    data = _handle_multipart_data(args, data, headers)
+ 
+     return {
+         'method': args.method.lower(),
+@@ -374,6 +413,35 @@
+     }
+ 
+ 
++def _prepare_request_data_payload(args):
++    data = args.data
++    auto_json = data and not args.form
++    if (args.json or auto_json) and isinstance(data, dict):
++        data = json_dict_to_request_body(data)
++    return data
++
++
++def _prepare_request_headers(args, base_headers):
++    headers = make_default_headers(args)
++    if base_headers:
++        headers.update(base_headers)
++    headers.update(args.headers)
++    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
++        headers['Transfer-Encoding'] = 'chunked'
++    return finalize_headers(headers)
++
++
++def _handle_multipart_data(args, data, headers):
++    files = args.files
++    if (args.form and files) or args.multipart:
++        data, headers['Content-Type'] = get_multipart_data_and_content_type(
++            data=args.multipart_data,
++            boundary=args.boundary,
++            content_type=args.headers.get('Content-Type'),
++        )
++    return data
++
++
+ def ensure_path_as_is(orig_url: str, prepped_url: str) -> str:
+     """
+     Handle `--path-as-is` by replacing the path component of the prepared
+@@ -391,10 +459,4 @@
+     'http://foo/../?foo=bar'
+ 
+     """
+-    parsed_orig, parsed_prepped = urlparse(orig_url), urlparse(prepped_url)
+-    final_dict = {
+-        # noinspection PyProtectedMember
+-        **parsed_prepped._asdict(),
+-        'path': parsed_orig.path,
+-    }
+-    return urlunparse(tuple(final_dict.values()))
++    return URLPair(orig_url=orig_url, prepped_url=prepped_url).get_path_as_is()

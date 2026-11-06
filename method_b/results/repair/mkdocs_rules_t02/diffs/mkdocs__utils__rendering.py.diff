@@ -1,0 +1,31 @@
+--- a/mkdocs/utils/rendering.py
++++ b/mkdocs/utils/rendering.py
+@@ -62,10 +62,16 @@
+         del el[-1]
+ 
+ 
++def _process_elements_by_xpath(
++    root: etree.Element, xpath: str, predicate: Callable[[etree.Element], str | None]
++) -> None:
++    for parent in root.findall(xpath):
++        _replace_elements_with_text(parent, predicate)
++
++
+ def _remove_fnrefs(root: etree.Element) -> None:
+     """Remove footnote references from the element, if any are present."""
+-    for parent in root.findall('.//sup[@id]/..'):
+-        _replace_elements_with_text(parent, _predicate_for_fnrefs)
++    _process_elements_by_xpath(root, './/sup[@id]/..', _predicate_for_fnrefs)
+ 
+ 
+ def _predicate_for_fnrefs(el: etree.Element) -> str | None:
+@@ -76,8 +82,7 @@
+ 
+ def _extract_alt_texts(root: etree.Element) -> None:
+     """For images that have an `alt` attribute, replace them with this content."""
+-    for parent in root.findall('.//img[@alt]/..'):
+-        _replace_elements_with_text(parent, _predicate_for_alt_texts)
++    _process_elements_by_xpath(root, './/img[@alt]/..', _predicate_for_alt_texts)
+ 
+ 
+ def _predicate_for_alt_texts(el: etree.Element) -> str | None:

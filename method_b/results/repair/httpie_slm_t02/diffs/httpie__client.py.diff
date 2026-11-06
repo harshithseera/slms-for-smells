@@ -1,0 +1,193 @@
+--- a/httpie/client.py
++++ b/httpie/client.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ from contextlib import contextmanager
++from dataclasses import dataclass
+ from time import monotonic
+ from typing import Any, Dict, Callable, Iterable
+ from urllib.parse import urlparse, urlunparse
+@@ -40,57 +41,50 @@
+ IGNORE_CONTENT_LENGTH_METHODS = frozenset([HTTP_OPTIONS])
+ 
+ 
++@dataclass
++class RequestContext:
++    args: argparse.Namespace
++    env: Environment
++    request_body_read_callback: Callable[[bytes], None] = None
++
++
++@dataclass
++class SSLContextConfig:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
+ def collect_messages(
+     env: Environment,
+     args: argparse.Namespace,
+     request_body_read_callback: Callable[[bytes], None] = None,
+ ) -> Iterable[RequestsMessage]:
+-    httpie_session = None
+-    httpie_session_headers = None
+-    if args.session or args.session_read_only:
+-        httpie_session = get_httpie_session(
+-            env=env,
+-            config_dir=env.config.directory,
+-            session_name=args.session or args.session_read_only,
+-            host=args.headers.get('Host'),
+-            url=args.url,
+-        )
+-        httpie_session_headers = httpie_session.headers
+-
+-    request_kwargs = make_request_kwargs(
+-        env,
+-        args=args,
+-        base_headers=httpie_session_headers,
+-        request_body_read_callback=request_body_read_callback
+-    )
++    context = RequestContext(args=args, env=env, request_body_read_callback=request_body_read_callback)
++    httpie_session = _get_or_create_httpie_session(context)
++    httpie_session_headers = httpie_session.headers if httpie_session else None
++
++    request_kwargs = make_request_kwargs(context, base_headers=httpie_session_headers)
+     send_kwargs = make_send_kwargs(args)
+     send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+-    requests_session = build_requests_session(
++    
++    ssl_config = SSLContextConfig(
++        verify=bool(send_kwargs_mergeable_from_env['verify']),
+         ssl_version=args.ssl_version,
+         ciphers=args.ciphers,
+-        verify=bool(send_kwargs_mergeable_from_env['verify'])
+     )
++    requests_session = build_requests_session(ssl_config)
+ 
+     if httpie_session:
+-        httpie_session.update_headers(request_kwargs['headers'])
+-        requests_session.cookies = httpie_session.cookies
+-        if args.auth_plugin:
+-            # Save auth from CLI to HTTPie session.
+-            httpie_session.auth = {
+-                'type': args.auth_plugin.auth_type,
+-                'raw_auth': args.auth_plugin.raw_auth,
+-            }
+-        elif httpie_session.auth:
+-            # Apply auth from HTTPie session
+-            request_kwargs['auth'] = httpie_session.auth
++        _update_httpie_session_with_request(httpie_session, request_kwargs, args)
+ 
+     if args.debug:
+-        # TODO: reflect the split between request and send kwargs.
+         dump_request(request_kwargs)
+ 
+     request = requests.Request(**request_kwargs)
+     prepared_request = requests_session.prepare_request(request)
+     transform_headers(request, prepared_request)
++    
+     if args.path_as_is:
+         prepared_request.url = ensure_path_as_is(
+             orig_url=args.url,
+@@ -101,6 +95,7 @@
+             request=prepared_request,
+             always=args.compress > 1,
+         )
++
+     response_count = 0
+     expired_cookies = []
+     while prepared_request:
+@@ -134,10 +129,39 @@
+         break
+ 
+     if httpie_session:
+-        if httpie_session.is_new() or not args.session_read_only:
+-            httpie_session.cookies = requests_session.cookies
+-            httpie_session.remove_cookies(expired_cookies)
+-            httpie_session.save()
++        _save_httpie_session(httpie_session, requests_session, expired_cookies, args)
++
++
++def _get_or_create_httpie_session(context: RequestContext):
++    args = context.args
++    env = context.env
++    if args.session or args.session_read_only:
++        return get_httpie_session(
++            env=env,
++            config_dir=env.config.directory(),
++            session_name=args.session or args.session_read_only,
++            host=args.headers.get('Host'),
++            url=args.url,
++        )
++    return None
++
++
++def _update_httpie_session_with_request(httpie_session, request_kwargs, args):
++    httpie_session.update_headers(request_kwargs['headers'])
++    if args.auth_plugin:
++        httpie_session.auth = {
++            'type': args.auth_plugin.auth_type(),
++            'raw_auth': args.auth_plugin.raw_auth(),
++        }
++    elif httpie_session.auth:
++        request_kwargs['auth'] = httpie_session.auth
++
++
++def _save_httpie_session(httpie_session, requests_session, expired_cookies, args):
++    if httpie_session.is_new() or not args.session_read_only:
++        httpie_session.cookies = requests_session.cookies
++        httpie_session.remove_cookies(expired_cookies)
++        httpie_session.save()
+ 
+ 
+ # noinspection PyProtectedMember
+@@ -154,20 +178,18 @@
+ 
+ 
+ def build_requests_session(
+-    verify: bool,
+-    ssl_version: str = None,
+-    ciphers: str = None,
++    ssl_config: SSLContextConfig,
+ ) -> requests.Session:
+     requests_session = requests.Session()
+ 
+     # Install our adapter.
+     http_adapter = HTTPieHTTPAdapter()
+     https_adapter = HTTPieHTTPSAdapter(
+-        ciphers=ciphers,
+-        verify=verify,
++        ciphers=ssl_config.ciphers,
++        verify=ssl_config.verify,
+         ssl_version=(
+-            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+-            if ssl_version else None
++            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_config.ssl_version]
++            if ssl_config.ssl_version else None
+         ),
+     )
+     requests_session.mount('http://', http_adapter)
+@@ -324,7 +346,7 @@
+ 
+ def make_request_kwargs(
+     env: Environment,
+-    args: argparse.Namespace,
++    args: argparse.Namespace = None,
+     base_headers: HTTPHeadersDict = None,
+     request_body_read_callback=lambda chunk: chunk
+ ) -> dict:
+@@ -332,6 +354,12 @@
+     Translate our `args` into `requests.Request` keyword arguments.
+ 
+     """
++    if isinstance(env, RequestContext):
++        context = env
++        env = context.env
++        args = context.args
++        request_body_read_callback = context.request_body_read_callback or request_body_read_callback
++
+     files = args.files
+     # Serialize JSON data, if needed.
+     data = args.data

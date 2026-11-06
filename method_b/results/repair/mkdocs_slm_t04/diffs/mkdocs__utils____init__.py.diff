@@ -1,0 +1,77 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -6,6 +6,7 @@
+ """
+ from __future__ import annotations
+ 
++import dataclasses
+ import functools
+ import logging
+ import os
+@@ -166,12 +167,24 @@
+     return bool(_ERROR_TEMPLATE_RE.match(path))
+ 
+ 
++@dataclasses.dataclass(frozen=True)
++class _UrlPath:
++    value: str
++
++    @classmethod
++    def normalize(cls, path: str) -> _UrlPath:
++        if not path.startswith('/'):
++            path = '/' + path
++        path = posixpath.normpath(path)[1:]
++        return cls(path)
++
++    def parts(self) -> list[str]:
++        return self.value.split('/') if self.value else []
++
++
+ @functools.lru_cache(maxsize=None)
+ def _norm_parts(path: str) -> list[str]:
+-    if not path.startswith('/'):
+-        path = '/' + path
+-    path = posixpath.normpath(path)[1:]
+-    return path.split('/') if path else []
++    return _UrlPath.normalize(path).parts()
+ 
+ 
+ def get_relative_url(url: str, other: str) -> str:
+@@ -256,22 +269,33 @@
+ def get_theme_dir(name: str) -> str:
+     """Return the directory of an installed theme by name."""
+     theme = get_themes()[name]
+-    return os.path.dirname(os.path.abspath(theme.load().__file__))
++    return theme.get_file_path()
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+ def get_themes() -> dict[str, EntryPoint]:
+     """Return a dict of all installed themes as {name: EntryPoint}."""
++    if not hasattr(EntryPoint, 'get_file_path'):
++        def _get_file_path(self: EntryPoint) -> str:
++            return os.path.dirname(os.path.abspath(self.load().__file__))
++        EntryPoint.get_file_path = _get_file_path
++
++    if not hasattr(EntryPoint, 'get_dist_name'):
++        def _get_dist_name(self: EntryPoint) -> str:
++            assert self.dist is not None
++            return self.dist.name
++        EntryPoint.get_dist_name = _get_dist_name
++
+     themes: dict[str, EntryPoint] = {}
+     eps: dict[EntryPoint, None] = dict.fromkeys(entry_points(group='mkdocs.themes'))
+-    builtins = {ep.name for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
++    builtins = {ep.name for ep in eps if ep.dist is not None and ep.get_dist_name() == 'mkdocs'}
+ 
+     for theme in eps:
+         assert theme.dist is not None
+ 
+-        if theme.name in builtins and theme.dist.name != 'mkdocs':
++        if theme.name in builtins and theme.get_dist_name() != 'mkdocs':
+             raise exceptions.ConfigurationError(
+-                f"The theme '{theme.name}' is a builtin theme but the package '{theme.dist.name}' "
++                f"The theme '{theme.name}' is a builtin theme but the package '{theme.get_dist_name()}' "
+                 "attempts to provide a theme with the same name."
+             )
+         elif theme.name in themes:

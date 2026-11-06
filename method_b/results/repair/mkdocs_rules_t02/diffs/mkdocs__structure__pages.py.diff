@@ -1,0 +1,30 @@
+--- a/mkdocs/structure/pages.py
++++ b/mkdocs/structure/pages.py
+@@ -30,6 +30,9 @@
+ 
+ 
+ log = logging.getLogger(__name__)
++
++_ANCHOR_PRIORITY = 5
++_RAW_HTML_PRIORITY = 21
+ 
+ 
+ class Page(StructureItem):
+@@ -340,7 +343,7 @@
+                     add(anchor)
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+-        md.treeprocessors.register(self, "mkdocs_extract_anchors", priority=5)  # Same as 'toc'.
++        md.treeprocessors.register(self, "mkdocs_extract_anchors", priority=_ANCHOR_PRIORITY)
+ 
+ 
+ class _RelativePathTreeprocessor(markdown.treeprocessors.Treeprocessor):
+@@ -533,7 +536,7 @@
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+         md.preprocessors.register(
+-            self, "mkdocs_raw_html", priority=21  # Right before 'html_block'.
++            self, "mkdocs_raw_html", priority=_RAW_HTML_PRIORITY
+         )
+ 
+ 

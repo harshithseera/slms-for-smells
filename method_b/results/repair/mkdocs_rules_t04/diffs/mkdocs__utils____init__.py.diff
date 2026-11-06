@@ -1,0 +1,21 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -214,6 +214,9 @@
+         return result
+ 
+     return posixpath.join(base, path)
++
++
++_PARENT_PREFIX_LENGTH = 3
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+@@ -234,7 +237,7 @@
+     # Relative path - preserve information about it
+     norm = posixpath.normpath(path) + '/'
+     relative_level = 0
+-    while norm.startswith('../', relative_level * 3):
++    while norm.startswith('../', relative_level * _PARENT_PREFIX_LENGTH):
+         relative_level += 1
+     return path, relative_level
+ 

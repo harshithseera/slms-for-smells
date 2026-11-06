@@ -1,0 +1,71 @@
+--- a/httpie/cli/utils.py
++++ b/httpie/cli/utils.py
+@@ -1,7 +1,25 @@
+ import argparse
++from dataclasses import dataclass
+ from typing import Any, Callable, Generic, Iterator, Iterable, Optional, TypeVar
+ 
+ T = TypeVar('T')
++
++
++@dataclass
++class _ActionContext:
++    parser: argparse.ArgumentParser
++    namespace: argparse.Namespace
++    values: Any
++    option_string: Optional[str] = None
++
++
++@dataclass
++class _LazyChoicesConfig:
++    getter: Callable[[], Iterable[T]]
++    help_formatter: Optional[Callable[[T, bool], str]] = None
++    sort: bool = False
++    cache: bool = True
++    isolation_mode: bool = False
+ 
+ 
+ class Manual(argparse.Action):
+@@ -21,8 +39,9 @@
+         )
+ 
+     def __call__(self, parser, namespace, values, option_string=None):
+-        parser.print_manual()
+-        parser.exit()
++        ctx = _ActionContext(parser=parser, namespace=namespace, values=values, option_string=option_string)
++        ctx.parser.print_manual()
++        ctx.parser.exit()
+ 
+ 
+ class LazyChoices(argparse.Action, Generic[T]):
+@@ -36,11 +55,18 @@
+         isolation_mode: bool = False,
+         **kwargs
+     ) -> None:
+-        self.getter = getter
+-        self.help_formatter = help_formatter
+-        self.sort = sort
+-        self.cache = cache
+-        self.isolation_mode = isolation_mode
++        config = _LazyChoicesConfig(
++            getter=getter,
++            help_formatter=help_formatter,
++            sort=sort,
++            cache=cache,
++            isolation_mode=isolation_mode
++        )
++        self.getter = config.getter
++        self.help_formatter = config.help_formatter
++        self.sort = config.sort
++        self.cache = config.cache
++        self.isolation_mode = config.isolation_mode
+         self._help: Optional[str] = None
+         self._obj: Optional[Iterable[T]] = None
+         super().__init__(*args, **kwargs)
+@@ -76,4 +102,5 @@
+             return iter(self.load())
+ 
+     def __call__(self, parser, namespace, values, option_string=None):
+-        setattr(namespace, self.dest, values)
++        ctx = _ActionContext(parser=parser, namespace=namespace, values=values, option_string=option_string)
++        setattr(ctx.namespace, self.dest, ctx.values)

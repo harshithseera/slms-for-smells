@@ -1,0 +1,138 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/mkdocs_rules_t02",
+  "fixed_set": 720,
+  "files": [
+    {
+      "file": "mkdocs/__main__.py",
+      "findings": 12,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/commands/gh_deploy.py",
+      "findings": 4,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/commands/serve.py",
+      "findings": 5,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/config/base.py",
+      "findings": 7,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/contrib/search/__init__.py",
+      "findings": 2,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/livereload/__init__.py",
+      "findings": 8,
+      "still_passing": 719,
+      "broken": 1,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_directory"
+      ]
+    },
+    {
+      "file": "mkdocs/plugins.py",
+      "findings": 16,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/structure/files.py",
+      "findings": 10,
+      "still_passing": 663,
+      "broken": 57,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.build_tests.BuildTests::test_anchor_warning",
+        "mkdocs.tests.build_tests.BuildTests::test_anchor_warning_and_query",
+        "mkdocs.tests.build_tests.BuildTests::test_anchor_warning_for_footnote",
+        "mkdocs.tests.build_tests.BuildTests::test_conflicting_readme_and_index",
+        "mkdocs.tests.build_tests.BuildTests::test_draft_pages_with_invalid_links"
+      ]
+    },
+    {
+      "file": "mkdocs/structure/nav.py",
+      "findings": 6,
+      "still_passing": 719,
+      "broken": 1,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.structure.nav_tests.SiteNavigationTests::test_active"
+      ]
+    },
+    {
+      "file": "mkdocs/structure/pages.py",
+      "findings": 16,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/theme.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/utils/__init__.py",
+      "findings": 6,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/utils/cache.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/utils/rendering.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/utils/yaml.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    }
+  ],
+  "files_safe": 12,
+  "files_breaking": 3
+}

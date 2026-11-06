@@ -1,0 +1,79 @@
+--- a/mkdocs/contrib/search/__init__.py
++++ b/mkdocs/contrib/search/__init__.py
+@@ -62,6 +62,9 @@
+ class SearchPlugin(BasePlugin[_PluginConfig]):
+     """Add a search feature to MkDocs."""
+ 
++    def _get_theme_locale_language(self, config: MkDocsConfig) -> str:
++        return config.theme.locale.language
++
+     def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+         """Add plugin templates and scripts to config."""
+         if config.theme.get('include_search_page'):
+@@ -74,7 +77,7 @@
+         if self.config.lang is None:
+             # lang setting undefined. Set default based on theme locale
+             validate = _PluginConfig.lang.run_validation
+-            self.config.lang = validate(config.theme.locale.language)
++            self.config.lang = validate(self._get_theme_locale_language(config))
+         # The `python` method of `prebuild_index` is pending deprecation as of version 1.2.
+         # TODO: Raise a deprecation warning in a future release (1.3?).
+         if self.config.prebuild_index == 'python':
+@@ -92,29 +95,37 @@
+         """Add page to search index."""
+         self.search_index.add_entry_from_context(page)
+ 
+-    def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
+-        """Build search index."""
+-        output_base_path = os.path.join(config.site_dir, 'search')
++    def _write_search_index(self, output_base_path: str) -> None:
+         search_index = self.search_index.generate_search_index()
+         json_output_path = os.path.join(output_base_path, 'search_index.json')
+         utils.write_file(search_index.encode('utf-8'), json_output_path)
+ 
++    def _get_language_files(self) -> List[str]:
+         assert self.config.lang is not None
+-        if not config.theme.get('search_index_only'):
+-            # Include language support files in output. Copy them directly
+-            # so that only the needed files are included.
+-            files = []
+-            if len(self.config.lang) > 1 or 'en' not in self.config.lang:
+-                files.append('lunr.stemmer.support.js')
+-            if len(self.config.lang) > 1:
+-                files.append('lunr.multi.js')
+-            if 'ja' in self.config.lang or 'jp' in self.config.lang:
+-                files.append('tinyseg.js')
+-            for lang in self.config.lang:
+-                if lang != 'en':
+-                    files.append(f'lunr.{lang}.js')
++        files = []
++        if len(self.config.lang) > 1 or 'en' not in self.config.lang:
++            files.append('lunr.stemmer.support.js')
++        if len(self.config.lang) > 1:
++            files.append('lunr.multi.js')
++        if 'ja' in self.config.lang or 'jp' in self.config.lang:
++            files.append('tinyseg.js')
++        for lang in self.config.lang:
++            if lang != 'en':
++                files.append(f'lunr.{lang}.js')
++        return files
+ 
+-            for filename in files:
+-                from_path = os.path.join(base_path, 'lunr-language', filename)
+-                to_path = os.path.join(output_base_path, filename)
+-                utils.copy_file(from_path, to_path)
++    def _copy_language_files(self, output_base_path: str) -> None:
++        for filename in self._get_language_files():
++            from_path = os.path.join(base_path, 'lunr-language', filename)
++            to_path = os.path.join(output_base_path, filename)
++            utils.copy_file(from_path, to_path)
++
++    def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
++        """Build search index."""
++        output_base_path = os.path.join(config.site_dir, 'search')
++        self._write_search_index(output_base_path)
++
++        if config.theme.get('search_index_only'):
++            return
++
++        self._copy_language_files(output_base_path)

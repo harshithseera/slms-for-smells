@@ -1,0 +1,24 @@
+--- a/httpie/internal/update_warnings.py
++++ b/httpie/internal/update_warnings.py
+@@ -52,11 +52,19 @@
+         json.dump(data, stream)
+ 
+ 
++def fetch_updates_lazy(env: Environment) -> None:
++    spawn_daemon('fetch_updates')
++
++
++def fetch_updates_eager(env: Environment) -> None:
++    _fetch_updates(env)
++
++
+ def fetch_updates(env: Environment, lazy: bool = True):
+     if lazy:
+-        spawn_daemon('fetch_updates')
++        fetch_updates_lazy(env)
+     else:
+-        _fetch_updates(env)
++        fetch_updates_eager(env)
+ 
+ 
+ def maybe_fetch_updates(env: Environment) -> None:

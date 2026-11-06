@@ -1,0 +1,133 @@
+--- a/mkdocs/__main__.py
++++ b/mkdocs/__main__.py
+@@ -9,6 +9,7 @@
+ import textwrap
+ import traceback
+ import warnings
++from dataclasses import dataclass
+ 
+ import click
+ 
+@@ -23,6 +24,21 @@
+         colorama.init()
+ 
+ log = logging.getLogger(__name__)
++
++
++@dataclass
++class GhDeployOptions:
++    message: str | None
++    remote_branch: str | None
++    remote_name: str | None
++    force: bool
++    no_history: bool
++    ignore_version: bool
++    shell: bool
++
++
++def _show_warning_info(category, message, tb):
++    log.info(f'{category.__name__}: {message}\n{tb}')
+ 
+ 
+ def _showwarning(message, category, filename, lineno, file=None, line=None):
+@@ -42,7 +58,7 @@
+     except Exception:
+         tb = f'  File "{filename}", line {lineno}'
+ 
+-    log.info(f'{category.__name__}: {message}\n{tb}')
++    _show_warning_info(category, message, tb)
+ 
+ 
+ def _enable_warnings():
+@@ -100,6 +116,12 @@
+         self.stream.setFormatter(ColorFormatter())
+         self.stream.name = 'MkDocsStreamHandler'
+         self.logger.addHandler(self.stream)
++
++    def set_log_level(self, level):
++        self.logger.setLevel(level)
++
++    def set_stream_formatter(self, formatter):
++        self.stream.setFormatter(formatter)
+ 
+     def __del__(self):
+         self.logger.removeHandler(self.stream)
+@@ -160,11 +182,15 @@
+     return inner
+ 
+ 
++def _handle_verbosity(ctx, value, level):
++    state = ctx.ensure_object(State)
++    if value:
++        state.set_log_level(level)
++
++
+ def verbose_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.DEBUG)
++        _handle_verbosity(ctx, value, logging.DEBUG)
+ 
+     return click.option(
+         '-v',
+@@ -178,9 +204,7 @@
+ 
+ def quiet_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.ERROR)
++        _handle_verbosity(ctx, value, logging.ERROR)
+ 
+     return click.option(
+         '-q',
+@@ -203,7 +227,7 @@
+                 or os.environ.get('TERM') == 'dumb'
+             )
+         ):
+-            state.stream.setFormatter(logging.Formatter('%(levelname)-8s-  %(message)s'))
++            state.set_stream_formatter(logging.Formatter('%(levelname)-8s-  %(message)s'))
+ 
+     return click.option(
+         '--color/--no-color',
+@@ -235,9 +259,10 @@
+ PYTHON_VERSION = f"{sys.version_info.major}.{sys.version_info.minor}"
+ 
+ PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+-
+-
+-@click.group(context_settings=dict(help_option_names=['-h', '--help'], max_content_width=120))
++MAX_CONTENT_WIDTH = 120
++
++
++@click.group(context_settings=dict(help_option_names=['-h', '--help'], max_content_width=MAX_CONTENT_WIDTH))
+ @click.version_option(
+     __version__,
+     '-V',
+@@ -315,13 +340,23 @@
+         build.build(cfg, dirty=not clean)
+     finally:
+         cfg.plugins.on_shutdown()
+-    gh_deploy.gh_deploy(
+-        cfg,
++    
++    deploy_opts = GhDeployOptions(
+         message=message,
++        remote_branch=remote_branch,
++        remote_name=remote_name,
+         force=force,
+         no_history=no_history,
+         ignore_version=ignore_version,
+         shell=shell,
++    )
++    gh_deploy.gh_deploy(
++        cfg,
++        message=deploy_opts.message,
++        force=deploy_opts.force,
++        no_history=deploy_opts.no_history,
++        ignore_version=deploy_opts.ignore_version,
++        shell=deploy_opts.shell,
+     )
+ 
+ 

@@ -1,0 +1,53 @@
+--- a/httpie/models.py
++++ b/httpie/models.py
+@@ -19,6 +19,12 @@
+ 
+ ELAPSED_TIME_LABEL = 'Elapsed time'
+ 
++HTTP_VERSION_0_9 = 9
++HTTP_VERSION_1_0 = 10
++HTTP_VERSION_1_1 = 11
++HTTP_VERSION_2_0 = 20
++HTTP_VERSION_FALLBACK = 11
++
+ 
+ class HTTPMessage:
+     """Abstract class for HTTP messages."""
+@@ -90,7 +96,7 @@
+         data = {}
+         time_to_parse_headers = self._orig.elapsed.total_seconds()
+         # noinspection PyProtectedMember
+-        time_since_headers_parsed = monotonic() - self._orig._httpie_headers_parsed_at
++        time_since_headers_parsed = monotonic() - self._get_headers_parsed_at()
+         time_elapsed = time_to_parse_headers + time_since_headers_parsed
+         # data['Headers time'] = str(round(time_to_parse_headers, 5)) + 's'
+         # data['Body time'] = str(round(time_since_headers_parsed, 5)) + 's'
+@@ -100,6 +106,10 @@
+             for key, value in data.items()
+         )
+ 
++    def _get_headers_parsed_at(self) -> float:
++        # noinspection PyProtectedMember
++        return self._orig._httpie_headers_parsed_at
++
+     @property
+     def version(self) -> str:
+         """
+@@ -109,12 +119,12 @@
+ 
+         """
+         mapping = {
+-            9: '0.9',
+-            10: '1.0',
+-            11: '1.1',
+-            20: '2.0',
++            HTTP_VERSION_0_9: '0.9',
++            HTTP_VERSION_1_0: '1.0',
++            HTTP_VERSION_1_1: '1.1',
++            HTTP_VERSION_2_0: '2.0',
+         }
+-        fallback = 11
++        fallback = HTTP_VERSION_FALLBACK
+         version = None
+         try:
+             raw = self._orig.raw

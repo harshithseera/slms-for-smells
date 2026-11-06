@@ -1,0 +1,22 @@
+--- a/mkdocs/utils/yaml.py
++++ b/mkdocs/utils/yaml.py
+@@ -82,6 +82,10 @@
+         return self.config.docs_dir
+ 
+ 
++def _get_page_src_path(page: Any) -> str:
++    return page.file.src_path
++
++
+ class RelativeDirPlaceholder(_DirPlaceholder):
+     """
+     A placeholder object that gets resolved to the directory of the Markdown file currently being rendered.
+@@ -103,7 +107,7 @@
+                 "The current file is not set for the '!relative' tag. "
+                 "It cannot be used in this context; the intended usage is within `markdown_extensions`."
+             )
+-        return os.path.dirname(os.path.join(self.config.docs_dir, current_page.file.src_path))
++        return os.path.dirname(os.path.join(self.config.docs_dir, _get_page_src_path(current_page)))
+ 
+ 
+ def get_yaml_loader(loader=yaml.Loader, config: MkDocsConfig | None = None):

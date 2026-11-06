@@ -1,0 +1,216 @@
+--- a/mkdocs/livereload/__init__.py
++++ b/mkdocs/livereload/__init__.py
+@@ -73,6 +73,13 @@
+ """
+ _SCRIPT_TEMPLATE = string.Template(_SCRIPT_TEMPLATE_STR)
+ 
++_DEFAULT_BUILD_DELAY = 0.1
++_DEFAULT_SHUTDOWN_DELAY = 0.25
++_DEFAULT_POLL_INTERVAL = 0.5
++_HTTP_INTERNAL_SERVER_ERROR = 500
++_HTTP_NOT_FOUND = 404
++_TIMESTAMP_MULTIPLIER = 1000
++
+ 
+ class _LoggerAdapter(logging.LoggerAdapter):
+     def process(self, msg: str, kwargs: dict) -> tuple[str, dict]:  # type: ignore[override]
+@@ -102,8 +109,8 @@
+         port: int,
+         root: str,
+         mount_path: str = "/",
+-        polling_interval: float = 0.5,
+-        shutdown_delay: float = 0.25,
++        polling_interval: float = _DEFAULT_POLL_INTERVAL,
++        shutdown_delay: float = _DEFAULT_SHUTDOWN_DELAY,
+     ) -> None:
+         self.builder = builder
+         try:
+@@ -114,7 +121,7 @@
+         self.root = os.path.abspath(root)
+         self.mount_path = _normalize_mount_path(mount_path)
+         self.url = _serve_url(host, port, mount_path)
+-        self.build_delay = 0.1
++        self.build_delay = _DEFAULT_BUILD_DELAY
+         self.shutdown_delay = shutdown_delay
+         # To allow custom error pages.
+         self.error_handler: Callable[[int], bytes | None] = lambda code: None
+@@ -170,6 +177,12 @@
+             self.observer.unschedule(self._watch_refs.pop(path))
+ 
+     def serve(self, *, open_in_browser=False):
++        if open_in_browser:
++            self._serve_with_browser()
++        else:
++            self._serve_standard()
++
++    def _prepare_server_start(self):
+         self.server_bind()
+         self.server_activate()
+ 
+@@ -179,14 +192,17 @@
+             paths_str = ", ".join(f"'{_try_relativize_path(path)}'" for path in self._watched_paths)
+             log.info(f"Watching paths for changes: {paths_str}")
+ 
+-        if open_in_browser:
+-            log.info(f"Serving on {self.url} and opening it in a browser")
+-        else:
+-            log.info(f"Serving on {self.url}")
++    def _serve_standard(self):
++        self._prepare_server_start()
++        log.info(f"Serving on {self.url}")
+         self.serve_thread.start()
+-        if open_in_browser:
+-            webbrowser.open(self.url)
+-
++        self._build_loop()
++
++    def _serve_with_browser(self):
++        self._prepare_server_start()
++        log.info(f"Serving on {self.url} and opening it in a browser")
++        self.serve_thread.start()
++        webbrowser.open(self.url)
+         self._build_loop()
+ 
+     def _build_loop(self):
+@@ -225,6 +241,12 @@
+                 self._epoch_cond.notify_all()
+ 
+     def shutdown(self, wait=False) -> None:
++        if wait:
++            self._shutdown_and_wait()
++        else:
++            self._shutdown_nowait()
++
++    def _shutdown_common(self):
+         self.observer.stop()
+         with self._rebuild_cond:
+             self._shutdown = True
+@@ -233,21 +255,26 @@
+         if self.serve_thread.is_alive():
+             super().shutdown()
+         self.server_close()
+-        if wait:
+-            self.serve_thread.join()
+-            self.observer.join()
++
++    def _shutdown_nowait(self) -> None:
++        self._shutdown_common()
++
++    def _shutdown_and_wait(self) -> None:
++        self._shutdown_common()
++        self.serve_thread.join()
++        self.observer.join()
+ 
+     def serve_request(self, environ, start_response) -> Iterable[bytes]:
+         try:
+             result = self._serve_request(environ, start_response)
+         except Exception:
+-            code = 500
++            code = _HTTP_INTERNAL_SERVER_ERROR
+             msg = "500 Internal Server Error"
+             log.exception(msg)
+         else:
+             if result is not None:
+                 return result
+-            code = 404
++            code = _HTTP_NOT_FOUND
+             msg = "404 Not Found"
+ 
+         error_content = None
+@@ -262,39 +289,56 @@
+         return [error_content]
+ 
+     def _serve_request(self, environ, start_response) -> Iterable[bytes] | None:
++        path = self._decode_path(environ)
++
++        if livereload_response := self._handle_livereload_path(path, environ, start_response):
++            return livereload_response
++
++        if file_response := self._handle_file_path(path, start_response):
++            return file_response
++
++        if path == "/":
++            start_response("302 Found", [("Location", urllib.parse.quote(self.mount_path))])
++            return []
++
++        return None  # Not found
++
++    def _decode_path(self, environ) -> str:
+         # https://bugs.python.org/issue16679
+         # https://github.com/bottlepy/bottle/blob/f9b1849db4/bottle.py#L984
+-        path = environ["PATH_INFO"].encode("latin-1").decode("utf-8", "ignore")
+-
+-        if path.startswith("/livereload/"):
+-            if m := re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path):
+-                epoch = int(m[1])
+-                start_response("200 OK", [("Content-Type", "text/plain")])
+-
+-                def condition():
+-                    return self._visible_epoch > epoch
+-
+-                with self._epoch_cond:
+-                    if not condition():
+-                        # Stall the browser, respond as soon as there's something new.
+-                        # If there's not, respond anyway after a minute.
+-                        self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
+-                        self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
+-                    return [b"%d" % self._visible_epoch]
+-
+-        if (path + "/").startswith(self.mount_path):
+-            rel_file_path = path[len(self.mount_path) :]
+-
+-            if path.endswith("/"):
+-                rel_file_path += "index.html"
+-            # Prevent directory traversal - normalize the path.
+-            rel_file_path = posixpath.normpath("/" + rel_file_path).lstrip("/")
+-            file_path = os.path.join(self.root, rel_file_path)
+-        elif path == "/":
+-            start_response("302 Found", [("Location", urllib.parse.quote(self.mount_path))])
+-            return []
+-        else:
+-            return None  # Not found
++        return environ["PATH_INFO"].encode("latin-1").decode("utf-8", "ignore")
++
++    def _handle_livereload_path(self, path: str, environ, start_response) -> Iterable[bytes] | None:
++        if not path.startswith("/livereload/"):
++            return None
++        
++        m = re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path)
++        if not m:
++            return None
++
++        epoch = int(m[1])
++        start_response("200 OK", [("Content-Type", "text/plain")])
++
++        def condition():
++            return self._visible_epoch > epoch
++
++        with self._epoch_cond:
++            if not condition():
++                # Stall the browser, respond as soon as there's something new.
++                # If there's not, respond anyway after a minute.
++                self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
++                self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
++            return [b"%d" % self._visible_epoch]
++
++    def _handle_file_path(self, path: str, start_response) -> Iterable[bytes] | None:
++        if not (path + "/").startswith(self.mount_path):
++            return None
++
++        rel_file_path = path[len(self.mount_path) :]
++        if path.endswith("/"):
++            rel_file_path += "index.html"
++        rel_file_path = posixpath.normpath("/" + rel_file_path).lstrip("/")
++        file_path = os.path.join(self.root, rel_file_path)
+ 
+         # Wait until the ongoing rebuild (if any) finishes, so we're not serving a half-built site.
+         with self._epoch_cond:
+@@ -368,7 +412,7 @@
+ 
+ 
+ def _timestamp() -> int:
+-    return round(time.monotonic() * 1000)
++    return round(time.monotonic() * _TIMESTAMP_MULTIPLIER)
+ 
+ 
+ def _try_relativize_path(path: str) -> str:

@@ -1,0 +1,863 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/results/repair/mkdocs_rules/code",
+  "files": 35,
+  "loc": 7263,
+  "candidates": 99,
+  "candidates_before_sampling": 99,
+  "static_s": 2.57,
+  "slm_model": null,
+  "slm": {
+    "calls": 0,
+    "latency_s": 0.0,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": null
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::verbose_option@181|mkdocs/__main__.py::quiet_option@195",
+      "source": "gate",
+      "reason": "AST similarity 0.975",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "_set_log_level",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "color_option",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::gh_deploy_command@320|mkdocs/commands/gh_deploy.py::gh_deploy@167",
+      "source": "gate",
+      "reason": "parameters ['force', 'ignore_version', 'message', 'no_history', 'shell'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/__main__.py",
+      "target": "_showwarning",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/__main__.py",
+      "target": "gh_deploy_command",
+      "source": "rule",
+      "reason": "9 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/commands/build.py",
+      "target": "get_context",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['base_url']",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_template",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_populate_page",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "_populate_page",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty', 'excluded'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_template@61|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'nav'] recur in 6 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_populate_page@147|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_content@359",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'page'] recur in 8 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_context@378",
+      "source": "gate",
+      "reason": "parameters ['config', 'nav', 'page'] recur in 4 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'nav', 'template_name'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'env', 'nav'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_theme_template@91|mkdocs/plugins.py::on_env@213|mkdocs/plugins.py::on_env@553",
+      "source": "gate",
+      "reason": "parameters ['config', 'env', 'files'] recur in 3 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_populate_page@147",
+      "source": "gate",
+      "reason": "parameters ['config', 'dirty', 'page'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "rule",
+      "reason": "62 lines, cyclomatic complexity 8, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "rule",
+      "reason": "116 lines, cyclomatic complexity 24, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/gh_deploy.py",
+      "target": "gh_deploy",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/serve.py",
+      "target": "_setup_server_environment",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/serve.py",
+      "target": "_serve_with_livereload",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/serve.py",
+      "target": "_serve_without_livereload",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::pre_validation@60|mkdocs/config/base.py::post_validation@75",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 8 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::run_validation@67|mkdocs/plugins.py::on_config@156",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 5 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::user_configs@260|mkdocs/theme.py::_vars@86",
+      "source": "gate",
+      "reason": "AST similarity 0.941; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__init__@80|mkdocs/config/config_options.py::__init__@86",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 6 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::run_validation@567|mkdocs/utils/__init__.py::__get__@417",
+      "source": "gate",
+      "reason": "AST similarity 0.8",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "PropagatingSubConfig._propagate_values",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Deprecated.__init__",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['removed'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Nav.run_validation",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['top'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "MarkdownExtensions.pre_validation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Hooks._load_hook",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "PathSpec.run_validation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__init__@517|mkdocs/config/config_options.py::__init__@520",
+      "source": "gate",
+      "reason": "parameters ['default', 'is_dir', 'required'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "RepoURL.post_validation",
+      "source": "rule",
+      "reason": "26 lines, cyclomatic complexity 13, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Theme._validate_theme_fields",
+      "source": "rule",
+      "reason": "24 lines, cyclomatic complexity 11, nesting 1",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Plugins.load_plugin",
+      "source": "rule",
+      "reason": "53 lines, cyclomatic complexity 17, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/contrib/search/__init__.py",
+      "target": "SearchPlugin.on_config",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "mkdocs/livereload/__init__.py::serve@177|mkdocs/livereload/__init__.py::shutdown@241",
+      "source": "gate",
+      "reason": "AST similarity 0.9; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.__init__",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.serve",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['open_in_browser'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.shutdown",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['wait'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.__init__",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/config/base.py::pre_validation@60|mkdocs/plugins.py::on_startup@100",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 28 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_serve@536|mkdocs/plugins.py::on_pre_template@562",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 6 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_serve@134|mkdocs/plugins.py::on_serve@536",
+      "source": "gate",
+      "reason": "parameters ['builder', 'config', 'server'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_pre_template@254|mkdocs/plugins.py::on_pre_template@562",
+      "source": "gate",
+      "reason": "parameters ['config', 'template', 'template_name'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_template_context@271|mkdocs/plugins.py::on_template_context@567",
+      "source": "gate",
+      "reason": "parameters ['config', 'context', 'template_name'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_post_template@289|mkdocs/plugins.py::on_post_template@574",
+      "source": "gate",
+      "reason": "parameters ['config', 'output_content', 'template_name'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_markdown@340|mkdocs/plugins.py::on_page_markdown@587",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'markdown', 'page'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_content@359|mkdocs/plugins.py::on_page_content@592",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'html', 'page'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_context@378|mkdocs/plugins.py::on_page_context@595",
+      "source": "gate",
+      "reason": "parameters ['config', 'context', 'nav', 'page'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_post_page@396|mkdocs/plugins.py::on_post_page@600",
+      "source": "gate",
+      "reason": "parameters ['config', 'output', 'page'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::src_uris@87|mkdocs/structure/nav.py::active@73",
+      "source": "gate",
+      "reason": "AST similarity 0.875; cluster of 4 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/livereload/__init__.py::serve@177|mkdocs/structure/files.py::copy_file@521",
+      "source": "gate",
+      "reason": "AST similarity 0.9; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::generated@289|mkdocs/structure/files.py::generated@305",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 5 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::generated@320|mkdocs/structure/files.py::__init__@359",
+      "source": "gate",
+      "reason": "AST similarity 0.831",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::content_bytes@488|mkdocs/structure/files.py::content_string@505",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "Files.add_files_from_theme",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "File._create_generated_file",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "File._read_content",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['as_bytes'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "File.copy_file",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "get_files",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "_filter_path_item",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_dir'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "_filter_paths",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_dir'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::generated@289|mkdocs/structure/files.py::generated@305",
+      "source": "gate",
+      "reason": "parameters ['config', 'inclusion', 'src_uri'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::_filter_path_item@672|mkdocs/structure/files.py::_filter_paths@679",
+      "source": "gate",
+      "reason": "parameters ['basename', 'is_dir', 'path'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/structure/files.py",
+      "target": "File.__init__",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/nav.py",
+      "target": "mkdocs/structure/nav.py::_set_active_status@21|mkdocs/structure/pages.py::active@125",
+      "source": "gate",
+      "reason": "AST similarity 0.971",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_set_active_status",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "get_navigation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_process_missing_from_config",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_validate_links",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_resolve_nav_item",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/nav.py",
+      "target": "mkdocs/structure/nav.py::_data_to_navigation@194|mkdocs/structure/nav.py::_resolve_nav_item@212",
+      "source": "gate",
+      "reason": "parameters ['config', 'data', 'files'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "Page.read_source",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_ExtractAnchorsTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._possible_target_uris",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['use_directory_urls'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RawHTMLPreprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_ExtractTitleTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/pages.py",
+      "target": "mkdocs/structure/pages.py::__init__@337|mkdocs/structure/pages.py::__init__@354",
+      "source": "gate",
+      "reason": "parameters ['config', 'file', 'files'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "Page._set_edit_url",
+      "source": "rule",
+      "reason": "36 lines, cyclomatic complexity 13, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._possible_target_uris",
+      "source": "rule",
+      "reason": "36 lines, cyclomatic complexity 13, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "rule",
+      "reason": "98 lines, cyclomatic complexity 32, nesting 6",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "mkdocs/config/base.py::user_configs@260|mkdocs/utils/__init__.py::path_to_url@252",
+      "source": "gate",
+      "reason": "AST similarity 0.811; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "get_relative_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "get_themes",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/utils/cache.py",
+      "target": "download_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/utils/yaml.py",
+      "target": "RelativeDirPlaceholder._get_src_path",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    }
+  ],
+  "by_smell": {
+    "data_clumps": {
+      "candidates": 21,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "duplicated_logic": {
+      "candidates": 16,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "flag_argument": {
+      "candidates": 12,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_method": {
+      "candidates": 8,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_parameter_list": {
+      "candidates": 7,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "message_chains": {
+      "candidates": 31,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "primitive_obsession": {
+      "candidates": 4,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    }
+  }
+}

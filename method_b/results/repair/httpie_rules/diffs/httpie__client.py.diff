@@ -1,0 +1,157 @@
+--- a/httpie/client.py
++++ b/httpie/client.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ from contextlib import contextmanager
++from dataclasses import dataclass
+ from time import monotonic
+ from typing import Any, Dict, Callable, Iterable
+ from urllib.parse import urlparse, urlunparse
+@@ -40,11 +41,45 @@
+ IGNORE_CONTENT_LENGTH_METHODS = frozenset([HTTP_OPTIONS])
+ 
+ 
++@dataclass
++class RequestContext:
++    env: Environment
++    args: argparse.Namespace
++    request_body_read_callback: Callable[[bytes], None] = None
++
++
++@dataclass
++class SSLContextConfig:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
++@dataclass
++class UrlPath:
++    orig_url: str
++    prepped_url: str
++
++    def get_path_as_is(self) -> str:
++        parsed_orig, parsed_prepped = urlparse(self.orig_url), urlparse(self.prepped_url)
++        final_dict = {
++            # noinspection PyProtectedMember
++            **parsed_prepped._asdict(),
++            'path': parsed_orig.path,
++        }
++        return urlunparse(tuple(final_dict.values()))
++
++
+ def collect_messages(
+     env: Environment,
+     args: argparse.Namespace,
+     request_body_read_callback: Callable[[bytes], None] = None,
+ ) -> Iterable[RequestsMessage]:
++    context = RequestContext(
++        env=env,
++        args=args,
++        request_body_read_callback=request_body_read_callback
++    )
+     httpie_session = None
+     httpie_session_headers = None
+     if args.session or args.session_read_only:
+@@ -58,18 +93,19 @@
+         httpie_session_headers = httpie_session.headers
+ 
+     request_kwargs = make_request_kwargs(
+-        env,
+-        args=args,
++        context,
+         base_headers=httpie_session_headers,
+-        request_body_read_callback=request_body_read_callback
+     )
+     send_kwargs = make_send_kwargs(args)
+     send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+-    requests_session = build_requests_session(
++    verify_val = send_kwargs_mergeable_from_env.get('verify')
++    verify_bool = verify_val if isinstance(verify_val, bool) else bool(verify_val)
++    ssl_config = SSLContextConfig(
++        verify=verify_bool,
+         ssl_version=args.ssl_version,
+         ciphers=args.ciphers,
+-        verify=bool(send_kwargs_mergeable_from_env['verify'])
+     )
++    requests_session = build_requests_session(ssl_config)
+ 
+     if httpie_session:
+         httpie_session.update_headers(request_kwargs['headers'])
+@@ -154,20 +190,18 @@
+ 
+ 
+ def build_requests_session(
+-    verify: bool,
+-    ssl_version: str = None,
+-    ciphers: str = None,
++    ssl_config: SSLContextConfig,
+ ) -> requests.Session:
+     requests_session = requests.Session()
+ 
+     # Install our adapter.
+     http_adapter = HTTPieHTTPAdapter()
+     https_adapter = HTTPieHTTPSAdapter(
+-        ciphers=ciphers,
+-        verify=verify,
++        ciphers=ssl_config.ciphers,
++        verify=ssl_config.verify,
+         ssl_version=(
+-            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+-            if ssl_version else None
++            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_config.ssl_version]
++            if ssl_config.ssl_version else None
+         ),
+     )
+     requests_session.mount('http://', http_adapter)
+@@ -323,15 +357,14 @@
+ 
+ 
+ def make_request_kwargs(
+-    env: Environment,
+-    args: argparse.Namespace,
++    context: RequestContext,
+     base_headers: HTTPHeadersDict = None,
+-    request_body_read_callback=lambda chunk: chunk
+ ) -> dict:
+     """
+     Translate our `args` into `requests.Request` keyword arguments.
+ 
+     """
++    args = context.args
+     files = args.files
+     # Serialize JSON data, if needed.
+     data = args.data
+@@ -357,14 +390,16 @@
+             content_type=args.headers.get('Content-Type'),
+         )
+ 
++    callback = context.request_body_read_callback or (lambda chunk: chunk)
++
+     return {
+         'method': args.method.lower(),
+         'url': args.url,
+         'headers': headers,
+         'data': prepare_request_body(
+-            env,
++            context.env,
+             data,
+-            body_read_callback=request_body_read_callback,
++            body_read_callback=callback,
+             chunked=args.chunked,
+             offline=args.offline,
+             content_length_header_value=headers.get('Content-Length'),
+@@ -391,10 +426,5 @@
+     'http://foo/../?foo=bar'
+ 
+     """
+-    parsed_orig, parsed_prepped = urlparse(orig_url), urlparse(prepped_url)
+-    final_dict = {
+-        # noinspection PyProtectedMember
+-        **parsed_prepped._asdict(),
+-        'path': parsed_orig.path,
+-    }
+-    return urlunparse(tuple(final_dict.values()))
++    url_path = UrlPath(orig_url=orig_url, prepped_url=prepped_url)
++    return url_path.get_path_as_is()

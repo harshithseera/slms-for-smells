@@ -1,0 +1,62 @@
+--- a/gymdesk/stats.py
++++ b/gymdesk/stats.py
+@@ -2,29 +2,46 @@
+ from __future__ import annotations
+ 
+ 
+-def mean_session_minutes(sessions: list[float]) -> float:
+-    total = 0.0
++def _aggregate_sessions(sessions: list[float], combine_func, initial_value: float, final_func) -> float:
++    acc = initial_value
+     count = 0
+     for s in sessions:
+-        total += s
++        acc = combine_func(acc, s)
+         count += 1
+-    return total / count if count else 0.0
++    return final_func(acc, count) if count else 0.0
++
++
++def mean_session_minutes(sessions: list[float]) -> float:
++    return _aggregate_sessions(
++        sessions,
++        lambda acc, s: acc + s,
++        0.0,
++        lambda total, count: total / count
++    )
+ 
+ 
+ def geometric_mean_session_minutes(sessions: list[float]) -> float:
+-    product = 1.0
+-    count = 0
+-    for s in sessions:
+-        product *= s
+-        count += 1
+-    return product ** (1 / count) if count else 0.0
++    return _aggregate_sessions(
++        sessions,
++        lambda acc, s: acc * s,
++        1.0,
++        lambda product, count: product ** (1 / count)
++    )
++
++
++def _compute_session_stats(sessions: list[float]) -> dict:
++    return {"count": len(sessions), "mean": mean_session_minutes(sessions), "longest": max(sessions, default=0.0)}
++
++
++def _session_summary_text(sessions: list[float]) -> str:
++    stats = _compute_session_stats(sessions)
++    return f"{stats['count']} sessions, mean {stats['mean']:.1f} min, longest {stats['longest']:.0f} min"
+ 
+ 
+ def session_summary(sessions: list[float], as_text: bool = False) -> dict | str:
+-    stats = {"count": len(sessions), "mean": mean_session_minutes(sessions), "longest": max(sessions, default=0.0)}
+     if as_text:
+-        return f"{stats['count']} sessions, mean {stats['mean']:.1f} min, longest {stats['longest']:.0f} min"
+-    return stats
++        return _session_summary_text(sessions)
++    return _compute_session_stats(sessions)
+ 
+ 
+ def occupancy(booked: int, capacity: int) -> float:

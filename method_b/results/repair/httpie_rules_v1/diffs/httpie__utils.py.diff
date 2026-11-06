@@ -1,0 +1,62 @@
+--- a/httpie/utils.py
++++ b/httpie/utils.py
+@@ -22,6 +22,31 @@
+ Item = Tuple[str, Any]
+ Items = List[Item]
+ T = TypeVar("T")
++
++BYTES_FACTOR_PB = 1 << 50
++BYTES_FACTOR_TB = 1 << 40
++BYTES_FACTOR_GB = 1 << 30
++BYTES_FACTOR_MB = 1 << 20
++BYTES_FACTOR_KB = 1 << 10
++BYTES_FACTOR_B = 1
++
++
++class Url:
++    """A small value type that validates a URL on creation and extracts its host."""
++
++    def __init__(self, url: str):
++        self.url = url
++        self._netloc = urlsplit(url).netloc
++
++    @property
++    def data(self) -> str:
++        return self.url
++
++    def as_host(self) -> str:
++        return self._netloc.split('@')[-1]
++
++    def __str__(self) -> str:
++        return self.url
+ 
+ 
+ class JsonDictPreservingDuplicateKeys(OrderedDict):
+@@ -102,12 +127,12 @@
+ 
+     """
+     abbrevs = [
+-        (1 << 50, 'PB'),
+-        (1 << 40, 'TB'),
+-        (1 << 30, 'GB'),
+-        (1 << 20, 'MB'),
+-        (1 << 10, 'kB'),
+-        (1, 'B')
++        (BYTES_FACTOR_PB, 'PB'),
++        (BYTES_FACTOR_TB, 'TB'),
++        (BYTES_FACTOR_GB, 'GB'),
++        (BYTES_FACTOR_MB, 'MB'),
++        (BYTES_FACTOR_KB, 'kB'),
++        (BYTES_FACTOR_B, 'B')
+     ]
+ 
+     if n == 1:
+@@ -264,7 +289,7 @@
+ 
+ 
+ def url_as_host(url: str) -> str:
+-    return urlsplit(url).netloc.split('@')[-1]
++    return Url(url).as_host()
+ 
+ 
+ class LockFileError(ValueError):

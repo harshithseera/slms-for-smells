@@ -1,0 +1,169 @@
+--- a/mkdocs/config/base.py
++++ b/mkdocs/config/base.py
+@@ -34,6 +34,34 @@
+ T = TypeVar('T')
+ 
+ 
++def _validate_helper(self: Config, validation_method_name: str) -> tuple[ConfigErrors, ConfigWarnings]:
++    failed: ConfigErrors = []
++    warnings: ConfigWarnings = []
++
++    for key, config_option in self._schema:
++        try:
++            method = getattr(config_option, validation_method_name)
++            if validation_method_name == 'validate':
++                value = self.get(key)
++                self[key] = method(value)
++            else:
++                method(self, key_name=key)
++            warnings.extend((key, w) for w in config_option.warnings)
++            config_option.reset_warnings()
++            if validation_method_name == 'validate':
++                pass # validate loop breaks on exception per item
++        except ValidationError as e:
++            failed.append((key, e))
++            if validation_method_name == 'validate':
++                break
++
++    if validation_method_name == 'validate':
++        for key in set(self.keys()) - self._schema_keys:
++            warnings.append((key, f"Unrecognised configuration name: {key}"))
++
++    return failed, warnings
++
++
+ class BaseConfigOption(Generic[T]):
+     def __init__(self) -> None:
+         self.warnings: list[str] = []
+@@ -179,51 +207,13 @@
+             self[key] = config_option.default
+ 
+     def _validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+-        failed: ConfigErrors = []
+-        warnings: ConfigWarnings = []
+-
+-        for key, config_option in self._schema:
+-            try:
+-                value = self.get(key)
+-                self[key] = config_option.validate(value)
+-                warnings.extend((key, w) for w in config_option.warnings)
+-                config_option.reset_warnings()
+-            except ValidationError as e:
+-                failed.append((key, e))
+-                break
+-
+-        for key in set(self.keys()) - self._schema_keys:
+-            warnings.append((key, f"Unrecognised configuration name: {key}"))
+-
+-        return failed, warnings
++        return _validate_helper(self, 'validate')
+ 
+     def _pre_validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+-        failed: ConfigErrors = []
+-        warnings: ConfigWarnings = []
+-
+-        for key, config_option in self._schema:
+-            try:
+-                config_option.pre_validation(self, key_name=key)
+-                warnings.extend((key, w) for w in config_option.warnings)
+-                config_option.reset_warnings()
+-            except ValidationError as e:
+-                failed.append((key, e))
+-
+-        return failed, warnings
++        return _validate_helper(self, 'pre_validation')
+ 
+     def _post_validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+-        failed: ConfigErrors = []
+-        warnings: ConfigWarnings = []
+-
+-        for key, config_option in self._schema:
+-            try:
+-                config_option.post_validation(self, key_name=key)
+-                warnings.extend((key, w) for w in config_option.warnings)
+-                config_option.reset_warnings()
+-            except ValidationError as e:
+-                failed.append((key, e))
+-
+-        return failed, warnings
++        return _validate_helper(self, 'post_validation')
+ 
+     def validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+         failed, warnings = self._pre_validate()
+@@ -337,42 +327,27 @@
+             result_config_file.close()
+ 
+ 
+-def load_config(
+-    config_file: str | IO | None = None, *, config_file_path: str | None = None, **kwargs
+-) -> MkDocsConfig:
+-    """
+-    Load the configuration for a given file object or name.
+-
+-    The config_file can either be a file object, string or None. If it is None
+-    the default `mkdocs.yml` filename will loaded.
+-
+-    Extra kwargs are passed to the configuration to replace any default values
+-    unless they themselves are None.
+-    """
++def _prepare_options(kwargs: dict) -> dict:
+     options = kwargs.copy()
+-
+-    # Filter None values from the options. This usually happens with optional
+-    # parameters from Click.
+     for key, value in options.copy().items():
+         if value is None:
+             options.pop(key)
+-
++    return options
++
++
++def _load_config_file_obj(config_file: str | IO | None, config_file_path: str | None) -> MkDocsConfig:
+     with _open_config_file(config_file) as fd:
+-        # Initialize the config with the default schema.
+         from mkdocs.config.defaults import MkDocsConfig
+ 
+         if config_file_path is None:
+             if sys.stdin and fd is not sys.stdin.buffer:
+                 config_file_path = getattr(fd, 'name', None)
+         cfg = MkDocsConfig(config_file_path=config_file_path)
+-        # load the config file
+         cfg.load_file(fd)
+-
+-    # Then load the options to overwrite anything in the config.
+-    cfg.load_dict(options)
+-
+-    errors, warnings = cfg.validate()
+-
++    return cfg
++
++
++def _process_config_results(cfg: MkDocsConfig, errors: list, warnings: list) -> None:
+     for config_name, warning in warnings:
+         log.warning(f"Config value '{config_name}': {warning}")
+ 
+@@ -389,4 +364,24 @@
+             f"Aborted with {len(warnings)} configuration warnings in 'strict' mode!"
+         )
+ 
++
++def load_config(
++    config_file: str | IO | None = None, *, config_file_path: str | None = None, **kwargs
++) -> MkDocsConfig:
++    """
++    Load the configuration for a given file object or name.
++
++    The config_file can either be a file object, string or None. If it is None
++    the default `mkdocs.yml` filename will loaded.
++
++    Extra kwargs are passed to the configuration to replace any default values
++    unless they themselves are None.
++    """
++    options = _prepare_options(kwargs)
++    cfg = _load_config_file_obj(config_file, config_file_path)
++    cfg.load_dict(options)
++
++    errors, warnings = cfg.validate()
++    _process_config_results(cfg, errors, warnings)
++
+     return cfg

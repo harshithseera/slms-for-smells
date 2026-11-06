@@ -1,0 +1,263 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/method_b/data/mock_codebase/gymdesk",
+  "condition": "slm",
+  "scan_before": "results/scan_code_7b_v3.json",
+  "findings_sent": 16,
+  "files_edited": 6,
+  "edits": [
+    {
+      "file": "gymdesk/billing.py",
+      "findings": 5,
+      "latency_s": 2.64,
+      "tokens_in": 1297,
+      "tokens_out": 773,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 58,
+      "import_ok": true
+    },
+    {
+      "file": "gymdesk/checkin.py",
+      "findings": 2,
+      "latency_s": 1.3,
+      "tokens_in": 708,
+      "tokens_out": 345,
+      "format_retries": 0,
+      "status": "unchanged",
+      "public_names_removed": [],
+      "lines_changed": 0,
+      "import_ok": true
+    },
+    {
+      "file": "gymdesk/club.py",
+      "findings": 5,
+      "latency_s": 4.73,
+      "tokens_in": 2416,
+      "tokens_out": 2017,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 159,
+      "import_ok": true
+    },
+    {
+      "file": "gymdesk/reports.py",
+      "findings": 2,
+      "latency_s": 1.94,
+      "tokens_in": 1025,
+      "tokens_out": 637,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 46,
+      "import_ok": true
+    },
+    {
+      "file": "gymdesk/scheduling.py",
+      "findings": 2,
+      "latency_s": 16.57,
+      "tokens_in": 1431,
+      "tokens_out": 1262,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 97,
+      "import_ok": true
+    },
+    {
+      "file": "gymdesk/stats.py",
+      "findings": 2,
+      "latency_s": 18.55,
+      "tokens_in": 680,
+      "tokens_out": 434,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 41,
+      "import_ok": true
+    }
+  ],
+  "repair_s": 46.0,
+  "llm": {
+    "model": "gemini-3.5-flash-lite",
+    "temperature": 0.4,
+    "calls": 6,
+    "tokens_in": 7557,
+    "tokens_out": 5468
+  },
+  "tests": {
+    "fixed_set": 20,
+    "still_passing": 20,
+    "pass_rate": 1.0,
+    "newly_failing": [],
+    "summary": {
+      "tests": 20,
+      "passed": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "recheck": "static",
+  "smells": {
+    "candidates": {
+      "data_clumps": {
+        "before": 2,
+        "after": 3,
+        "resolved": 0,
+        "persisted": 2,
+        "introduced": 1
+      },
+      "duplicated_logic": {
+        "before": 4,
+        "after": 4,
+        "resolved": 2,
+        "persisted": 2,
+        "introduced": 2
+      },
+      "flag_argument": {
+        "before": 3,
+        "after": 3,
+        "resolved": 0,
+        "persisted": 3,
+        "introduced": 0
+      },
+      "long_method": {
+        "before": 1,
+        "after": 1,
+        "resolved": 0,
+        "persisted": 1,
+        "introduced": 0
+      },
+      "long_parameter_list": {
+        "before": 2,
+        "after": 2,
+        "resolved": 0,
+        "persisted": 2,
+        "introduced": 0
+      },
+      "magic_numbers": {
+        "before": 6,
+        "after": 6,
+        "resolved": 1,
+        "persisted": 5,
+        "introduced": 1
+      },
+      "message_chains": {
+        "before": 3,
+        "after": 3,
+        "resolved": 0,
+        "persisted": 3,
+        "introduced": 0
+      },
+      "primitive_obsession": {
+        "before": 5,
+        "after": 5,
+        "resolved": 0,
+        "persisted": 5,
+        "introduced": 0
+      },
+      "_total": {
+        "before": 26,
+        "after": 27,
+        "resolved": 3,
+        "persisted": 23,
+        "introduced": 4
+      }
+    },
+    "sent_resolved": 3,
+    "sent_total": 16
+  },
+  "labels_after": {
+    "rules": {
+      "data_clumps": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [
+          "gymdesk/billing.py::_calculate_adjusted_total@27|gymdesk/reports.py::revenue_for_member@51"
+        ],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "duplicated_logic": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 1,
+        "fp": 3,
+        "fn": 1,
+        "unlabelled_fp": [
+          "gymdesk/billing.py::_calculate_adjusted_total@27|gymdesk/reports.py::_calculate_total@41",
+          "gymdesk/club.py::charge_member@118|gymdesk/club.py::refund_member@124"
+        ],
+        "precision": 0.25,
+        "recall": 0.5
+      },
+      "flag_argument": {
+        "positives": 2,
+        "negatives": 1,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "long_method": {
+        "positives": 1,
+        "negatives": 0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "long_parameter_list": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "magic_numbers": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 1,
+        "fp": 5,
+        "fn": 1,
+        "unlabelled_fp": [
+          "GymClub.send_reminders_dry_run"
+        ],
+        "precision": 0.16666666666666666,
+        "recall": 0.5
+      },
+      "message_chains": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "primitive_obsession": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 2,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.5,
+        "recall": 1.0
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+--- a/httpie/models.py
++++ b/httpie/models.py
+@@ -18,6 +18,19 @@
+ from .utils import split_cookies, parse_content_type_header
+ 
+ ELAPSED_TIME_LABEL = 'Elapsed time'
++
++HTTP_VERSION_0_9 = 9
++HTTP_VERSION_1_0 = 10
++HTTP_VERSION_1_1 = 11
++HTTP_VERSION_2_0 = 20
++
++HTTP_VERSION_MAPPING = {
++    HTTP_VERSION_0_9: '0.9',
++    HTTP_VERSION_1_0: '1.0',
++    HTTP_VERSION_1_1: '1.1',
++    HTTP_VERSION_2_0: '2.0',
++}
++HTTP_VERSION_FALLBACK = HTTP_VERSION_1_1
+ 
+ 
+ class HTTPMessage:
+@@ -100,6 +113,16 @@
+             for key, value in data.items()
+         )
+ 
++    def _get_raw_version(self) -> int:
++        try:
++            raw = self._orig.raw
++            if getattr(raw, '_original_response', None):
++                return raw._original_response.version
++            else:
++                return raw.version
++        except AttributeError:
++            return None
++
+     @property
+     def version(self) -> str:
+         """
+@@ -108,23 +131,8 @@
+         Assume HTTP/1.1 if version is not available.
+ 
+         """
+-        mapping = {
+-            9: '0.9',
+-            10: '1.0',
+-            11: '1.1',
+-            20: '2.0',
+-        }
+-        fallback = 11
+-        version = None
+-        try:
+-            raw = self._orig.raw
+-            if getattr(raw, '_original_response', None):
+-                version = raw._original_response.version
+-            else:
+-                version = raw.version
+-        except AttributeError:
+-            pass
+-        return mapping[version or fallback]
++        version = self._get_raw_version()
++        return HTTP_VERSION_MAPPING.get(version, HTTP_VERSION_MAPPING[HTTP_VERSION_FALLBACK])
+ 
+ 
+ class HTTPRequest(HTTPMessage):

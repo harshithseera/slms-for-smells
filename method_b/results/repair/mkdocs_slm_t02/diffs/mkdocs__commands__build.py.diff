@@ -1,0 +1,209 @@
+--- a/mkdocs/commands/build.py
++++ b/mkdocs/commands/build.py
+@@ -146,13 +146,25 @@
+ 
+ def _populate_page(page: Page, config: MkDocsConfig, files: Files, dirty: bool = False) -> None:
+     """Read page content from docs_dir and render Markdown."""
++    if dirty:
++        _populate_page_if_dirty(page, config, files)
++    else:
++        _populate_page_if_not_dirty(page, config, files)
++
++
++def _populate_page_if_dirty(page: Page, config: MkDocsConfig, files: Files) -> None:
++    if not page.file.is_modified():
++        return
++    _populate_page_common(page, config, files)
++
++
++def _populate_page_if_not_dirty(page: Page, config: MkDocsConfig, files: Files) -> None:
++    _populate_page_common(page, config, files)
++
++
++def _populate_page_common(page: Page, config: MkDocsConfig, files: Files) -> None:
+     config._current_page = page
+     try:
+-        # When --dirty is used, only read the page if the file has been modified since the
+-        # previous build of the output.
+-        if dirty and not page.file.is_modified():
+-            return
+-
+         # Run the `pre_page` plugin event
+         page = config.plugins.on_pre_page(page, config=config, files=files)
+ 
+@@ -173,7 +185,6 @@
+         )
+     except Exception as e:
+         message = f"Error reading page '{page.file.src_uri}':"
+-        # Prevent duplicated the error message because it will be printed immediately afterwards.
+         if not isinstance(e, BuildError):
+             message += f" {e}"
+         log.error(message)
+@@ -194,63 +205,71 @@
+     """Pass a Page to theme template and write output to site_dir."""
+     config._current_page = page
+     try:
+-        # When --dirty is used, only build the page if the file has been modified since the
+-        # previous build of the output.
+         if dirty and not page.file.is_modified():
+             return
+ 
+         log.debug(f"Building page {page.file.src_uri}")
+-
+-        # Activate page. Signals to theme that this is the current page.
+         page.active = True
+ 
+         context = get_context(nav, doc_files, config, page)
+-
+-        # Allow 'template:' override in md source files.
+         template = env.get_template(page.meta.get('template', 'main.html'))
+-
+-        # Run `page_context` plugin events.
+         context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+ 
+         if excluded:
+-            page.content = (
+-                '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
+-                'DRAFT'
+-                '</div>' + (page.content or '')
+-            )
+-
+-        # Render the template.
+-        output = template.render(context)
+-
+-        # Run `post_page` plugin events.
+-        output = config.plugins.on_post_page(output, page=page, config=config)
+-
+-        # Write the output file.
+-        if output.strip():
+-            utils.write_file(
+-                output.encode('utf-8', errors='xmlcharrefreplace'), page.file.abs_dest_path
+-            )
++            _build_page_excluded(page)
+         else:
+-            log.info(f"Page skipped: '{page.file.src_uri}'. Generated empty output.")
++            _build_page_included(page, template, context, config)
+ 
+     except Exception as e:
+         message = f"Error building page '{page.file.src_uri}':"
+-        # Prevent duplicated the error message because it will be printed immediately afterwards.
+         if not isinstance(e, BuildError):
+             message += f" {e}"
+         log.error(message)
+         raise
+     finally:
+-        # Deactivate page
+         page.active = False
+         config._current_page = None
+ 
+ 
++def _build_page_excluded(page: Page) -> None:
++    page.content = (
++        '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
++        'DRAFT'
++        '</div>' + (page.content or '')
++    )
++
++
++def _build_page_included(page: Page, template: jinja2.Template, context: templates.TemplateContext, config: MkDocsConfig) -> None:
++    output = template.render(context)
++    output = config.plugins.on_post_page(output, page=page, config=config)
++
++    if output.strip():
++        utils.write_file(
++            output.encode('utf-8', errors='xmlcharrefreplace'), page.file.abs_dest_path
++        )
++    else:
++        log.info(f"Page skipped: '{page.file.src_uri}'. Generated empty output.")
++
++
+ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+     """Perform a full site build."""
++    if dirty:
++        build_dirty(config, serve_url=serve_url)
++    else:
++        build_clean(config, serve_url=serve_url)
++
++
++def build_clean(config: MkDocsConfig, *, serve_url: str | None = None) -> None:
++    _build_internal(config, serve_url=serve_url, dirty=False)
++
++
++def build_dirty(config: MkDocsConfig, *, serve_url: str | None = None) -> None:
++    _build_internal(config, serve_url=serve_url, dirty=True)
++
++
++def _build_internal(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+     logger = logging.getLogger('mkdocs')
+ 
+-    # Add CountHandler for strict mode
+     warning_counter = utils.CountHandler()
+     warning_counter.setLevel(logging.WARNING)
+     if config.strict:
+@@ -261,17 +280,13 @@
+     try:
+         start = time.monotonic()
+ 
+-        # Run `config` plugin events.
+         config = config.plugins.on_config(config)
+-
+-        # Run `pre_build` plugin events.
+         config.plugins.on_pre_build(config=config)
+ 
+         if not dirty:
+             log.info("Cleaning site directory")
+             utils.clean_directory(config.site_dir)
+         else:  # pragma: no cover
+-            # Warn user about problems that may occur with --dirty option
+             log.warning(
+                 "A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other"
+                 " links within your site. This option is designed for site development purposes only."
+@@ -282,20 +297,14 @@
+             if dirty and site_directory_contains_stale_files(config.site_dir):
+                 log.info("The directory contains stale files. Use --clean to remove them.")
+ 
+-        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+-
+         files = get_files(config)
+         env = config.theme.get_env()
+         files.add_files_from_theme(env, config)
+ 
+-        # Run `files` plugin events.
+         files = config.plugins.on_files(files, config=config)
+-        # If plugins have added files but haven't set their inclusion level, calculate it again.
+         set_exclusions(files, config)
+ 
+         nav = get_navigation(files, config)
+-
+-        # Run `nav` plugin events.
+         nav = config.plugins.on_nav(nav, config=config, files=files)
+ 
+         log.debug("Reading markdown pages.")
+@@ -315,11 +324,7 @@
+                 + "\n  - ".join(excluded)
+             )
+ 
+-        # Run `env` plugin events.
+         env = config.plugins.on_env(env, config=config, files=files)
+-
+-        # Start writing files to site_dir now that all data is gathered. Note that order matters. Files
+-        # with lower precedence get written first so that files with higher precedence can overwrite them.
+ 
+         log.debug("Copying static assets.")
+         files.copy_static_files(dirty=dirty, inclusion=inclusion)
+@@ -343,7 +348,6 @@
+             assert file.page is not None
+             file.page.validate_anchor_links(files=files, log_level=log_level)
+ 
+-        # Run `post_build` plugin events.
+         config.plugins.on_post_build(config=config)
+ 
+         if counts := warning_counter.get_counts():
+@@ -353,7 +357,6 @@
+         log.info(f'Documentation built in {time.monotonic() - start:.2f} seconds')
+ 
+     except Exception as e:
+-        # Run `build_error` plugin events.
+         config.plugins.on_build_error(error=e)
+         if isinstance(e, BuildError):
+             log.error(str(e))

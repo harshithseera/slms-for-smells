@@ -1,0 +1,50 @@
+--- a/httpie/output/lexers/metadata.py
++++ b/httpie/output/lexers/metadata.py
+@@ -1,3 +1,4 @@
++from dataclasses import dataclass
+ import pygments
+ 
+ from httpie.models import ELAPSED_TIME_LABEL
+@@ -10,9 +11,16 @@
+ }
+ 
+ 
+-def speed_based_token(lexer, match, ctx):
++@dataclass
++class LexerContext:
++    lexer: object
++    match: object
++    ctx: object
++
++
++def _speed_based_token(lc: LexerContext):
+     try:
+-        value = float(match.group())
++        value = float(lc.match.group())
+     except ValueError:
+         return pygments.token.Number
+ 
+@@ -23,11 +31,21 @@
+         token = pygments.token.Number.SPEED.VERY_SLOW
+ 
+     response_type = precise(
+-        lexer,
++        lc.lexer,
+         token,
+         pygments.token.Number
+     )
+-    yield match.start(), response_type, match.group()
++    yield lc.match.start(), response_type, lc.match.group()
++
++
++def speed_based_token(lexer, match, ctx):
++    lc = LexerContext(lexer=lexer, match=match, ctx=ctx)
++    yield from _speed_based_token(lc) if hasattr(_speed_based_token(lc), '__iter__') and not isinstance(_speed_based_token(lc), pygments.token._TokenType) else []
++    # Wait, if it returns a TokenType on ValueError, we need to handle it properly:
++    res = _speed_based_token(lc)
++    if isinstance(res, pygments.token._TokenType):
++        return res
++    yield from res
+ 
+ 
+ class MetadataLexer(pygments.lexer.RegexLexer):

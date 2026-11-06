@@ -1,0 +1,10 @@
+--- a/httpie/output/lexers/http.py
++++ b/httpie/output/lexers/http.py
+@@ -43,6 +43,7 @@
+ 
+ 
+ def request_method(lexer, match, ctx):
++    status_code_start = STATUS_TYPES.get(match.group())
+     response_type = precise(
+         lexer,
+         RESPONSE_TYPES.get(match.group()),

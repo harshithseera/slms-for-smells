@@ -1,0 +1,27 @@
+--- a/httpie/output/processing.py
++++ b/httpie/output/processing.py
+@@ -41,10 +41,13 @@
+                 if p.enabled:
+                     self.enabled_plugins.append(p)
+ 
++    def _format_text(self, text: str, method_name: str) -> str:
++        for p in self.enabled_plugins:
++            text = getattr(p, method_name)(text)
++        return text
++
+     def format_headers(self, headers: str) -> str:
+-        for p in self.enabled_plugins:
+-            headers = p.format_headers(headers)
+-        return headers
++        return self._format_text(headers, 'format_headers')
+ 
+     def format_body(self, content: str, mime: str) -> str:
+         if is_valid_mime(mime):
+@@ -53,6 +56,4 @@
+         return content
+ 
+     def format_metadata(self, metadata: str) -> str:
+-        for p in self.enabled_plugins:
+-            metadata = p.format_metadata(metadata)
+-        return metadata
++        return self._format_text(metadata, 'format_metadata')

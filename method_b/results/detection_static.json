@@ -1,0 +1,81 @@
+{
+  "metrics": {
+    "n_snippets": 7,
+    "scope": [
+      "duplicated_logic"
+    ],
+    "rules": {
+      "duplicated_logic": {
+        "tp": 3,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.8571428571428571
+      }
+    }
+  },
+  "details": [
+    {
+      "snippet": "dup_renamed.py",
+      "gold": [
+        "duplicated_logic"
+      ],
+      "gate_hits": [
+        [
+          "duplicated_logic",
+          "dup_renamed.py::invoice_total@1|dup_renamed.py::quote_amount@11"
+        ]
+      ]
+    },
+    {
+      "snippet": "dup_parsers.py",
+      "gold": [
+        "duplicated_logic"
+      ],
+      "gate_hits": [
+        [
+          "duplicated_logic",
+          "dup_parsers.py::parse_users@1|dup_parsers.py::parse_orders@14"
+        ]
+      ]
+    },
+    {
+      "snippet": "dup_validators.py",
+      "gold": [
+        "duplicated_logic"
+      ],
+      "gate_hits": [
+        [
+          "duplicated_logic",
+          "dup_validators.py::validate_email@9|dup_validators.py::validate_username@22"
+        ]
+      ]
+    },
+    {
+      "snippet": "dupn_different_math.py",
+      "gold": [],
+      "gate_hits": [
+        [
+          "duplicated_logic",
+          "dupn_different_math.py::mean@1|dupn_different_math.py::geometric_mean@10"
+        ]
+      ]
+    },
+    {
+      "snippet": "dupn_walkers.py",
+      "gold": [],
+      "gate_hits": []
+    },
+    {
+      "snippet": "clean_temperature.py",
+      "gold": [],
+      "gate_hits": []
+    },
+    {
+      "snippet": "clean_inventory.py",
+      "gold": [],
+      "gate_hits": []
+    }
+  ]
+}

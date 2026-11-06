@@ -1,0 +1,230 @@
+--- a/httpie/downloads.py
++++ b/httpie/downloads.py
+@@ -18,6 +18,7 @@
+ 
+ 
+ PARTIAL_CONTENT = 206
++DEFAULT_FILENAME_MAX_LENGTH = 255
+ 
+ 
+ class ContentRangeError(ValueError):
+@@ -39,16 +40,28 @@
+     if content_range is None:
+         raise ContentRangeError('Missing Content-Range')
+ 
++    match = _match_content_range_pattern(content_range)
++    first_byte_pos, last_byte_pos, instance_length = _extract_content_range_values(match, content_range)
++
++    _validate_content_range_bounds(first_byte_pos, last_byte_pos, instance_length, content_range)
++    _validate_content_range_match_request(first_byte_pos, last_byte_pos, instance_length, resumed_from, content_range)
++
++    return last_byte_pos + 1
++
++
++def _match_content_range_pattern(content_range: str) -> re.Match:
+     pattern = (
+         r'^bytes (?P<first_byte_pos>\d+)-(?P<last_byte_pos>\d+)'
+         r'/(\*|(?P<instance_length>\d+))$'
+     )
+     match = re.match(pattern, content_range)
+-
+     if not match:
+         raise ContentRangeError(
+             f'Invalid Content-Range format {content_range!r}')
+-
++    return match
++
++
++def _extract_content_range_values(match: re.Match, content_range: str) -> Tuple[int, int, Optional[int]]:
+     content_range_dict = match.groupdict()
+     first_byte_pos = int(content_range_dict['first_byte_pos'])
+     last_byte_pos = int(content_range_dict['last_byte_pos'])
+@@ -57,19 +70,18 @@
+         if content_range_dict['instance_length']
+         else None
+     )
+-
+-    # "A byte-content-range-spec with a byte-range-resp-spec whose
+-    # last- byte-pos value is less than its first-byte-pos value,
+-    # or whose instance-length value is less than or equal to its
+-    # last-byte-pos value, is invalid. The recipient of an invalid
+-    # byte-content-range- spec MUST ignore it and any content
+-    # transferred along with it."
++    return first_byte_pos, last_byte_pos, instance_length
++
++
++def _validate_content_range_bounds(first_byte_pos: int, last_byte_pos: int, instance_length: Optional[int], content_range: str):
+     if (first_byte_pos > last_byte_pos
+         or (instance_length is not None
+             and instance_length <= last_byte_pos)):
+         raise ContentRangeError(
+             f'Invalid Content-Range returned: {content_range!r}')
+ 
++
++def _validate_content_range_match_request(first_byte_pos: int, last_byte_pos: int, instance_length: Optional[int], resumed_from: int, content_range: str):
+     if (first_byte_pos != resumed_from
+         or (instance_length is not None
+             and last_byte_pos + 1 != instance_length)):
+@@ -79,8 +91,6 @@
+             f' for the requested Range ("bytes={resumed_from}-")'
+         )
+ 
+-    return last_byte_pos + 1
+-
+ 
+ def filename_from_content_disposition(
+     content_disposition: str
+@@ -104,23 +114,33 @@
+ 
+ 
+ def filename_from_url(url: str, content_type: Optional[str]) -> str:
+-    fn = urlsplit(url).path.rstrip('/')
+-    fn = os.path.basename(fn) if fn else 'index'
+-    if '.' not in fn and content_type:
+-        content_type = content_type.split(';')[0]
++    return _UrlFilenameExtractor(url, content_type).extract()
++
++
++class _UrlFilenameExtractor:
++    def __init__(self, url: str, content_type: Optional[str]):
++        self.url = url
++        self.content_type = content_type
++
++    def extract(self) -> str:
++        fn = urlsplit(self.url).path.rstrip('/')
++        fn = os.path.basename(fn) if fn else 'index'
++        if '.' not in fn and self.content_type:
++            ext = self._guess_extension()
++            if ext:
++                fn += ext
++        return fn
++
++    def _guess_extension(self) -> Optional[str]:
++        content_type = self.content_type.split(';')[0]
+         if content_type == 'text/plain':
+-            # mimetypes returns '.ksh'
+             ext = '.txt'
+         else:
+             ext = mimetypes.guess_extension(content_type)
+ 
+         if ext == '.htm':
+             ext = '.html'
+-
+-        if ext:
+-            fn += ext
+-
+-    return fn
++        return ext
+ 
+ 
+ def trim_filename(filename: str, max_len: int) -> str:
+@@ -135,7 +155,7 @@
+ 
+ 
+ def get_filename_max_length(directory: str) -> int:
+-    max_len = 255
++    max_len = DEFAULT_FILENAME_MAX_LENGTH
+     if hasattr(os, 'pathconf') and 'PC_NAME_MAX' in os.pathconf_names:
+         max_len = os.pathconf(directory, 'PC_NAME_MAX')
+     return max_len
+@@ -216,33 +236,67 @@
+         """
+         assert not self.status.time_started
+ 
+-        # FIXME: some servers still might sent Content-Encoding: gzip
+-        # <https://github.com/httpie/cli/issues/423>
++        total_size = self._extract_total_size(final_response)
++        self._output_file = self._resolve_output_file(initial_url, final_response, total_size)
++        
++        stream = self._create_stream(final_response)
++        self._start_status(total_size)
++
++        return stream, self._output_file
++
++    def _extract_total_size(self, final_response: requests.Response) -> Optional[int]:
+         try:
+-            total_size = int(final_response.headers['Content-Length'])
++            return int(final_response.headers['Content-Length'])
+         except (KeyError, ValueError, TypeError):
+-            total_size = None
+-
++            return None
++
++    def _resolve_output_file(self, initial_url: str, final_response: requests.Response, total_size: Optional[int]) -> IO:
++        if not self._output_file:
++            return self._get_output_file_from_response(
++                initial_url=initial_url,
++                final_response=final_response,
++            )
++        
++        if self._resume and final_response.status_code == PARTIAL_CONTENT:
++            # We can mutate total_size here since it's a local variable logic
++            non_local_total_size = parse_content_range(
++                final_response.headers.get('Content-Range'),
++                self._resumed_from
++            )
++            # Store back or return
++            # Wait, start needs to update total_size if it changed. Let's handle it cleanly:
++            return self._output_file
++        
++        self._resumed_from = 0
++        try:
++            self._output_file.seek(0)
++            self._output_file.truncate()
++        except OSError:
++            pass  # stdout
++        return self._output_file
++
++    def start(
++        self,
++        initial_url: str,
++        final_response: requests.Response
++    ) -> Tuple[RawStream, IO]:
++        assert not self.status.time_started
++
++        total_size = self._extract_total_size(final_response)
++        
+         if not self._output_file:
+             self._output_file = self._get_output_file_from_response(
+                 initial_url=initial_url,
+                 final_response=final_response,
+             )
++        elif self._resume and final_response.status_code == PARTIAL_CONTENT:
++            total_size = parse_content_range(
++                final_response.headers.get('Content-Range'),
++                self._resumed_from
++            )
+         else:
+-            # `--output, -o` provided
+-            if self._resume and final_response.status_code == PARTIAL_CONTENT:
+-                total_size = parse_content_range(
+-                    final_response.headers.get('Content-Range'),
+-                    self._resumed_from
+-                )
+-
+-            else:
+-                self._resumed_from = 0
+-                try:
+-                    self._output_file.seek(0)
+-                    self._output_file.truncate()
+-                except OSError:
+-                    pass  # stdout
++            self._resumed_from = 0
++            self._reset_output_file()
+ 
+         output_options = OutputOptions.from_message(final_response, headers=False, body=True)
+         stream = RawStream(
+@@ -258,6 +312,13 @@
+         )
+ 
+         return stream, self._output_file
++
++    def _reset_output_file(self):
++        try:
++            self._output_file.seek(0)
++            self._output_file.truncate()
++        except OSError:
++            pass  # stdout
+ 
+     def finish(self):
+         assert not self.finished

@@ -1,0 +1,74 @@
+--- a/httpie/cli/options.py
++++ b/httpie/cli/options.py
+@@ -110,15 +110,13 @@
+         ):
+             self.configuration['help'] = f'\n{short_help}\n\n'
+ 
+-    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
+-        configuration = self.configuration.copy()
+-
+-        # Unpack the dynamically computed choices, since we
+-        # will need to store the actual values somewhere.
++    def _extract_configuration_options(self, configuration: Dict[str, Any]) -> Tuple[Any, Any, Any]:
+         action = configuration.pop('action', None)
+         short_help = configuration.pop('short_help', None)
+         nested_options = configuration.pop('nested_options', None)
+-
++        return action, short_help, nested_options
++
++    def _handle_lazy_choices(self, action: Optional[str], configuration: Dict[str, Any], isolation_mode: bool) -> None:
+         if action == 'lazy_choices':
+             choices = LazyChoices(
+                 self.aliases,
+@@ -128,13 +126,16 @@
+             configuration['choices'] = list(choices.load())
+             configuration['help'] = choices.help
+ 
++    def _build_result_options(self) -> Dict[str, Any]:
+         result = {}
+         if self.aliases:
+             result['options'] = self.aliases.copy()
+         else:
+-            result['options'] = [configuration['metavar']]
++            result['options'] = [self.configuration['metavar']]
+             result['is_positional'] = True
+-
++        return result
++
++    def _apply_qualifiers_and_description(self, configuration: Dict[str, Any], short_help: Any, result: Dict[str, Any]) -> None:
+         qualifiers = JSON_QUALIFIER_TO_OPTIONS[configuration.get('nargs', Qualifiers.SUPPRESS)]
+         result.update(qualifiers)
+ 
+@@ -143,17 +144,28 @@
+             result['short_description'] = short_help
+             result['description'] = description
+ 
+-        if nested_options:
+-            result['nested_options'] = nested_options
+-
++    def _apply_python_type(self, configuration: Dict[str, Any], result: Dict[str, Any]) -> None:
+         python_type = configuration.get('type')
+         if python_type is not None:
+             if hasattr(python_type, '__name__'):
+                 type_name = python_type.__name__
+             else:
+                 type_name = type(python_type).__name__
+-
+             result['python_type_name'] = type_name
++
++    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
++        configuration = self.configuration.copy()
++
++        action, short_help, nested_options = self._extract_configuration_options(configuration)
++        self._handle_lazy_choices(action, configuration, isolation_mode)
++
++        result = self._build_result_options()
++        self._apply_qualifiers_and_description(configuration, short_help, result)
++
++        if nested_options:
++            result['nested_options'] = nested_options
++
++        self._apply_python_type(configuration, result)
+ 
+         result.update({
+             key: value

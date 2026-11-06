@@ -1,0 +1,11 @@
+--- a/httpie/uploads.py
++++ b/httpie/uploads.py
+@@ -62,7 +62,7 @@
+             yield chunk
+ 
+ 
+-def as_bytes(data: Union[str, bytes]) -> bytes:
++def as_bytes(data: Any) -> bytes:
+     if isinstance(data, str):
+         return data.encode()
+     else:

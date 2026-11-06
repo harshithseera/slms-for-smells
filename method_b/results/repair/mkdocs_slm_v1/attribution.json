@@ -1,0 +1,122 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/results/repair/mkdocs_slm",
+  "fixed_set": 720,
+  "files": [
+    {
+      "file": "mkdocs/__main__.py",
+      "findings": 4,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/commands/build.py",
+      "findings": 16,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/commands/gh_deploy.py",
+      "findings": 4,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/commands/serve.py",
+      "findings": 5,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/config/base.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/config/config_options.py",
+      "findings": 11,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/contrib/search/__init__.py",
+      "findings": 1,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/livereload/__init__.py",
+      "findings": 5,
+      "still_passing": 717,
+      "broken": 3,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_directory",
+        "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_mount_path",
+        "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_unicode_mount_path"
+      ]
+    },
+    {
+      "file": "mkdocs/plugins.py",
+      "findings": 3,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/structure/files.py",
+      "findings": 6,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/structure/nav.py",
+      "findings": 4,
+      "still_passing": 720,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "mkdocs/structure/pages.py",
+      "findings": 6,
+      "still_passing": 718,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_relative_slash_link_with_suggestion",
+        "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_self_anchor_link_with_suggestion"
+      ]
+    },
+    {
+      "file": "mkdocs/utils/__init__.py",
+      "findings": 3,
+      "still_passing": 718,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir",
+        "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir_importerror"
+      ]
+    }
+  ],
+  "files_safe": 10,
+  "files_breaking": 3
+}

@@ -1,0 +1,2073 @@
+{
+  "scans": [
+    {
+      "file": "httpie_7b.json",
+      "codebase": "httpie",
+      "files": 78,
+      "loc": 9817,
+      "candidates": 104,
+      "judged": 80,
+      "rule_findings": 24,
+      "confirmed": 42,
+      "confirm_rate": 0.525,
+      "reject_rule_rate": 0.0,
+      "gate_echo_rate": 0.42857142857142855,
+      "severity": {
+        "low": 25,
+        "medium": 42
+      },
+      "slm": {
+        "calls": 80,
+        "latency_s": 666.75,
+        "tokens_in": 75158,
+        "tokens_out": 6215,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 8.33
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v1",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 10,
+          "confirmed": 10,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 14,
+          "confirmed": 1,
+          "reject_fired": 0
+        },
+        "flag_argument": {
+          "judged": 15,
+          "confirmed": 15,
+          "reject_fired": 0
+        },
+        "magic_numbers": {
+          "judged": 9,
+          "confirmed": 7,
+          "reject_fired": 0
+        },
+        "message_chains": {
+          "judged": 28,
+          "confirmed": 6,
+          "reject_fired": 0
+        },
+        "primitive_obsession": {
+          "judged": 4,
+          "confirmed": 3,
+          "reject_fired": 0
+        }
+      }
+    },
+    {
+      "file": "httpie_7b_v2.json",
+      "codebase": "httpie",
+      "files": 78,
+      "loc": 9817,
+      "candidates": 97,
+      "judged": 73,
+      "rule_findings": 24,
+      "confirmed": 36,
+      "confirm_rate": 0.4931506849315068,
+      "reject_rule_rate": 0.1780821917808219,
+      "gate_echo_rate": 0.2222222222222222,
+      "severity": {
+        "low": 19,
+        "medium": 36
+      },
+      "slm": {
+        "calls": 73,
+        "latency_s": 1913.79,
+        "tokens_in": 83594,
+        "tokens_out": 7530,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 26.22
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v2",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 10,
+          "confirmed": 9,
+          "reject_fired": 1
+        },
+        "duplicated_logic": {
+          "judged": 14,
+          "confirmed": 0,
+          "reject_fired": 9
+        },
+        "flag_argument": {
+          "judged": 15,
+          "confirmed": 15,
+          "reject_fired": 0
+        },
+        "magic_numbers": {
+          "judged": 9,
+          "confirmed": 3,
+          "reject_fired": 1
+        },
+        "message_chains": {
+          "judged": 21,
+          "confirmed": 7,
+          "reject_fired": 2
+        },
+        "primitive_obsession": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 0
+        }
+      }
+    },
+    {
+      "file": "httpie_7b_v3.json",
+      "codebase": "httpie",
+      "files": 78,
+      "loc": 9817,
+      "candidates": 97,
+      "judged": 73,
+      "rule_findings": 24,
+      "confirmed": 35,
+      "confirm_rate": 0.4794520547945205,
+      "reject_rule_rate": 0.1917808219178082,
+      "gate_echo_rate": 0.2571428571428571,
+      "severity": {
+        "low": 19,
+        "medium": 35
+      },
+      "slm": {
+        "calls": 73,
+        "latency_s": 2233.3,
+        "tokens_in": 87660,
+        "tokens_out": 7603,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 30.59
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v3",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 10,
+          "confirmed": 9,
+          "reject_fired": 1
+        },
+        "duplicated_logic": {
+          "judged": 14,
+          "confirmed": 0,
+          "reject_fired": 9
+        },
+        "flag_argument": {
+          "judged": 15,
+          "confirmed": 14,
+          "reject_fired": 1
+        },
+        "magic_numbers": {
+          "judged": 9,
+          "confirmed": 3,
+          "reject_fired": 1
+        },
+        "message_chains": {
+          "judged": 21,
+          "confirmed": 7,
+          "reject_fired": 2
+        },
+        "primitive_obsession": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 0
+        }
+      }
+    },
+    {
+      "file": "mkdocs_7b_v3.json",
+      "codebase": "mkdocs",
+      "files": 35,
+      "loc": 7084,
+      "candidates": 118,
+      "judged": 92,
+      "rule_findings": 26,
+      "confirmed": 39,
+      "confirm_rate": 0.42391304347826086,
+      "reject_rule_rate": 0.31521739130434784,
+      "gate_echo_rate": 0.23076923076923078,
+      "severity": {
+        "low": 15,
+        "medium": 39
+      },
+      "slm": {
+        "calls": 92,
+        "latency_s": 2559.07,
+        "tokens_in": 113511,
+        "tokens_out": 8583,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 27.82
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v3",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 19,
+          "confirmed": 9,
+          "reject_fired": 8
+        },
+        "duplicated_logic": {
+          "judged": 19,
+          "confirmed": 1,
+          "reject_fired": 9
+        },
+        "flag_argument": {
+          "judged": 12,
+          "confirmed": 12,
+          "reject_fired": 0
+        },
+        "magic_numbers": {
+          "judged": 8,
+          "confirmed": 1,
+          "reject_fired": 1
+        },
+        "message_chains": {
+          "judged": 30,
+          "confirmed": 14,
+          "reject_fired": 10
+        },
+        "primitive_obsession": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 1
+        }
+      }
+    },
+    {
+      "file": "scan_code_7b.json",
+      "codebase": "gymdesk",
+      "files": 10,
+      "loc": 529,
+      "candidates": 29,
+      "judged": 26,
+      "rule_findings": 3,
+      "confirmed": 19,
+      "confirm_rate": 0.7307692307692307,
+      "reject_rule_rate": 0.0,
+      "gate_echo_rate": 0.3157894736842105,
+      "severity": {
+        "low": 7,
+        "medium": 19
+      },
+      "slm": {
+        "calls": 26,
+        "latency_s": 708.77,
+        "tokens_in": 27413,
+        "tokens_out": 2378,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 27.26
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v1",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 2,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "flag_argument": {
+          "judged": 3,
+          "confirmed": 3,
+          "reject_fired": 0
+        },
+        "magic_numbers": {
+          "judged": 6,
+          "confirmed": 6,
+          "reject_fired": 0
+        },
+        "message_chains": {
+          "judged": 6,
+          "confirmed": 3,
+          "reject_fired": 0
+        },
+        "primitive_obsession": {
+          "judged": 5,
+          "confirmed": 3,
+          "reject_fired": 0
+        }
+      },
+      "rules_totals": {
+        "tp": 15,
+        "fp": 13,
+        "fn": 0,
+        "precision": 0.5357142857142857,
+        "recall": 1.0
+      },
+      "rules+slm_totals": {
+        "tp": 15,
+        "fp": 6,
+        "fn": 0,
+        "precision": 0.7142857142857143,
+        "recall": 1.0
+      },
+      "scores": {
+        "rules": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          }
+        },
+        "rules+slm": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          }
+        }
+      }
+    },
+    {
+      "file": "scan_code_7b_v2.json",
+      "codebase": "gymdesk",
+      "files": 10,
+      "loc": 529,
+      "candidates": 26,
+      "judged": 23,
+      "rule_findings": 3,
+      "confirmed": 12,
+      "confirm_rate": 0.5217391304347826,
+      "reject_rule_rate": 0.34782608695652173,
+      "gate_echo_rate": 0.25,
+      "severity": {
+        "medium": 12,
+        "low": 3
+      },
+      "slm": {
+        "calls": 23,
+        "latency_s": 223.25,
+        "tokens_in": 28311,
+        "tokens_out": 2183,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 9.71
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v2",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 2,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "flag_argument": {
+          "judged": 3,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "magic_numbers": {
+          "judged": 6,
+          "confirmed": 2,
+          "reject_fired": 4
+        },
+        "message_chains": {
+          "judged": 3,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "primitive_obsession": {
+          "judged": 5,
+          "confirmed": 2,
+          "reject_fired": 1
+        }
+      },
+      "rules_totals": {
+        "tp": 15,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.6,
+        "recall": 1.0
+      },
+      "rules+slm_totals": {
+        "tp": 14,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333
+      },
+      "scores": {
+        "rules": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          }
+        },
+        "rules+slm": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 1,
+            "fp": 1,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 0.5
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          }
+        }
+      }
+    },
+    {
+      "file": "scan_code_7b_v3.json",
+      "codebase": "gymdesk",
+      "files": 10,
+      "loc": 529,
+      "candidates": 26,
+      "judged": 23,
+      "rule_findings": 3,
+      "confirmed": 13,
+      "confirm_rate": 0.5652173913043478,
+      "reject_rule_rate": 0.30434782608695654,
+      "gate_echo_rate": 0.23076923076923078,
+      "severity": {
+        "medium": 13,
+        "low": 3
+      },
+      "slm": {
+        "calls": 23,
+        "latency_s": 705.57,
+        "tokens_in": 29112,
+        "tokens_out": 2425,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 30.68
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0,
+      "version": "v3",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 2,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 4,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "flag_argument": {
+          "judged": 3,
+          "confirmed": 3,
+          "reject_fired": 0
+        },
+        "magic_numbers": {
+          "judged": 6,
+          "confirmed": 2,
+          "reject_fired": 4
+        },
+        "message_chains": {
+          "judged": 3,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "primitive_obsession": {
+          "judged": 5,
+          "confirmed": 2,
+          "reject_fired": 1
+        }
+      },
+      "rules_totals": {
+        "tp": 15,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.6,
+        "recall": 1.0
+      },
+      "rules+slm_totals": {
+        "tp": 14,
+        "fp": 2,
+        "fn": 1,
+        "precision": 0.875,
+        "recall": 0.9333333333333333
+      },
+      "scores": {
+        "rules": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          }
+        },
+        "rules+slm": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 1,
+            "fp": 1,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 0.5
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          }
+        }
+      }
+    },
+    {
+      "file": "scan_code_7b_v3_t02.json",
+      "codebase": "gymdesk",
+      "files": 10,
+      "loc": 529,
+      "candidates": 26,
+      "judged": 23,
+      "rule_findings": 3,
+      "confirmed": 11,
+      "confirm_rate": 0.4782608695652174,
+      "reject_rule_rate": 0.391304347826087,
+      "gate_echo_rate": 0.2727272727272727,
+      "severity": {
+        "medium": 11,
+        "low": 3
+      },
+      "slm": {
+        "calls": 23,
+        "latency_s": 923.49,
+        "tokens_in": 29112,
+        "tokens_out": 2149,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 40.15
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0.2,
+      "version": "v3",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 2,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 4,
+          "confirmed": 1,
+          "reject_fired": 2
+        },
+        "flag_argument": {
+          "judged": 3,
+          "confirmed": 2,
+          "reject_fired": 1
+        },
+        "magic_numbers": {
+          "judged": 6,
+          "confirmed": 2,
+          "reject_fired": 4
+        },
+        "message_chains": {
+          "judged": 3,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "primitive_obsession": {
+          "judged": 5,
+          "confirmed": 2,
+          "reject_fired": 2
+        }
+      },
+      "rules_totals": {
+        "tp": 15,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.6,
+        "recall": 1.0
+      },
+      "rules+slm_totals": {
+        "tp": 12,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.9230769230769231,
+        "recall": 0.8
+      },
+      "scores": {
+        "rules": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          }
+        },
+        "rules+slm": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 0.5
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 1,
+            "fp": 1,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 0.5
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 0.5
+          }
+        }
+      }
+    },
+    {
+      "file": "scan_code_7b_v3_t04.json",
+      "codebase": "gymdesk",
+      "files": 10,
+      "loc": 529,
+      "candidates": 26,
+      "judged": 23,
+      "rule_findings": 3,
+      "confirmed": 10,
+      "confirm_rate": 0.43478260869565216,
+      "reject_rule_rate": 0.43478260869565216,
+      "gate_echo_rate": 0.3,
+      "severity": {
+        "medium": 10,
+        "low": 3
+      },
+      "slm": {
+        "calls": 23,
+        "latency_s": 283.7,
+        "tokens_in": 29112,
+        "tokens_out": 2106,
+        "invalid_dropped": 0,
+        "retries": 0,
+        "mean_latency_s": 12.33
+      },
+      "slm_model": "qwen2.5-coder:7b",
+      "slm_temperature": 0.4,
+      "version": "v3",
+      "per_smell": {
+        "data_clumps": {
+          "judged": 2,
+          "confirmed": 2,
+          "reject_fired": 0
+        },
+        "duplicated_logic": {
+          "judged": 4,
+          "confirmed": 1,
+          "reject_fired": 2
+        },
+        "flag_argument": {
+          "judged": 3,
+          "confirmed": 0,
+          "reject_fired": 3
+        },
+        "magic_numbers": {
+          "judged": 6,
+          "confirmed": 4,
+          "reject_fired": 2
+        },
+        "message_chains": {
+          "judged": 3,
+          "confirmed": 3,
+          "reject_fired": 0
+        },
+        "primitive_obsession": {
+          "judged": 5,
+          "confirmed": 0,
+          "reject_fired": 3
+        }
+      },
+      "rules_totals": {
+        "tp": 15,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.6,
+        "recall": 1.0
+      },
+      "rules+slm_totals": {
+        "tp": 9,
+        "fp": 4,
+        "fn": 6,
+        "precision": 0.6923076923076923,
+        "recall": 0.6
+      },
+      "scores": {
+        "rules": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 4,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.3333333333333333,
+            "recall": 1.0
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 2,
+            "fp": 2,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.5,
+            "recall": 1.0
+          }
+        },
+        "rules+slm": {
+          "data_clumps": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "duplicated_logic": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 1,
+            "fp": 0,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 0.5
+          },
+          "flag_argument": {
+            "positives": 2,
+            "negatives": 1,
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "unlabelled_fp": [],
+            "precision": null,
+            "recall": 0.0
+          },
+          "long_method": {
+            "positives": 1,
+            "negatives": 0,
+            "tp": 1,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "long_parameter_list": {
+            "positives": 2,
+            "negatives": 0,
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "magic_numbers": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 1,
+            "fp": 3,
+            "fn": 1,
+            "unlabelled_fp": [],
+            "precision": 0.25,
+            "recall": 0.5
+          },
+          "message_chains": {
+            "positives": 2,
+            "negatives": 4,
+            "tp": 2,
+            "fp": 1,
+            "fn": 0,
+            "unlabelled_fp": [],
+            "precision": 0.6666666666666666,
+            "recall": 1.0
+          },
+          "primitive_obsession": {
+            "positives": 2,
+            "negatives": 2,
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "unlabelled_fp": [],
+            "precision": null,
+            "recall": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "repairs": [
+    {
+      "run": "gymdesk_rules_r1",
+      "codebase": "gymdesk",
+      "condition": "rules",
+      "tag": "r1",
+      "temperature": 0,
+      "findings_sent": 26,
+      "files_edited": 8,
+      "status": {
+        "repaired": 8
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 362,
+      "diff_lines_per_file": 45.25,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 18,
+      "pass_rate": 0.9,
+      "llm_tokens_in": 10293,
+      "llm_tokens_out": 6888,
+      "repair_s": 22.2,
+      "recheck_gone": 14,
+      "recheck_sent": 26,
+      "recheck_new": 3,
+      "files_safe_alone": 8,
+      "files_checked_alone": 8,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_rules_r2",
+      "codebase": "gymdesk",
+      "condition": "rules",
+      "tag": "r2",
+      "temperature": 0,
+      "findings_sent": 26,
+      "files_edited": 8,
+      "status": {
+        "repaired": 8
+      },
+      "format_retries": 1,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 334,
+      "diff_lines_per_file": 41.75,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 13072,
+      "llm_tokens_out": 8108,
+      "repair_s": 31.5,
+      "recheck_gone": 10,
+      "recheck_sent": 26,
+      "recheck_new": 6,
+      "files_safe_alone": 8,
+      "files_checked_alone": 8,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_rules_r3",
+      "codebase": "gymdesk",
+      "condition": "rules",
+      "tag": "r3",
+      "temperature": 0,
+      "findings_sent": 26,
+      "files_edited": 8,
+      "status": {
+        "repaired": 8
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 303,
+      "diff_lines_per_file": 37.875,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 18,
+      "pass_rate": 0.9,
+      "llm_tokens_in": 10293,
+      "llm_tokens_out": 6975,
+      "repair_s": 23.6,
+      "recheck_gone": 12,
+      "recheck_sent": 26,
+      "recheck_new": 6,
+      "files_safe_alone": 8,
+      "files_checked_alone": 8,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_rules_t02",
+      "codebase": "gymdesk",
+      "condition": "rules",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 26,
+      "files_edited": 8,
+      "status": {
+        "repaired": 8
+      },
+      "format_retries": 1,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 327,
+      "diff_lines_per_file": 40.875,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 15106,
+      "llm_tokens_out": 9145,
+      "repair_s": 29.3,
+      "recheck_gone": 8,
+      "recheck_sent": 26,
+      "recheck_new": 4,
+      "files_safe_alone": 8,
+      "files_checked_alone": 8,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_rules_t04",
+      "codebase": "gymdesk",
+      "condition": "rules",
+      "tag": "t04",
+      "temperature": 0.4,
+      "findings_sent": 26,
+      "files_edited": 8,
+      "status": {
+        "repaired": 8
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 355,
+      "diff_lines_per_file": 44.375,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 10293,
+      "llm_tokens_out": 6900,
+      "repair_s": 46.4,
+      "recheck_gone": 12,
+      "recheck_sent": 26,
+      "recheck_new": 3,
+      "files_safe_alone": 8,
+      "files_checked_alone": 8,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_slm_r1",
+      "codebase": "gymdesk",
+      "condition": "slm",
+      "tag": "r1",
+      "temperature": 0,
+      "findings_sent": 16,
+      "files_edited": 6,
+      "status": {
+        "repaired": 5,
+        "unchanged": 1
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 236,
+      "diff_lines_per_file": 47.2,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 7557,
+      "llm_tokens_out": 5363,
+      "repair_s": 16.0,
+      "recheck_gone": 3,
+      "recheck_sent": 16,
+      "recheck_new": 6,
+      "files_safe_alone": 5,
+      "files_checked_alone": 5,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_slm_r2",
+      "codebase": "gymdesk",
+      "condition": "slm",
+      "tag": "r2",
+      "temperature": 0,
+      "findings_sent": 16,
+      "files_edited": 6,
+      "status": {
+        "repaired": 5,
+        "unchanged": 1
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 257,
+      "diff_lines_per_file": 51.4,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 7557,
+      "llm_tokens_out": 5426,
+      "repair_s": 19.7,
+      "recheck_gone": 3,
+      "recheck_sent": 16,
+      "recheck_new": 5,
+      "files_safe_alone": 5,
+      "files_checked_alone": 5,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_slm_r3",
+      "codebase": "gymdesk",
+      "condition": "slm",
+      "tag": "r3",
+      "temperature": 0,
+      "findings_sent": 16,
+      "files_edited": 6,
+      "status": {
+        "repaired": 4,
+        "unchanged": 1,
+        "syntax_error": 1
+      },
+      "format_retries": 1,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 149,
+      "diff_lines_per_file": 37.25,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 10094,
+      "llm_tokens_out": 7089,
+      "repair_s": 35.9,
+      "recheck_gone": 3,
+      "recheck_sent": 16,
+      "recheck_new": 4,
+      "files_safe_alone": 4,
+      "files_checked_alone": 4,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_slm_t02",
+      "codebase": "gymdesk",
+      "condition": "slm",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 16,
+      "files_edited": 6,
+      "status": {
+        "repaired": 5,
+        "unchanged": 1
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 282,
+      "diff_lines_per_file": 56.4,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 7557,
+      "llm_tokens_out": 5434,
+      "repair_s": 18.8,
+      "recheck_gone": 4,
+      "recheck_sent": 16,
+      "recheck_new": 4,
+      "files_safe_alone": 5,
+      "files_checked_alone": 5,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "gymdesk_slm_t04",
+      "codebase": "gymdesk",
+      "condition": "slm",
+      "tag": "t04",
+      "temperature": 0.4,
+      "findings_sent": 16,
+      "files_edited": 6,
+      "status": {
+        "repaired": 5,
+        "unchanged": 1
+      },
+      "format_retries": 0,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 245,
+      "diff_lines_per_file": 49,
+      "tests_fixed_set": 20,
+      "tests_still_passing": 20,
+      "pass_rate": 1.0,
+      "llm_tokens_in": 7557,
+      "llm_tokens_out": 5468,
+      "repair_s": 46.0,
+      "recheck_gone": 3,
+      "recheck_sent": 16,
+      "recheck_new": 4,
+      "files_safe_alone": 5,
+      "files_checked_alone": 5,
+      "files_breaking_alone": 0
+    },
+    {
+      "run": "httpie_rules",
+      "codebase": "httpie",
+      "condition": "rules",
+      "tag": "t0",
+      "temperature": 0,
+      "findings_sent": 97,
+      "files_edited": 36,
+      "status": {
+        "unchanged": 6,
+        "repaired": 29,
+        "reverted": 1
+      },
+      "format_retries": 0,
+      "import_retries": 2,
+      "reverted": 1,
+      "public_names_removed": 0,
+      "diff_lines_total": 1888,
+      "diff_lines_per_file": 65.10344827586206,
+      "tests_fixed_set": 987,
+      "tests_still_passing": 968,
+      "pass_rate": 0.9807,
+      "llm_tokens_in": 89132,
+      "llm_tokens_out": 74397,
+      "repair_s": 197.3,
+      "recheck_gone": 38,
+      "recheck_sent": 97,
+      "recheck_new": 52,
+      "files_safe_alone": 27,
+      "files_checked_alone": 29,
+      "files_breaking_alone": 2
+    },
+    {
+      "run": "httpie_rules_t02",
+      "codebase": "httpie",
+      "condition": "rules",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 97,
+      "files_edited": 36,
+      "status": {
+        "unchanged": 6,
+        "repaired": 29,
+        "reverted": 1
+      },
+      "format_retries": 0,
+      "import_retries": 2,
+      "reverted": 1,
+      "public_names_removed": 0,
+      "diff_lines_total": 1855,
+      "diff_lines_per_file": 63.96551724137931,
+      "tests_fixed_set": 987,
+      "tests_still_passing": 894,
+      "pass_rate": 0.9058,
+      "llm_tokens_in": 88898,
+      "llm_tokens_out": 73216,
+      "repair_s": 189.0,
+      "recheck_gone": 39,
+      "recheck_sent": 97,
+      "recheck_new": 45,
+      "files_safe_alone": 26,
+      "files_checked_alone": 29,
+      "files_breaking_alone": 3
+    },
+    {
+      "run": "httpie_slm",
+      "codebase": "httpie",
+      "condition": "slm",
+      "tag": "t0",
+      "temperature": 0,
+      "findings_sent": 59,
+      "files_edited": 26,
+      "status": {
+        "repaired": 22,
+        "unchanged": 2,
+        "reverted": 2
+      },
+      "format_retries": 2,
+      "import_retries": 2,
+      "reverted": 2,
+      "public_names_removed": 0,
+      "diff_lines_total": 2329,
+      "diff_lines_per_file": 105.86363636363636,
+      "tests_fixed_set": 987,
+      "tests_still_passing": 953,
+      "pass_rate": 0.9656,
+      "llm_tokens_in": 83793,
+      "llm_tokens_out": 69830,
+      "repair_s": 174.8,
+      "recheck_gone": 34,
+      "recheck_sent": 59,
+      "recheck_new": 45,
+      "files_safe_alone": 16,
+      "files_checked_alone": 22,
+      "files_breaking_alone": 6
+    },
+    {
+      "run": "httpie_slm_t02",
+      "codebase": "httpie",
+      "condition": "slm",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 59,
+      "files_edited": 26,
+      "status": {
+        "repaired": 23,
+        "unchanged": 2,
+        "reverted": 1
+      },
+      "format_retries": 2,
+      "import_retries": 2,
+      "reverted": 1,
+      "public_names_removed": 0,
+      "diff_lines_total": 2362,
+      "diff_lines_per_file": 102.69565217391305,
+      "tests_fixed_set": 987,
+      "tests_still_passing": 895,
+      "pass_rate": 0.9068,
+      "llm_tokens_in": 80037,
+      "llm_tokens_out": 68403,
+      "repair_s": 153.1,
+      "recheck_gone": 28,
+      "recheck_sent": 59,
+      "recheck_new": 46,
+      "files_safe_alone": 20,
+      "files_checked_alone": 23,
+      "files_breaking_alone": 3
+    },
+    {
+      "run": "mkdocs_rules",
+      "codebase": "mkdocs",
+      "condition": "rules",
+      "tag": "t0",
+      "temperature": 0,
+      "findings_sent": 118,
+      "files_edited": 17,
+      "status": {
+        "repaired": 15,
+        "unchanged": 2
+      },
+      "format_retries": 1,
+      "import_retries": 1,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 1063,
+      "diff_lines_per_file": 70.86666666666666,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 649,
+      "pass_rate": 0.9014,
+      "llm_tokens_in": 105414,
+      "llm_tokens_out": 77297,
+      "repair_s": 240.8,
+      "recheck_gone": 39,
+      "recheck_sent": 118,
+      "recheck_new": 20,
+      "files_safe_alone": 12,
+      "files_checked_alone": 15,
+      "files_breaking_alone": 3
+    },
+    {
+      "run": "mkdocs_rules_t02",
+      "codebase": "mkdocs",
+      "condition": "rules",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 118,
+      "files_edited": 17,
+      "status": {
+        "repaired": 15,
+        "unchanged": 1,
+        "reverted": 1
+      },
+      "format_retries": 1,
+      "import_retries": 1,
+      "reverted": 1,
+      "public_names_removed": 0,
+      "diff_lines_total": 801,
+      "diff_lines_per_file": 53.4,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 661,
+      "pass_rate": 0.9181,
+      "llm_tokens_in": 105868,
+      "llm_tokens_out": 77524,
+      "repair_s": 174.3,
+      "recheck_gone": 27,
+      "recheck_sent": 118,
+      "recheck_new": 13,
+      "files_safe_alone": 12,
+      "files_checked_alone": 15,
+      "files_breaking_alone": 3
+    },
+    {
+      "run": "mkdocs_rules_t04",
+      "codebase": "mkdocs",
+      "condition": "rules",
+      "tag": "t04",
+      "temperature": 0.4,
+      "findings_sent": 118,
+      "files_edited": 17,
+      "status": {
+        "repaired": 15,
+        "unchanged": 2
+      },
+      "format_retries": 1,
+      "import_retries": 1,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 1111,
+      "diff_lines_per_file": 74.06666666666666,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 554,
+      "pass_rate": 0.7694,
+      "llm_tokens_in": 105292,
+      "llm_tokens_out": 77016,
+      "repair_s": 174.7,
+      "recheck_gone": 34,
+      "recheck_sent": 118,
+      "recheck_new": 23,
+      "files_safe_alone": 12,
+      "files_checked_alone": 15,
+      "files_breaking_alone": 3
+    },
+    {
+      "run": "mkdocs_slm",
+      "codebase": "mkdocs",
+      "condition": "slm",
+      "tag": "t0",
+      "temperature": 0,
+      "findings_sent": 65,
+      "files_edited": 13,
+      "status": {
+        "repaired": 13
+      },
+      "format_retries": 1,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 1477,
+      "diff_lines_per_file": 113.61538461538461,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 715,
+      "pass_rate": 0.9931,
+      "llm_tokens_in": 80877,
+      "llm_tokens_out": 61473,
+      "repair_s": 147.4,
+      "recheck_gone": 29,
+      "recheck_sent": 65,
+      "recheck_new": 41,
+      "files_safe_alone": 11,
+      "files_checked_alone": 13,
+      "files_breaking_alone": 2
+    },
+    {
+      "run": "mkdocs_slm_t02",
+      "codebase": "mkdocs",
+      "condition": "slm",
+      "tag": "t02",
+      "temperature": 0.2,
+      "findings_sent": 65,
+      "files_edited": 13,
+      "status": {
+        "repaired": 13
+      },
+      "format_retries": 2,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 1404,
+      "diff_lines_per_file": 108,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 537,
+      "pass_rate": 0.7458,
+      "llm_tokens_in": 84833,
+      "llm_tokens_out": 64419,
+      "repair_s": 159.1,
+      "recheck_gone": 32,
+      "recheck_sent": 65,
+      "recheck_new": 35,
+      "files_safe_alone": 8,
+      "files_checked_alone": 13,
+      "files_breaking_alone": 5
+    },
+    {
+      "run": "mkdocs_slm_t04",
+      "codebase": "mkdocs",
+      "condition": "slm",
+      "tag": "t04",
+      "temperature": 0.4,
+      "findings_sent": 65,
+      "files_edited": 13,
+      "status": {
+        "repaired": 13
+      },
+      "format_retries": 3,
+      "import_retries": 0,
+      "reverted": 0,
+      "public_names_removed": 0,
+      "diff_lines_total": 1392,
+      "diff_lines_per_file": 107.07692307692308,
+      "tests_fixed_set": 720,
+      "tests_still_passing": 703,
+      "pass_rate": 0.9764,
+      "llm_tokens_in": 98106,
+      "llm_tokens_out": 71489,
+      "repair_s": 163.8,
+      "recheck_gone": 28,
+      "recheck_sent": 65,
+      "recheck_new": 35,
+      "files_safe_alone": 9,
+      "files_checked_alone": 13,
+      "files_breaking_alone": 4
+    }
+  ]
+}

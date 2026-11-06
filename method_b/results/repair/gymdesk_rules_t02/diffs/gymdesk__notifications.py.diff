@@ -1,0 +1,19 @@
+--- a/gymdesk/notifications.py
++++ b/gymdesk/notifications.py
+@@ -2,6 +2,16 @@
+ from __future__ import annotations
+ 
+ from gymdesk.models import GymClass, Member
++
++
++def _base_email(member: Member, gym_class: GymClass, action_text: str, closing_text: str) -> dict:
++    subject = f"{action_text}: {gym_class.title}"
++    when = gym_class.start.strftime("%a %d %b %H:%M")
++    lines = [f"Hi {member.first_name},", "",
++             f"You are booked for {gym_class.title} on {when} in {gym_class.room}." if action_text == "Booked" else f"Your booking for {gym_class.title} on {when} in {gym_class.room} is cancelled.", "",
++             closing_text, "gymdesk"]
++    body = "\n".join(lines)
++    return {"to": member.email, "subject": subject, "body": body}
+ 
+ 
+ def booking_email(member: Member, gym_class: GymClass) -> dict:

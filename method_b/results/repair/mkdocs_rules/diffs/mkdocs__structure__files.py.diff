@@ -1,0 +1,256 @@
+--- a/mkdocs/structure/files.py
++++ b/mkdocs/structure/files.py
+@@ -7,6 +7,7 @@
+ import posixpath
+ import shutil
+ import warnings
++from dataclasses import dataclass
+ from functools import cached_property
+ from pathlib import PurePath, PurePosixPath
+ from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Mapping, Sequence, overload
+@@ -161,7 +162,7 @@
+         for path in env.list_templates(filter_func=filter):
+             # Theme files do not override docs_dir files
+             if self.get_file_from_path(path) is None:
+-                for dir in config.theme.dirs:
++                for dir in config.theme.get_dirs():
+                     # Find the first theme dir which contains path
+                     if os.path.isfile(os.path.join(dir, path)):
+                         self.append(File(path, dir, config.site_dir, config.use_directory_urls))
+@@ -176,6 +177,23 @@
+     def _files(self, value: Iterable[File]):
+         warnings.warn("Do not access Files._files.", DeprecationWarning)
+         self._src_uris = {f.src_uri: f for f in value}
++
++
++@dataclass
++class _GeneratedFileContext:
++    config: MkDocsConfig
++    src_uri: str
++    inclusion: InclusionLevel = InclusionLevel.UNDEFINED
++
++
++@dataclass
++class _FileInfo:
++    path: str
++    src_dir: str | None
++    dest_dir: str
++    use_directory_urls: bool
++    dest_uri: str | None = None
++    inclusion: InclusionLevel = InclusionLevel.UNDEFINED
+ 
+ 
+ class File:
+@@ -313,16 +331,27 @@
+ 
+         It will pretend to be a file in the docs dir at `src_uri`.
+         """
++        ctx = _GeneratedFileContext(config=config, src_uri=src_uri, inclusion=inclusion)
++        return cls._create_generated_file(ctx, content=content, abs_src_path=abs_src_path)
++
++    @classmethod
++    def _create_generated_file(
++        cls,
++        ctx: _GeneratedFileContext,
++        *,
++        content: str | bytes | None = None,
++        abs_src_path: str | None = None,
++    ) -> File:
+         if (content is None) == (abs_src_path is None):
+             raise TypeError("File must have exactly one of 'content' or 'abs_src_path'")
+         f = cls(
+-            src_uri,
++            ctx.src_uri,
+             src_dir=None,
+-            dest_dir=config.site_dir,
+-            use_directory_urls=config.use_directory_urls,
+-            inclusion=inclusion,
++            dest_dir=ctx.config.site_dir,
++            use_directory_urls=ctx.config.use_directory_urls,
++            inclusion=ctx.inclusion,
+         )
+-        f.generated_by = config.plugins._current_plugin or '<unknown>'
++        f.generated_by = ctx.config.plugins._current_plugin or '<unknown>'
+         f.abs_src_path = abs_src_path
+         f._content = content
+         return f
+@@ -337,13 +366,24 @@
+         dest_uri: str | None = None,
+         inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+     ) -> None:
+-        self.src_path = path
+-        self.src_dir = src_dir
+-        self.dest_dir = dest_dir
+-        self.use_directory_urls = use_directory_urls
+-        if dest_uri is not None:
+-            self.dest_uri = dest_uri
+-        self.inclusion = inclusion
++        info = _FileInfo(
++            path=path,
++            src_dir=src_dir,
++            dest_dir=dest_dir,
++            use_directory_urls=use_directory_urls,
++            dest_uri=dest_uri,
++            inclusion=inclusion,
++        )
++        self._init_from_info(info)
++
++    def _init_from_info(self, info: _FileInfo) -> None:
++        self.src_path = info.path
++        self.src_dir = info.src_dir
++        self.dest_dir = info.dest_dir
++        self.use_directory_urls = info.use_directory_urls
++        if info.dest_uri is not None:
++            self.dest_uri = info.dest_uri
++        self.inclusion = info.inclusion
+ 
+     def __repr__(self):
+         return (
+@@ -422,23 +462,38 @@
+         """Return url for file relative to other file."""
+         return utils.get_relative_url(self.url, other.url if isinstance(other, File) else other)
+ 
+-    @property
+-    def content_bytes(self) -> bytes:
+-        """
+-        Get the content of this file as a bytestring.
+-
+-        May raise if backed by a real file (`abs_src_path`) if it cannot be read.
+-
+-        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
+-        """
++    def _read_content(self, as_bytes: bool) -> str | bytes:
+         content = self._content
+         if content is None:
+             assert self.abs_src_path is not None
+-            with open(self.abs_src_path, 'rb') as f:
+-                return f.read()
+-        if not isinstance(content, bytes):
+-            content = content.encode()
+-        return content
++            mode = 'rb' if as_bytes else 'rt'
++            kwargs = {} if as_bytes else {'encoding': 'utf-8-sig', errors: 'strict' if False else 'strict'} # simplified
++            # Let's keep original read logic
++            if as_bytes:
++                with open(self.abs_src_path, 'rb') as f:
++                    return f.read()
++            else:
++                with open(self.abs_src_path, encoding='utf-8-sig', errors='strict') as f:
++                    return f.read()
++        if as_bytes:
++            if not isinstance(content, bytes):
++                content = content.encode()
++            return content
++        else:
++            if not isinstance(content, str):
++                content = content.decode('utf-8-sig', errors='strict')
++            return content
++
++    @property
++    def content_bytes(self) -> bytes:
++        """
++        Get the content of this file as a bytestring.
++
++        May raise if backed by a real file (`abs_src_path`) if it cannot be read.
++
++        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
++        """
++        return self._read_content(as_bytes=True)  # type: ignore
+ 
+     @content_bytes.setter
+     def content_bytes(self, value: bytes):
+@@ -455,14 +510,7 @@
+ 
+         If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
+         """
+-        content = self._content
+-        if content is None:
+-            assert self.abs_src_path is not None
+-            with open(self.abs_src_path, encoding='utf-8-sig', errors='strict') as f:
+-                return f.read()
+-        if not isinstance(content, str):
+-            content = content.decode('utf-8-sig', errors='strict')
+-        return content
++        return self._read_content(as_bytes=False)  # type: ignore
+ 
+     @content_string.setter
+     def content_string(self, value: str):
+@@ -472,9 +520,12 @@
+ 
+     def copy_file(self, dirty: bool = False) -> None:
+         """Copy source file to destination, ensuring parent directories exist."""
+-        if dirty and not self.is_modified():
+-            log.debug(f"Skip copying unmodified file: '{self.src_uri}'")
+-            return
++        if dirty:
++            self._copy_file_dirty()
++        else:
++            self._copy_file_clean()
++
++    def _copy_file_clean(self) -> None:
+         log.debug(f"Copying media file: '{self.src_uri}'")
+         output_path = self.abs_dest_path
+         os.makedirs(os.path.dirname(output_path), exist_ok=True)
+@@ -492,6 +543,12 @@
+             with open(output_path, 'wb') as output_file:
+                 output_file.write(content)
+ 
++    def _copy_file_dirty(self) -> None:
++        if not self.is_modified():
++            log.debug(f"Skip copying unmodified file: '{self.src_uri}'")
++            return
++        self._copy_file_clean()
++
+     def is_modified(self) -> bool:
+         if self._content is not None:
+             return True
+@@ -547,8 +604,10 @@
+     """Walk the `docs_dir` and return a Files collection."""
+     files: list[File] = []
+     conflicting_files: list[tuple[File, File]] = []
+-    for source_dir, dirnames, filenames in os.walk(config['docs_dir'], followlinks=True):
+-        relative_dir = os.path.relpath(source_dir, config['docs_dir'])
++    docs_dir = config.get_docs_dir()
++    site_dir = config.get_site_dir()
++    for source_dir, dirnames, filenames in os.walk(docs_dir, followlinks=True):
++        relative_dir = os.path.relpath(source_dir, docs_dir)
+         dirnames.sort()
+         filenames.sort(key=_file_sort_key)
+ 
+@@ -556,8 +615,8 @@
+         for filename in filenames:
+             file = File(
+                 os.path.join(relative_dir, filename),
+-                config['docs_dir'],
+-                config['site_dir'],
++                docs_dir,
++                site_dir,
+                 config['use_directory_urls'],
+             )
+             # Skip README.md if an index file also exists in dir (part 1)
+@@ -610,17 +669,18 @@
+     return sorted(filenames, key=_file_sort_key)
+ 
+ 
++def _filter_path_item(basename: str, path: str, item: str, is_dir: bool) -> bool:
++    if item.endswith('/') and not is_dir:
++        return False
++    match = path if item.startswith('/') else basename
++    return fnmatch.fnmatch(match, item.strip('/'))
++
++
+ def _filter_paths(basename: str, path: str, is_dir: bool, exclude: Iterable[str]) -> bool:
+     warnings.warn(
+         "_filter_paths is not used since MkDocs 1.5 and will be removed soon.", DeprecationWarning
+     )
+     for item in exclude:
+-        # Items ending in '/' apply only to directories.
+-        if item.endswith('/') and not is_dir:
+-            continue
+-        # Items starting with '/' apply to the whole path.
+-        # In any other cases just the basename is used.
+-        match = path if item.startswith('/') else basename
+-        if fnmatch.fnmatch(match, item.strip('/')):
++        if _filter_path_item(basename, path, item, is_dir):
+             return True
+     return False

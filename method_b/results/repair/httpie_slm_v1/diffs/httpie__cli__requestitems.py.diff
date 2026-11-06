@@ -1,0 +1,176 @@
+--- a/httpie/cli/requestitems.py
++++ b/httpie/cli/requestitems.py
+@@ -40,84 +40,103 @@
+         request_type: Optional[RequestType] = None,
+     ) -> 'RequestItems':
+         instance = cls(request_type=request_type)
+-        rules: Dict[str, Tuple[Callable, dict]] = {
++        rules = instance._get_rules()
++
++        request_item_args = instance._handle_nested_json_args(request_item_args, rules)
++        instance._handle_remaining_args(request_item_args, rules)
++
++        return instance
++
++    def _get_rules(self) -> Dict[str, Tuple[Callable, dict]]:
++        return {
+             SEPARATOR_HEADER: (
+                 process_header_arg,
+-                instance.headers,
++                self.headers,
+             ),
+             SEPARATOR_HEADER_EMPTY: (
+                 process_empty_header_arg,
+-                instance.headers,
++                self.headers,
+             ),
+             SEPARATOR_HEADER_EMBED: (
+                 process_embed_header_arg,
+-                instance.headers,
++                self.headers,
+             ),
+             SEPARATOR_QUERY_PARAM: (
+                 process_query_param_arg,
+-                instance.params,
++                self.params,
+             ),
+             SEPARATOR_QUERY_EMBED_FILE: (
+                 process_embed_query_param_arg,
+-                instance.params,
++                self.params,
+             ),
+             SEPARATOR_FILE_UPLOAD: (
+                 process_file_upload_arg,
+-                instance.files,
++                self.files,
+             ),
+             SEPARATOR_DATA_STRING: (
+                 process_data_item_arg,
+-                instance.data,
++                self.data,
+             ),
+             SEPARATOR_DATA_EMBED_FILE_CONTENTS: (
+                 process_data_embed_file_contents_arg,
+-                instance.data,
++                self.data,
+             ),
+             SEPARATOR_GROUP_NESTED_JSON_ITEMS: (
+                 process_data_nested_json_embed_args,
+-                instance.data,
++                self.data,
+             ),
+             SEPARATOR_DATA_RAW_JSON: (
+                 convert_json_value_to_form_if_needed(
+-                    in_json_mode=instance.is_json,
++                    in_json_mode=self.is_json,
+                     processor=process_data_raw_json_embed_arg
+                 ),
+-                instance.data,
++                self.data,
+             ),
+             SEPARATOR_DATA_EMBED_RAW_JSON_FILE: (
+                 convert_json_value_to_form_if_needed(
+-                    in_json_mode=instance.is_json,
++                    in_json_mode=self.is_json,
+                     processor=process_data_embed_raw_json_file_arg,
+                 ),
+-                instance.data,
++                self.data,
+             ),
+         }
+ 
+-        if instance.is_json:
+-            json_item_args, request_item_args = split_iterable(
+-                iterable=request_item_args,
+-                key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
+-            )
+-            if json_item_args:
+-                pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
+-                processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
+-                value = processor_func(pairs)
+-                target_dict.update(value)
+-
+-        # Then handle all other items.
++    def _handle_nested_json_args(
++        self,
++        request_item_args: List[KeyValueArg],
++        rules: Dict[str, Tuple[Callable, dict]]
++    ) -> List[KeyValueArg]:
++        if not self.is_json:
++            return request_item_args
++
++        json_item_args, request_item_args = split_iterable(
++            iterable=request_item_args,
++            key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
++        )
++        if json_item_args:
++            pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
++            processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
++            value = processor_func(pairs)
++            target_dict.update(value)
++
++        return request_item_args
++
++    def _handle_remaining_args(
++        self,
++        request_item_args: List[KeyValueArg],
++        rules: Dict[str, Tuple[Callable, dict]]
++    ) -> None:
+         for arg in request_item_args:
+             processor_func, target_dict = rules[arg.sep]
+             value = processor_func(arg)
+ 
+             if arg.sep in SEPARATORS_GROUP_MULTIPART:
+-                instance.multipart_data[arg.key] = value
++                self.multipart_data[arg.key] = value
+ 
+             if isinstance(target_dict, BaseMultiDict):
+                 target_dict.add(arg.key, value)
+             else:
+                 target_dict[arg.key] = value
+-
+-        return instance
+ 
+ 
+ JSONType = Union[str, bool, int, list, dict]
+@@ -162,16 +181,11 @@
+     )
+ 
+ 
+-def convert_json_value_to_form_if_needed(in_json_mode: bool, processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+-    """
+-    We allow primitive values to be passed to forms via JSON key/value syntax.
+-
+-    But complex values lead to an error because there’s no clear way to serialize them.
+-
+-    """
+-    if in_json_mode:
+-        return processor
+-
++def _convert_json_value_to_form_json_mode(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], JSONType]:
++    return processor
++
++
++def _convert_json_value_to_form_non_json_mode(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+     @functools.wraps(processor)
+     def wrapper(*args, **kwargs) -> str:
+         try:
+@@ -184,6 +198,18 @@
+             raise ParseError('Cannot use complex JSON value types with --form/--multipart.')
+ 
+     return wrapper
++
++
++def convert_json_value_to_form_if_needed(in_json_mode: bool, processor: Callable[[KeyValueArg], JSONType]) -> Callable:
++    """
++    We allow primitive values to be passed to forms via JSON key/value syntax.
++
++    But complex values lead to an error because there’s no clear way to serialize them.
++
++    """
++    if in_json_mode:
++        return _convert_json_value_to_form_json_mode(processor)
++    return _convert_json_value_to_form_non_json_mode(processor)
+ 
+ 
+ def process_data_item_arg(arg: KeyValueArg) -> str:

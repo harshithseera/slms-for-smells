@@ -1,0 +1,102 @@
+--- a/httpie/cli/requestitems.py
++++ b/httpie/cli/requestitems.py
+@@ -40,7 +40,14 @@
+         request_type: Optional[RequestType] = None,
+     ) -> 'RequestItems':
+         instance = cls(request_type=request_type)
+-        rules: Dict[str, Tuple[Callable, dict]] = {
++        rules = cls._get_rules(instance)
++        request_item_args = cls._process_json_items(instance, request_item_args, rules)
++        cls._process_other_items(instance, request_item_args, rules)
++        return instance
++
++    @staticmethod
++    def _get_rules(instance: 'RequestItems') -> Dict[str, Tuple[Callable, dict]]:
++        return {
+             SEPARATOR_HEADER: (
+                 process_header_arg,
+                 instance.headers,
+@@ -93,18 +100,25 @@
+             ),
+         }
+ 
+-        if instance.is_json:
+-            json_item_args, request_item_args = split_iterable(
+-                iterable=request_item_args,
+-                key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
+-            )
+-            if json_item_args:
+-                pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
+-                processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
+-                value = processor_func(pairs)
+-                target_dict.update(value)
+-
+-        # Then handle all other items.
++    @staticmethod
++    def _process_json_items(instance: 'RequestItems', request_item_args: List[KeyValueArg], rules: dict) -> List[KeyValueArg]:
++        if not instance.is_json:
++            return request_item_args
++
++        json_item_args, request_item_args = split_iterable(
++            iterable=request_item_args,
++            key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
++        )
++        if json_item_args:
++            pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
++            processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
++            value = processor_func(pairs)
++            target_dict.update(value)
++
++        return request_item_args
++
++    @staticmethod
++    def _process_other_items(instance: 'RequestItems', request_item_args: List[KeyValueArg], rules: dict):
+         for arg in request_item_args:
+             processor_func, target_dict = rules[arg.sep]
+             value = processor_func(arg)
+@@ -116,8 +130,6 @@
+                 target_dict.add(arg.key, value)
+             else:
+                 target_dict[arg.key] = value
+-
+-        return instance
+ 
+ 
+ JSONType = Union[str, bool, int, list, dict]
+@@ -162,16 +174,7 @@
+     )
+ 
+ 
+-def convert_json_value_to_form_if_needed(in_json_mode: bool, processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+-    """
+-    We allow primitive values to be passed to forms via JSON key/value syntax.
+-
+-    But complex values lead to an error because there’s no clear way to serialize them.
+-
+-    """
+-    if in_json_mode:
+-        return processor
+-
++def _convert_json_value_to_form_mode(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+     @functools.wraps(processor)
+     def wrapper(*args, **kwargs) -> str:
+         try:
+@@ -184,6 +187,18 @@
+             raise ParseError('Cannot use complex JSON value types with --form/--multipart.')
+ 
+     return wrapper
++
++
++def convert_json_value_to_form_if_needed(in_json_mode: bool, processor: Callable[[KeyValueArg], JSONType]) -> Callable:
++    """
++    We allow primitive values to be passed to forms via JSON key/value syntax.
++
++    But complex values lead to an error because there’s no clear way to serialize them.
++
++    """
++    if in_json_mode:
++        return processor
++    return _convert_json_value_to_form_mode(processor)
+ 
+ 
+ def process_data_item_arg(arg: KeyValueArg) -> str:

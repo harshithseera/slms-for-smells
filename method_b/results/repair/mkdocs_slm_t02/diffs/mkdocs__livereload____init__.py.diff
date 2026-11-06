@@ -1,0 +1,162 @@
+--- a/mkdocs/livereload/__init__.py
++++ b/mkdocs/livereload/__init__.py
+@@ -131,10 +131,13 @@
+ 
+         self._shutdown = False
+         self.serve_thread = threading.Thread(target=lambda: self.serve_forever(shutdown_delay))
+-        self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval)
++        self.observer = self._create_observer(polling_interval)
+ 
+         self._watched_paths: dict[str, int] = {}
+         self._watch_refs: dict[str, Any] = {}
++
++    def _create_observer(self, polling_interval: float):
++        return watchdog.observers.polling.PollingObserver(timeout=polling_interval)
+ 
+     def watch(self, path: str, func: None = None, *, recursive: bool = True) -> None:
+         """Add the 'path' to watched paths, call the function and reload when any file changes under it."""
+@@ -170,6 +173,18 @@
+             self.observer.unschedule(self._watch_refs.pop(path))
+ 
+     def serve(self, *, open_in_browser=False):
++        if open_in_browser:
++            self.serve_with_browser()
++        else:
++            self.serve_without_browser()
++
++    def serve_without_browser(self):
++        self._serve_common(open_in_browser=False)
++
++    def serve_with_browser(self):
++        self._serve_common(open_in_browser=True)
++
++    def _serve_common(self, *, open_in_browser: bool):
+         self.server_bind()
+         self.server_activate()
+ 
+@@ -225,6 +240,12 @@
+                 self._epoch_cond.notify_all()
+ 
+     def shutdown(self, wait=False) -> None:
++        if wait:
++            self.shutdown_and_wait()
++        else:
++            self._shutdown_base()
++
++    def _shutdown_base(self) -> None:
+         self.observer.stop()
+         with self._rebuild_cond:
+             self._shutdown = True
+@@ -233,9 +254,11 @@
+         if self.serve_thread.is_alive():
+             super().shutdown()
+         self.server_close()
+-        if wait:
+-            self.serve_thread.join()
+-            self.observer.join()
++
++    def shutdown_and_wait(self) -> None:
++        self._shutdown_base()
++        self.serve_thread.join()
++        self.observer.join()
+ 
+     def serve_request(self, environ, start_response) -> Iterable[bytes]:
+         try:
+@@ -262,41 +285,51 @@
+         return [error_content]
+ 
+     def _serve_request(self, environ, start_response) -> Iterable[bytes] | None:
+-        # https://bugs.python.org/issue16679
+-        # https://github.com/bottlepy/bottle/blob/f9b1849db4/bottle.py#L984
+         path = environ["PATH_INFO"].encode("latin-1").decode("utf-8", "ignore")
+ 
+-        if path.startswith("/livereload/"):
+-            if m := re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path):
+-                epoch = int(m[1])
+-                start_response("200 OK", [("Content-Type", "text/plain")])
+-
+-                def condition():
+-                    return self._visible_epoch > epoch
+-
+-                with self._epoch_cond:
+-                    if not condition():
+-                        # Stall the browser, respond as soon as there's something new.
+-                        # If there's not, respond anyway after a minute.
+-                        self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
+-                        self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
+-                    return [b"%d" % self._visible_epoch]
+-
++        livereload_response = self._try_serve_livereload(path, environ, start_response)
++        if livereload_response is not None:
++            return livereload_response
++
++        file_info = self._resolve_file_path(path, start_response)
++        if file_info is None:
++            return None
++
++        file_path, file, content_length, epoch = file_info
++        return self._prepare_file_response(file_path, file, content_length, epoch, start_response)
++
++    def _try_serve_livereload(self, path: str, environ, start_response) -> Iterable[bytes] | None:
++        if not path.startswith("/livereload/"):
++            return None
++        m = re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path)
++        if not m:
++            return None
++
++        epoch = int(m[1])
++        start_response("200 OK", [("Content-Type", "text/plain")])
++
++        def condition():
++            return self._visible_epoch > epoch
++
++        with self._epoch_cond:
++            if not condition():
++                self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
++                self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
++            return [b"%d" % self._visible_epoch]
++
++    def _resolve_file_path(self, path: str, start_response) -> tuple[str, BinaryIO, int, int] | None:
+         if (path + "/").startswith(self.mount_path):
+             rel_file_path = path[len(self.mount_path) :]
+-
+             if path.endswith("/"):
+                 rel_file_path += "index.html"
+-            # Prevent directory traversal - normalize the path.
+             rel_file_path = posixpath.normpath("/" + rel_file_path).lstrip("/")
+             file_path = os.path.join(self.root, rel_file_path)
+         elif path == "/":
+             start_response("302 Found", [("Location", urllib.parse.quote(self.mount_path))])
+-            return []
+-        else:
+-            return None  # Not found
+-
+-        # Wait until the ongoing rebuild (if any) finishes, so we're not serving a half-built site.
++            return [], None, 0, 0  # type: ignore[return-value]
++        else:
++            return None
++
+         with self._epoch_cond:
+             self._epoch_cond.wait_for(lambda: self._visible_epoch == self._wanted_epoch)
+             epoch = self._visible_epoch
+@@ -306,8 +339,8 @@
+         except OSError:
+             if not path.endswith("/") and os.path.isfile(os.path.join(file_path, "index.html")):
+                 start_response("302 Found", [("Location", urllib.parse.quote(path) + "/")])
+-                return []
+-            return None  # Not found
++                return [], None, 0, 0  # type: ignore[return-value]
++            return None
+ 
+         if self._watched_paths and file_path.endswith(".html"):
+             with file:
+@@ -318,6 +351,9 @@
+         else:
+             content_length = os.path.getsize(file_path)
+ 
++        return file_path, file, content_length, epoch
++
++    def _prepare_file_response(self, file_path: str, file: BinaryIO, content_length: int, epoch: int, start_response) -> Iterable[bytes]:
+         content_type = self._guess_type(file_path)
+         start_response(
+             "200 OK", [("Content-Type", content_type), ("Content-Length", str(content_length))]

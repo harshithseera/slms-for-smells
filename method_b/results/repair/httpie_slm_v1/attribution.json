@@ -1,0 +1,229 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/results/repair/httpie_slm",
+  "fixed_set": 987,
+  "files": [
+    {
+      "file": "httpie/cli/argparser.py",
+      "findings": 5,
+      "still_passing": 0,
+      "broken": 987,
+      "loads": false,
+      "examples": [
+        "tests.test_auth::test_auth_plugin_netrc_parse[basic-/basic-auth/httpie/password]",
+        "tests.test_auth::test_auth_plugin_netrc_parse[digest-/digest-auth/auth/httpie/password]",
+        "tests.test_auth::test_basic_auth[http]",
+        "tests.test_auth::test_basic_auth[https]",
+        "tests.test_auth::test_bearer_auth[http-long_tokenlong_tokenlong_tokenlong_tokenlong_token]"
+      ]
+    },
+    {
+      "file": "httpie/cli/argtypes.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/definition.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/nested_json/interpret.py",
+      "findings": 2,
+      "still_passing": 976,
+      "broken": 11,
+      "loads": true,
+      "examples": [
+        "tests.test_json::test_nested_json_errors[input_json14-expected_error14]",
+        "tests.test_json::test_nested_json_errors[input_json15-expected_error15]",
+        "tests.test_json::test_nested_json_errors[input_json16-expected_error16]",
+        "tests.test_json::test_nested_json_errors[input_json17-expected_error17]",
+        "tests.test_json::test_nested_json_errors[input_json18-expected_error18]"
+      ]
+    },
+    {
+      "file": "httpie/cli/nested_json/parse.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/options.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/requestitems.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/client.py",
+      "findings": 5,
+      "still_passing": 986,
+      "broken": 1,
+      "loads": true,
+      "examples": [
+        "tests.test_sessions.TestExpiredCookies::test_expired_cookies"
+      ]
+    },
+    {
+      "file": "httpie/config.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/core.py",
+      "findings": 5,
+      "still_passing": 125,
+      "broken": 862,
+      "loads": true,
+      "examples": [
+        "tests.test_auth::test_auth_plugin_netrc_parse[basic-/basic-auth/httpie/password]",
+        "tests.test_auth::test_auth_plugin_netrc_parse[digest-/digest-auth/auth/httpie/password]",
+        "tests.test_auth::test_basic_auth[http]",
+        "tests.test_auth::test_basic_auth[https]",
+        "tests.test_auth::test_bearer_auth[http-long_tokenlong_tokenlong_tokenlong_tokenlong_token]"
+      ]
+    },
+    {
+      "file": "httpie/downloads.py",
+      "findings": 4,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/internal/update_warnings.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/manager/tasks/plugins.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/models.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/formatters/colors.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/lexers/http.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/lexers/metadata.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/ui/rich_help.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/ui/rich_progress.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/writer.py",
+      "findings": 6,
+      "still_passing": 0,
+      "broken": 987,
+      "loads": false,
+      "examples": [
+        "tests.test_auth::test_auth_plugin_netrc_parse[basic-/basic-auth/httpie/password]",
+        "tests.test_auth::test_auth_plugin_netrc_parse[digest-/digest-auth/auth/httpie/password]",
+        "tests.test_auth::test_basic_auth[http]",
+        "tests.test_auth::test_basic_auth[https]",
+        "tests.test_auth::test_bearer_auth[http-long_tokenlong_tokenlong_tokenlong_tokenlong_token]"
+      ]
+    },
+    {
+      "file": "httpie/sessions.py",
+      "findings": 3,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/ssl_.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/status.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/uploads.py",
+      "findings": 5,
+      "still_passing": 985,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "tests.test_uploads::test_chunked_stdin",
+        "tests.test_uploads::test_chunked_stdin_multiple_chunks"
+      ]
+    }
+  ],
+  "files_safe": 18,
+  "files_breaking": 6
+}

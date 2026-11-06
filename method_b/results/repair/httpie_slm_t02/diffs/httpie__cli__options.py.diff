@@ -1,0 +1,76 @@
+--- a/httpie/cli/options.py
++++ b/httpie/cli/options.py
+@@ -110,14 +110,10 @@
+         ):
+             self.configuration['help'] = f'\n{short_help}\n\n'
+ 
+-    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
+-        configuration = self.configuration.copy()
+-
+-        # Unpack the dynamically computed choices, since we
+-        # will need to store the actual values somewhere.
++    def _handle_lazy_choices(self, configuration: Dict[str, Any], isolation_mode: bool) -> Optional[str]:
+         action = configuration.pop('action', None)
+         short_help = configuration.pop('short_help', None)
+-        nested_options = configuration.pop('nested_options', None)
++        configuration.pop('nested_options', None)
+ 
+         if action == 'lazy_choices':
+             choices = LazyChoices(
+@@ -128,13 +124,18 @@
+             configuration['choices'] = list(choices.load())
+             configuration['help'] = choices.help
+ 
++        return short_help
++
++    def _get_base_result(self, configuration: Dict[str, Any]) -> Dict[str, Any]:
+         result = {}
+         if self.aliases:
+             result['options'] = self.aliases.copy()
+         else:
+             result['options'] = [configuration['metavar']]
+             result['is_positional'] = True
+-
++        return result
++
++    def _add_qualifiers_and_descriptions(self, result: Dict[str, Any], configuration: Dict[str, Any], short_help: Optional[str]) -> None:
+         qualifiers = JSON_QUALIFIER_TO_OPTIONS[configuration.get('nargs', Qualifiers.SUPPRESS)]
+         result.update(qualifiers)
+ 
+@@ -143,18 +144,17 @@
+             result['short_description'] = short_help
+             result['description'] = description
+ 
++        nested_options = configuration.get('nested_options')
+         if nested_options:
+             result['nested_options'] = nested_options
+ 
++    def _add_python_type(self, result: Dict[str, Any], configuration: Dict[str, Any]) -> None:
+         python_type = configuration.get('type')
+         if python_type is not None:
+-            if hasattr(python_type, '__name__'):
+-                type_name = python_type.__name__
+-            else:
+-                type_name = type(python_type).__name__
+-
++            type_name = python_type.__name__ if hasattr(python_type, '__name__') else type(python_type).__name__
+             result['python_type_name'] = type_name
+ 
++    def _add_direct_mirror_options(self, result: Dict[str, Any], configuration: Dict[str, Any]) -> None:
+         result.update({
+             key: value
+             for key, value in configuration.items()
+@@ -162,6 +162,13 @@
+             if value is not Qualifiers.SUPPRESS
+         })
+ 
++    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
++        configuration = self.configuration.copy()
++        short_help = self._handle_lazy_choices(configuration, isolation_mode)
++        result = self._get_base_result(configuration)
++        self._add_qualifiers_and_descriptions(result, configuration, short_help)
++        self._add_python_type(result, configuration)
++        self._add_direct_mirror_options(result, configuration)
+         return result
+ 
+     @property

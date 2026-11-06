@@ -1,0 +1,161 @@
+--- a/httpie/output/formatters/colors.py
++++ b/httpie/output/formatters/colors.py
+@@ -26,6 +26,7 @@
+ SOLARIZED_STYLE = 'solarized'  # Bundled here
+ PYGMENTS_BOLD = ColorString('bold')
+ PYGMENTS_ITALIC = ColorString('italic')
++TERMINAL_COLOR_256 = 256
+ 
+ BUNDLED_STYLES = {
+     SOLARIZED_STYLE,
+@@ -35,6 +36,15 @@
+ 
+ def get_available_styles():
+     return sorted(BUNDLED_STYLES | set(pygments.styles.get_all_styles()))
++
++
++def _highlight_code(code: str, lexer: Lexer, formatter: pygments.formatter.Formatter, strip: bool = True) -> str:
++    highlighted = pygments.highlight(
++        code=code,
++        lexer=lexer,
++        formatter=formatter,
++    )
++    return highlighted.strip() if strip else highlighted
+ 
+ 
+ class ColorFormatter(FormatterPlugin):
+@@ -62,7 +72,7 @@
+             return
+ 
+         use_auto_style = color_scheme == AUTO_STYLE
+-        has_256_colors = env.colors == 256
++        has_256_colors = env.colors == TERMINAL_COLOR_256
+         if use_auto_style or not has_256_colors:
+             http_lexer = PygmentsHttpLexer()
+             body_formatter = header_formatter = TerminalFormatter()
+@@ -79,28 +89,16 @@
+         self.metadata_lexer = MetadataLexer(precise=precise)
+ 
+     def format_headers(self, headers: str) -> str:
+-        return pygments.highlight(
+-            code=headers,
+-            lexer=self.http_lexer,
+-            formatter=self.header_formatter,
+-        ).strip()
++        return _highlight_code(headers, self.http_lexer, self.header_formatter, strip=True)
+ 
+     def format_body(self, body: str, mime: str) -> str:
+         lexer = self.get_lexer_for_body(mime, body)
+         if lexer:
+-            body = pygments.highlight(
+-                code=body,
+-                lexer=lexer,
+-                formatter=self.body_formatter,
+-            )
++            body = _highlight_code(body, lexer, self.body_formatter, strip=False)
+         return body
+ 
+     def format_metadata(self, metadata: str) -> str:
+-        return pygments.highlight(
+-            code=metadata,
+-            lexer=self.metadata_lexer,
+-            formatter=self.header_formatter,
+-        ).strip()
++        return _highlight_code(metadata, self.metadata_lexer, self.header_formatter, strip=True)
+ 
+     def get_lexer_for_body(
+         self, mime: str,
+@@ -139,12 +137,7 @@
+             return Solarized256Style
+ 
+ 
+-def get_lexer(
+-    mime: str,
+-    explicit_json=False,
+-    body=''
+-) -> Optional[Type[Lexer]]:
+-    # Build candidate mime type and lexer names.
++def _build_mime_and_lexer_names(mime: str) -> Tuple[list, list]:
+     mime_types, lexer_names = [mime], []
+     type_, subtype = mime.split('/', 1)
+     if '+' not in subtype:
+@@ -157,12 +150,13 @@
+             f'{type_}/{subtype_suffix}',
+         ])
+ 
+-    # As a last resort, if no lexer feels responsible, and
+-    # the subtype contains 'json', take the JSON lexer
+     if 'json' in subtype:
+         lexer_names.append('json')
+ 
+-    # Try to resolve the right lexer.
++    return mime_types, lexer_names
++
++
++def _resolve_base_lexer(mime_types: list, lexer_names: list) -> Optional[Type[Lexer]]:
+     lexer = None
+     for mime_type in mime_types:
+         try:
+@@ -174,20 +168,54 @@
+         for name in lexer_names:
+             try:
+                 lexer = pygments.lexers.get_lexer_by_name(name)
++                break
+             except ClassNotFound:
+                 pass
+-
+-    if explicit_json and body and (not lexer or isinstance(lexer, TextLexer)):
+-        # JSON response with an incorrect Content-Type?
++    return lexer
++
++
++def _apply_explicit_json_override(lexer: Optional[Type[Lexer]], body: str) -> Optional[Type[Lexer]]:
++    if body and (not lexer or isinstance(lexer, TextLexer)):
+         try:
+-            json.loads(body)  # FIXME: the body also gets parsed in json.py
++            json.loads(body)
+         except ValueError:
+-            pass  # Nope
++            pass
+         else:
+             lexer = pygments.lexers.get_lexer_by_name('json')
+-
+-    # Use our own JSON lexer: it supports JSON bodies preceded by non-JSON data
+-    # as well as legit JSON bodies.
++    return lexer
++
++
++def get_lexer(
++    mime: str,
++    explicit_json=False,
++    body=''
++) -> Optional[Type[Lexer]]:
++    if explicit_json:
++        return get_lexer_explicit_json(mime=mime, body=body)
++    return get_lexer_standard(mime=mime, body=body)
++
++
++def get_lexer_standard(
++    mime: str,
++    body=''
++) -> Optional[Type[Lexer]]:
++    mime_types, lexer_names = _build_mime_and_lexer_names(mime)
++    lexer = _resolve_base_lexer(mime_types, lexer_names)
++
++    if isinstance(lexer, JsonLexer):
++        lexer = EnhancedJsonLexer()
++
++    return lexer
++
++
++def get_lexer_explicit_json(
++    mime: str,
++    body=''
++) -> Optional[Type[Lexer]]:
++    mime_types, lexer_names = _build_mime_and_lexer_names(mime)
++    lexer = _resolve_base_lexer(mime_types, lexer_names)
++    lexer = _apply_explicit_json_override(lexer, body)
++
+     if isinstance(lexer, JsonLexer):
+         lexer = EnhancedJsonLexer()
+ 

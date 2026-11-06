@@ -1,0 +1,1096 @@
+{
+  "codebase": "data/mock_codebase/gymdesk",
+  "files": 10,
+  "loc": 529,
+  "candidates": 29,
+  "static_s": 0.158,
+  "slm_model": "qwen2.5-coder:7b",
+  "slm": {
+    "calls": 26,
+    "latency_s": 708.77,
+    "tokens_in": 27413,
+    "tokens_out": 2378,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": 27.26
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::monthly_fee@12|gymdesk/club.py::find_member@37",
+      "source": "gate",
+      "reason": "AST similarity 0.902",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "gymdesk/billing.py::monthly_fee | gymdesk/club.py::find_member",
+            "severity": "low",
+            "evidence": "Both functions implement a try-except block to handle KeyError and raise a custom exception.",
+            "fix": "Extract a helper function to handle the exception and reuse it in both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/billing.py"
+          }
+        ],
+        "latency_s": 35.12,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::invoice_total@19|gymdesk/reports.py::revenue_for_member@35",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "gymdesk/billing.py::invoice_total | gymdesk/reports.py::revenue_for_member",
+            "severity": "medium",
+            "evidence": "Both functions perform the same computation with different variable names and parameters.",
+            "fix": "Extract a helper function and make both calls it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/billing.py"
+          }
+        ],
+        "latency_s": 24.1,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/billing.py",
+      "target": "format_amount",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['currency']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "format_amount",
+            "severity": "medium",
+            "evidence": "currency is passed as a raw str and validated within the function.",
+            "fix": "Introduce a Currency enum or dataclass to handle currency validation and formatting.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/billing.py"
+          }
+        ],
+        "latency_s": 30.27,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/billing.py",
+      "target": "convert_amount",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['from_currency', 'to_currency']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "convert_amount",
+            "severity": "medium",
+            "evidence": "The function validates and normalises the raw currency values.",
+            "fix": "Introduce a Currency enum or a Money dataclass to handle currency validation and formatting.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/billing.py"
+          }
+        ],
+        "latency_s": 25.76,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::compute_late_fee@47|gymdesk/billing.py::days_overdue@43",
+      "source": "gate",
+      "reason": "parameters ['due_date', 'grace_days', 'paid_date'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "gymdesk/billing.py::compute_late_fee | gymdesk/billing.py::days_overdue",
+            "severity": "medium",
+            "evidence": "Parameters ['due_date', 'grace_days', 'paid_date'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'LateFeeContext' with fields 'due_date', 'grace_days', 'paid_date' and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/billing.py"
+          }
+        ],
+        "latency_s": 34.93,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "gymdesk/billing.py",
+      "target": "compute_late_fee",
+      "source": "rule",
+      "reason": "8 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "CheckInDesk.room_for",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "CheckInDesk.room_for",
+            "severity": "medium",
+            "evidence": "self.club.bookings[booking_id].class_id, self.club.classes[self.club.bookings[booking_id].class_id].room",
+            "fix": "Add a method on CheckInDesk to get the room directly from the booking.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 37.56,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "CheckInDesk.trainer_name_for",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "CheckInDesk.trainer_name_for",
+            "severity": "medium",
+            "evidence": "self.club.bookings[booking_id].class_id, self.club.classes[self.club.bookings[booking_id].class_id].trainer_id, self.club.trainers[self.club.classes[self.club.bookings[booking_id].class_id].trainer_id].name",
+            "fix": "Add a method on Booking to return the trainer name.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 35.44,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "class_day",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "class_day",
+            "severity": "medium",
+            "evidence": "gym_class.start.date().isoformat()",
+            "fix": "Add a method on GymClass to return the start date in ISO format.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 24.33,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/checkin.py",
+      "target": "normalise_email",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "normalise_email",
+            "severity": "low",
+            "evidence": "The function normalises the email by stripping and lowercasing it.",
+            "fix": "Introduce an Email class that validates and formats the email once on creation.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 25.39,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/checkin.py",
+      "target": "email_domain",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "email_domain",
+            "severity": "medium",
+            "evidence": "Function validates and normalises the raw email value.",
+            "fix": "Introduce an Email class with validation and formatting.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 23.98,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "email_domain",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "email_domain",
+            "severity": "low",
+            "evidence": "email.strip().lower().split",
+            "fix": "Add a method on Member to return the email domain.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/checkin.py"
+          }
+        ],
+        "latency_s": 23.51,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.charge_monthly_fees",
+      "source": "gate",
+      "reason": "numeric literals [20, 0.9] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "GymClub.charge_monthly_fees",
+            "severity": "medium",
+            "evidence": "Numeric literals 20 and 0.9 used in the function body",
+            "fix": "Name these values as module constants and use the names in the code",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 31.47,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.apply_charge",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['refund'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "GymClub.apply_charge",
+            "severity": "medium",
+            "evidence": "Function applies different actions based on 'refund' boolean.",
+            "fix": "Split into two functions: 'apply_charge' and 'refund_charge'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 27.25,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.find_by_email",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "GymClub.find_by_email",
+            "severity": "low",
+            "evidence": "The email is passed as a raw string and checked for equality.",
+            "fix": "Introduce an Email class to validate and format the email.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 22.53,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.send_reminders",
+      "source": "gate",
+      "reason": "numeric literals [24] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "GymClub.send_reminders",
+            "severity": "medium",
+            "evidence": "Numeric literal 24 in the function body",
+            "fix": "Name the value as a module constant or configuration field",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 21.69,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.send_reminders",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dry_run'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "GymClub.send_reminders",
+            "severity": "medium",
+            "evidence": "The function uses a boolean 'dry_run' to switch between sending emails and not sending emails.",
+            "fix": "Split the function into two: one for sending emails and one for counting bookings.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 24.71,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "gymdesk/club.py",
+      "target": "gymdesk/club.py::schedule_class@51|gymdesk/scheduling.py::room_free@15",
+      "source": "gate",
+      "reason": "parameters ['duration_min', 'room', 'start'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "gymdesk/club.py::schedule_class | gymdesk/scheduling.py::room_free",
+            "severity": "medium",
+            "evidence": "Parameters ['duration_min', 'room', 'start'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'ClassSlot' with fields 'duration_min', 'room', 'start' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/club.py"
+          }
+        ],
+        "latency_s": 29.77,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.schedule_class",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/notifications.py",
+      "target": "gymdesk/notifications.py::booking_email@7|gymdesk/notifications.py::cancellation_email@17",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "gymdesk/notifications.py::booking_email | gymdesk/notifications.py::cancellation_email",
+            "severity": "medium",
+            "evidence": "Both functions have the same structure and logic with minor differences in subject and message.",
+            "fix": "Extract a helper function to generate the email body and call it from both `booking_email` and `cancellation_email`.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/notifications.py"
+          }
+        ],
+        "latency_s": 29.67,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/reports.py",
+      "target": "MonthlyReport.loyalty_score",
+      "source": "gate",
+      "reason": "numeric literals [12, 5, 10, 5, 0.5] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "MonthlyReport.loyalty_score",
+            "severity": "medium",
+            "evidence": "Numeric literals 12, 5, 10, 5, 0.5 in the function body",
+            "fix": "Name each business value as a module constant or configuration field",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/reports.py"
+          }
+        ],
+        "latency_s": 26.25,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/reports.py",
+      "target": "MonthlyReport.lines",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "MonthlyReport.lines",
+            "severity": "low",
+            "evidence": "self.club.members.values",
+            "fix": "Add a method on MonthlyReport to return the list of members.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/reports.py"
+          }
+        ],
+        "latency_s": 21.19,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/reports.py",
+      "target": "report_filename",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "report_filename",
+            "severity": "low",
+            "evidence": "Path(path).expanduser().resolve().name",
+            "fix": "Add a method on Path to return the filename.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/reports.py"
+          }
+        ],
+        "latency_s": 21.5,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/scheduling.py",
+      "target": "Scheduler.plan_week",
+      "source": "gate",
+      "reason": "numeric literals [7] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "Scheduler.plan_week",
+            "severity": "medium",
+            "evidence": "Numeric literal 7 used for days in a week",
+            "fix": "Define a constant for days in a week and use it",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/scheduling.py"
+          }
+        ],
+        "latency_s": 29.11,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "gymdesk/scheduling.py",
+      "target": "Scheduler.plan_week",
+      "source": "rule",
+      "reason": "51 lines, cyclomatic complexity 18, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/stats.py",
+      "target": "gymdesk/stats.py::mean_session_minutes@5|gymdesk/stats.py::geometric_mean_session_minutes@14",
+      "source": "gate",
+      "reason": "AST similarity 0.911",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "gymdesk/stats.py::mean_session_minutes | gymdesk/stats.py::geometric_mean_session_minutes",
+            "severity": "low",
+            "evidence": "Both functions implement a loop to process sessions and count them, differing only in the computation inside the loop.",
+            "fix": "Extract a helper function to compute the loop and count, then call it in both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/stats.py"
+          }
+        ],
+        "latency_s": 29.25,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/stats.py",
+      "target": "session_summary",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['as_text'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "session_summary",
+            "severity": "medium",
+            "evidence": "The function uses a boolean parameter 'as_text' to switch between returning a dictionary and a string.",
+            "fix": "Split the function into two: one returning a dictionary and another returning a string.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/stats.py"
+          }
+        ],
+        "latency_s": 28.64,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/timeslot.py",
+      "target": "TimeSlot.minutes",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "TimeSlot.minutes",
+            "severity": "medium",
+            "evidence": "Numeric literal 60 used for converting seconds to minutes.",
+            "fix": "Define a module constant for 60 and use it in the code.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/timeslot.py"
+          }
+        ],
+        "latency_s": 19.58,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/timeslot.py",
+      "target": "TimeSlot.gap_to",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "TimeSlot.gap_to",
+            "severity": "medium",
+            "evidence": "Numeric literal 60 used for converting seconds to minutes.",
+            "fix": "Define a constant for the number of seconds in a minute and use it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "gymdesk/timeslot.py"
+          }
+        ],
+        "latency_s": 25.78,
+        "invalid": 0,
+        "retries": 0
+      }
+    }
+  ],
+  "scores": {
+    "rules": {
+      "data_clumps": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "duplicated_logic": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 2,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.5,
+        "recall": 1.0
+      },
+      "flag_argument": {
+        "positives": 2,
+        "negatives": 1,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "long_method": {
+        "positives": 1,
+        "negatives": 0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "long_parameter_list": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "magic_numbers": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 4,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.3333333333333333,
+        "recall": 1.0
+      },
+      "message_chains": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 4,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.3333333333333333,
+        "recall": 1.0
+      },
+      "primitive_obsession": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 2,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.5,
+        "recall": 1.0
+      }
+    },
+    "rules+slm": {
+      "data_clumps": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "duplicated_logic": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "flag_argument": {
+        "positives": 2,
+        "negatives": 1,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "long_method": {
+        "positives": 1,
+        "negatives": 0,
+        "tp": 1,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "long_parameter_list": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "magic_numbers": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 4,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.3333333333333333,
+        "recall": 1.0
+      },
+      "message_chains": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "primitive_obsession": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "id": "C1",
+      "kind": "smells",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/billing.py::invoice_total|gymdesk/reports.py::revenue_for_member",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Both functions perform the same computation with different variable names and parameters."
+    },
+    {
+      "id": "C2",
+      "kind": "smells",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/notifications.py::booking_email|gymdesk/notifications.py::cancellation_email",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Both functions have the same structure and logic with minor differences in subject and message."
+    },
+    {
+      "id": "C3",
+      "kind": "smells",
+      "smell": "long_method",
+      "target": "Scheduler.plan_week",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": null
+    },
+    {
+      "id": "C4",
+      "kind": "smells",
+      "smell": "long_parameter_list",
+      "target": "compute_late_fee",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": null
+    },
+    {
+      "id": "C5",
+      "kind": "smells",
+      "smell": "long_parameter_list",
+      "target": "GymClub.schedule_class",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": null
+    },
+    {
+      "id": "C6",
+      "kind": "smells",
+      "smell": "magic_numbers",
+      "target": "GymClub.charge_monthly_fees",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literals 20 and 0.9 used in the function body"
+    },
+    {
+      "id": "C7",
+      "kind": "smells",
+      "smell": "magic_numbers",
+      "target": "MonthlyReport.loyalty_score",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literals 12, 5, 10, 5, 0.5 in the function body"
+    },
+    {
+      "id": "C8",
+      "kind": "smells",
+      "smell": "primitive_obsession",
+      "target": "format_amount",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "currency is passed as a raw str and validated within the function."
+    },
+    {
+      "id": "C9",
+      "kind": "smells",
+      "smell": "primitive_obsession",
+      "target": "convert_amount",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "The function validates and normalises the raw currency values."
+    },
+    {
+      "id": "C10",
+      "kind": "smells",
+      "smell": "data_clumps",
+      "target": "gymdesk/billing.py::compute_late_fee|gymdesk/billing.py::days_overdue",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Parameters ['due_date', 'grace_days', 'paid_date'] recur in 2 signatures."
+    },
+    {
+      "id": "C11",
+      "kind": "smells",
+      "smell": "data_clumps",
+      "target": "gymdesk/club.py::schedule_class|gymdesk/scheduling.py::room_free",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Parameters ['duration_min', 'room', 'start'] recur in 2 signatures."
+    },
+    {
+      "id": "C12",
+      "kind": "smells",
+      "smell": "message_chains",
+      "target": "CheckInDesk.room_for",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "self.club.bookings[booking_id].class_id, self.club.classes[self.club.bookings[booking_id].class_id].room"
+    },
+    {
+      "id": "C13",
+      "kind": "smells",
+      "smell": "message_chains",
+      "target": "CheckInDesk.trainer_name_for",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "self.club.bookings[booking_id].class_id, self.club.classes[self.club.bookings[booking_id].class_id].trainer_id, self.club.trainers[self.club.classes[self.club.bookings[booking_id].class_id].trainer_id].name"
+    },
+    {
+      "id": "C14",
+      "kind": "smells",
+      "smell": "flag_argument",
+      "target": "GymClub.apply_charge",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Function applies different actions based on 'refund' boolean."
+    },
+    {
+      "id": "C15",
+      "kind": "smells",
+      "smell": "flag_argument",
+      "target": "session_summary",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "The function uses a boolean parameter 'as_text' to switch between returning a dictionary and a string."
+    },
+    {
+      "id": "N2",
+      "kind": "negatives",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/stats.py::mean_session_minutes|gymdesk/stats.py::geometric_mean_session_minutes",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "Both functions implement a loop to process sessions and count them, differing only in the computation inside the loop."
+    },
+    {
+      "id": "N3",
+      "kind": "negatives",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/billing.py::monthly_fee|gymdesk/club.py::find_member",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "Both functions implement a try-except block to handle KeyError and raise a custom exception."
+    },
+    {
+      "id": "N9",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "GymClub.send_reminders",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literal 24 in the function body"
+    },
+    {
+      "id": "N10",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "Scheduler.plan_week",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literal 7 used for days in a week"
+    },
+    {
+      "id": "N11",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "TimeSlot.minutes",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literal 60 used for converting seconds to minutes."
+    },
+    {
+      "id": "N12",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "TimeSlot.gap_to",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Numeric literal 60 used for converting seconds to minutes."
+    },
+    {
+      "id": "N13",
+      "kind": "negatives",
+      "smell": "primitive_obsession",
+      "target": "GymClub.find_by_email",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "The email is passed as a raw string and checked for equality."
+    },
+    {
+      "id": "N14",
+      "kind": "negatives",
+      "smell": "primitive_obsession",
+      "target": "normalise_email",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "The function normalises the email by stripping and lowercasing it."
+    },
+    {
+      "id": "N15",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "class_day",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "gym_class.start.date().isoformat()"
+    },
+    {
+      "id": "N16",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "email_domain",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "email.strip().lower().split"
+    },
+    {
+      "id": "N17",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "report_filename",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "Path(path).expanduser().resolve().name"
+    },
+    {
+      "id": "N18",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "MonthlyReport.lines",
+      "rules": true,
+      "slm": false,
+      "slm_evidence": "self.club.members.values"
+    },
+    {
+      "id": "N19",
+      "kind": "negatives",
+      "smell": "flag_argument",
+      "target": "GymClub.send_reminders",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "The function uses a boolean 'dry_run' to switch between sending emails and not sending emails."
+    },
+    {
+      "id": "B3",
+      "kind": "borderline",
+      "smell": "primitive_obsession",
+      "target": "email_domain",
+      "rules": true,
+      "slm": true,
+      "slm_evidence": "Function validates and normalises the raw email value."
+    }
+  ]
+}

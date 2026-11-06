@@ -1,0 +1,120 @@
+--- a/mkdocs/__main__.py
++++ b/mkdocs/__main__.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ import logging
+ import os
+ import shutil
+@@ -23,6 +24,15 @@
+         colorama.init()
+ 
+ log = logging.getLogger(__name__)
++
++
++@dataclass
++class GhDeployParams:
++    message: str | None
++    force: bool
++    no_history: bool
++    ignore_version: bool
++    shell: bool
+ 
+ 
+ def _showwarning(message, category, filename, lineno, file=None, line=None):
+@@ -101,6 +111,12 @@
+         self.stream.name = 'MkDocsStreamHandler'
+         self.logger.addHandler(self.stream)
+ 
++    def set_level(self, level):
++        self.logger.setLevel(level)
++
++    def set_plain_formatter(self):
++        self.stream.setFormatter(logging.Formatter('%(levelname)-8s-  %(message)s'))
++
+     def __del__(self):
+         self.logger.removeHandler(self.stream)
+ 
+@@ -150,6 +166,9 @@
+     "URL or local path of the registry file that declares all known MkDocs-related projects."
+ )
+ 
++HELP_OPTION_NAMES = ['-h', '--help']
++MAX_CONTENT_WIDTH = 120
++
+ 
+ def add_options(*opts):
+     def inner(f):
+@@ -160,11 +179,15 @@
+     return inner
+ 
+ 
++def _handle_log_level(ctx, value, level):
++    if value:
++        state = ctx.ensure_object(State)
++        state.set_level(level)
++
++
+ def verbose_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.DEBUG)
++        _handle_log_level(ctx, value, logging.DEBUG)
+ 
+     return click.option(
+         '-v',
+@@ -178,9 +201,7 @@
+ 
+ def quiet_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.ERROR)
++        _handle_log_level(ctx, value, logging.ERROR)
+ 
+     return click.option(
+         '-q',
+@@ -203,7 +224,7 @@
+                 or os.environ.get('TERM') == 'dumb'
+             )
+         ):
+-            state.stream.setFormatter(logging.Formatter('%(levelname)-8s-  %(message)s'))
++            state.set_plain_formatter()
+ 
+     return click.option(
+         '--color/--no-color',
+@@ -237,7 +258,7 @@
+ PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+ 
+ 
+-@click.group(context_settings=dict(help_option_names=['-h', '--help'], max_content_width=120))
++@click.group(context_settings=dict(help_option_names=HELP_OPTION_NAMES, max_content_width=MAX_CONTENT_WIDTH))
+ @click.version_option(
+     __version__,
+     '-V',
+@@ -315,13 +336,20 @@
+         build.build(cfg, dirty=not clean)
+     finally:
+         cfg.plugins.on_shutdown()
+-    gh_deploy.gh_deploy(
+-        cfg,
++    params = GhDeployParams(
+         message=message,
+         force=force,
+         no_history=no_history,
+         ignore_version=ignore_version,
+         shell=shell,
++    )
++    gh_deploy.gh_deploy(
++        cfg,
++        message=params.message,
++        force=params.force,
++        no_history=params.no_history,
++        ignore_version=params.ignore_version,
++        shell=params.shell,
+     )
+ 
+ 

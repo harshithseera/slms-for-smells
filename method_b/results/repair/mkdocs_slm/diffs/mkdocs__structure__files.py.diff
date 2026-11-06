@@ -1,0 +1,131 @@
+--- a/mkdocs/structure/files.py
++++ b/mkdocs/structure/files.py
+@@ -119,7 +119,10 @@
+         """Copy static files from source to destination."""
+         for file in self:
+             if not file.is_documentation_page() and inclusion(file.inclusion):
+-                file.copy_file(dirty)
++                if dirty:
++                    file.copy_file_if_modified()
++                else:
++                    file.copy_file()
+ 
+     def documentation_pages(
+         self, *, inclusion: Callable[[InclusionLevel], bool] = InclusionLevel.is_included
+@@ -422,23 +425,26 @@
+         """Return url for file relative to other file."""
+         return utils.get_relative_url(self.url, other.url if isinstance(other, File) else other)
+ 
+-    @property
+-    def content_bytes(self) -> bytes:
+-        """
+-        Get the content of this file as a bytestring.
+-
+-        May raise if backed by a real file (`abs_src_path`) if it cannot be read.
+-
+-        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
+-        """
++    def _get_content_raw(self) -> bytes:
+         content = self._content
+         if content is None:
+             assert self.abs_src_path is not None
+             with open(self.abs_src_path, 'rb') as f:
+                 return f.read()
+-        if not isinstance(content, bytes):
+-            content = content.encode()
++        if isinstance(content, str):
++            return content.encode('utf-8')
+         return content
++
++    @property
++    def content_bytes(self) -> bytes:
++        """
++        Get the content of this file as a bytestring.
++
++        May raise if backed by a real file (`abs_src_path`) if it cannot be read.
++
++        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
++        """
++        return self._get_content_raw()
+ 
+     @content_bytes.setter
+     def content_bytes(self, value: bytes):
+@@ -460,8 +466,8 @@
+             assert self.abs_src_path is not None
+             with open(self.abs_src_path, encoding='utf-8-sig', errors='strict') as f:
+                 return f.read()
+-        if not isinstance(content, str):
+-            content = content.decode('utf-8-sig', errors='strict')
++        if isinstance(content, bytes):
++            return content.decode('utf-8-sig', errors='strict')
+         return content
+ 
+     @content_string.setter
+@@ -470,11 +476,8 @@
+         self._content = value
+         self.abs_src_path = None
+ 
+-    def copy_file(self, dirty: bool = False) -> None:
++    def copy_file(self) -> None:
+         """Copy source file to destination, ensuring parent directories exist."""
+-        if dirty and not self.is_modified():
+-            log.debug(f"Skip copying unmodified file: '{self.src_uri}'")
+-            return
+         log.debug(f"Copying media file: '{self.src_uri}'")
+         output_path = self.abs_dest_path
+         os.makedirs(os.path.dirname(output_path), exist_ok=True)
+@@ -491,6 +494,13 @@
+         else:
+             with open(output_path, 'wb') as output_file:
+                 output_file.write(content)
++
++    def copy_file_if_modified(self) -> None:
++        """Copy source file to destination if modified, ensuring parent directories exist."""
++        if not self.is_modified():
++            log.debug(f"Skip copying unmodified file: '{self.src_uri}'")
++            return
++        self.copy_file()
+ 
+     def is_modified(self) -> bool:
+         if self._content is not None:
+@@ -610,17 +620,30 @@
+     return sorted(filenames, key=_file_sort_key)
+ 
+ 
++def _filter_path_dir(basename: str, path: str, exclude: Iterable[str]) -> bool:
++    for item in exclude:
++        if not item.endswith('/'):
++            continue
++        match = path if item.startswith('/') else basename
++        if fnmatch.fnmatch(match, item.strip('/')):
++            return True
++    return False
++
++
++def _filter_path_file(basename: str, path: str, exclude: Iterable[str]) -> bool:
++    for item in exclude:
++        if item.endswith('/'):
++            continue
++        match = path if item.startswith('/') else basename
++        if fnmatch.fnmatch(match, item.strip('/')):
++            return True
++    return False
++
++
+ def _filter_paths(basename: str, path: str, is_dir: bool, exclude: Iterable[str]) -> bool:
+     warnings.warn(
+         "_filter_paths is not used since MkDocs 1.5 and will be removed soon.", DeprecationWarning
+     )
+-    for item in exclude:
+-        # Items ending in '/' apply only to directories.
+-        if item.endswith('/') and not is_dir:
+-            continue
+-        # Items starting with '/' apply to the whole path.
+-        # In any other cases just the basename is used.
+-        match = path if item.startswith('/') else basename
+-        if fnmatch.fnmatch(match, item.strip('/')):
+-            return True
+-    return False
++    if is_dir:
++        return _filter_path_dir(basename, path, exclude)
++    return _filter_path_file(basename, path, exclude)

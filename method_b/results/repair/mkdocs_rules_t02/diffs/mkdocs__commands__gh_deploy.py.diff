@@ -1,0 +1,131 @@
+--- a/mkdocs/commands/gh_deploy.py
++++ b/mkdocs/commands/gh_deploy.py
+@@ -4,6 +4,7 @@
+ import os
+ import re
+ import subprocess
++from dataclasses import dataclass
+ from typing import TYPE_CHECKING
+ 
+ import ghp_import  # type: ignore
+@@ -18,6 +19,15 @@
+ log = logging.getLogger(__name__)
+ 
+ default_message = """Deployed {sha} with MkDocs version: {version}"""
++
++
++@dataclass
++class _DeployOptions:
++    message: str | None = None
++    force: bool = False
++    no_history: bool = False
++    ignore_version: bool = False
++    shell: bool = False
+ 
+ 
+ def _is_cwd_git_repo() -> bool:
+@@ -97,28 +107,14 @@
+         raise Abort('Deployment Aborted!')
+ 
+ 
+-def gh_deploy(
+-    config: MkDocsConfig,
+-    message: str | None = None,
+-    force=False,
+-    no_history=False,
+-    ignore_version=False,
+-    shell=False,
+-) -> None:
+-    if not _is_cwd_git_repo():
+-        log.error('Cannot deploy - this directory does not appear to be a git repository')
+-
+-    remote_branch = config.remote_branch
+-    remote_name = config.remote_name
+-
+-    if not ignore_version:
+-        _check_version(remote_branch)
+-
++def _prepare_message(config: MkDocsConfig, message: str | None) -> str:
+     if message is None:
+         message = default_message
+     sha = _get_current_sha(os.path.dirname(config.config_file_path))
+-    message = message.format(version=mkdocs.__version__, sha=sha)
++    return message.format(version=mkdocs.__version__, sha=sha)
+ 
++
++def _run_ghp_import(config: MkDocsConfig, message: str, options: _DeployOptions) -> None:
+     log.info(
+         "Copying '%s' to '%s' branch and pushing to GitHub.",
+         config.site_dir,
+@@ -129,22 +125,22 @@
+         ghp_import.ghp_import(
+             config.site_dir,
+             mesg=message,
+-            remote=remote_name,
+-            branch=remote_branch,
++            remote=config.remote_name,
++            branch=config.remote_branch,
+             push=True,
+-            force=force,
+-            use_shell=shell,
+-            no_history=no_history,
++            force=options.force,
++            use_shell=options.shell,
++            no_history=options.no_history,
+             nojekyll=True,
+         )
+     except ghp_import.GhpError as e:
+         log.error(f"Failed to deploy to GitHub with error: \n{e.message}")
+         raise Abort('Deployment Aborted!')
+ 
++
++def _log_deployment_url(config: MkDocsConfig) -> None:
+     cname_file = os.path.join(config.site_dir, 'CNAME')
+-    # Does this repository have a CNAME set for GitHub Pages?
+     if os.path.isfile(cname_file):
+-        # This GitHub Pages repository has a CNAME configured.
+         with open(cname_file) as f:
+             cname_host = f.read().strip()
+         log.info(
+@@ -156,10 +152,9 @@
+         )
+         return
+ 
+-    host, path = _get_remote_url(remote_name)
++    host, path = _get_remote_url(config.remote_name)
+ 
+     if host is None or path is None:
+-        # This could be a GitHub Enterprise deployment.
+         log.info('Your documentation should be available shortly.')
+     else:
+         username, repo = path.split('/', 1)
+@@ -167,3 +162,29 @@
+             repo = repo[: -len('.git')]
+         url = f'https://{username}.github.io/{repo}/'
+         log.info(f"Your documentation should shortly be available at: {url}")
++
++
++def gh_deploy(
++    config: MkDocsConfig,
++    message: str | None = None,
++    force=False,
++    no_history=False,
++    ignore_version=False,
++    shell=False,
++) -> None:
++    options = _DeployOptions(
++        message=message,
++        force=force,
++        no_history=no_history,
++        ignore_version=ignore_version,
++        shell=shell,
++    )
++    if not _is_cwd_git_repo():
++        log.error('Cannot deploy - this directory does not appear to be a git repository')
++
++    if not options.ignore_version:
++        _check_version(config.remote_branch)
++
++    resolved_message = _prepare_message(config, options.message)
++    _run_ghp_import(config, resolved_message, options)
++    _log_deployment_url(config)

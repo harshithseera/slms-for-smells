@@ -1,0 +1,67 @@
+--- a/httpie/cli/options.py
++++ b/httpie/cli/options.py
+@@ -110,15 +110,7 @@
+         ):
+             self.configuration['help'] = f'\n{short_help}\n\n'
+ 
+-    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
+-        configuration = self.configuration.copy()
+-
+-        # Unpack the dynamically computed choices, since we
+-        # will need to store the actual values somewhere.
+-        action = configuration.pop('action', None)
+-        short_help = configuration.pop('short_help', None)
+-        nested_options = configuration.pop('nested_options', None)
+-
++    def _handle_lazy_choices(self, configuration: Dict[str, Any], action: Optional[str], isolation_mode: bool) -> None:
+         if action == 'lazy_choices':
+             choices = LazyChoices(
+                 self.aliases,
+@@ -128,12 +120,28 @@
+             configuration['choices'] = list(choices.load())
+             configuration['help'] = choices.help
+ 
+-        result = {}
++    def _get_options_entry(self, configuration: Dict[str, Any]) -> Dict[str, Any]:
+         if self.aliases:
+-            result['options'] = self.aliases.copy()
+-        else:
+-            result['options'] = [configuration['metavar']]
+-            result['is_positional'] = True
++            return {'options': self.aliases.copy()}
++        return {'options': [configuration['metavar']], 'is_positional': True}
++
++    def _get_python_type_name(self, python_type: Any) -> str:
++        if hasattr(python_type, '__name__'):
++            return python_type.__name__
++        return type(python_type).__name__
++
++    def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
++        configuration = self.configuration.copy()
++
++        # Unpack the dynamically computed choices, since we
++        # will need to store the actual values somewhere.
++        action = configuration.pop('action', None)
++        short_help = configuration.pop('short_help', None)
++        nested_options = configuration.pop('nested_options', None)
++
++        self._handle_lazy_choices(configuration, action, isolation_mode)
++
++        result = self._get_options_entry(configuration)
+ 
+         qualifiers = JSON_QUALIFIER_TO_OPTIONS[configuration.get('nargs', Qualifiers.SUPPRESS)]
+         result.update(qualifiers)
+@@ -148,12 +156,7 @@
+ 
+         python_type = configuration.get('type')
+         if python_type is not None:
+-            if hasattr(python_type, '__name__'):
+-                type_name = python_type.__name__
+-            else:
+-                type_name = type(python_type).__name__
+-
+-            result['python_type_name'] = type_name
++            result['python_type_name'] = self._get_python_type_name(python_type)
+ 
+         result.update({
+             key: value

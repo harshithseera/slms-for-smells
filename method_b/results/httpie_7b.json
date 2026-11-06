@@ -1,0 +1,2060 @@
+{
+  "codebase": "data/external/httpie",
+  "files": 78,
+  "loc": 9817,
+  "candidates": 104,
+  "candidates_before_sampling": 104,
+  "static_s": 3.833,
+  "slm_model": "qwen2.5-coder:7b",
+  "slm": {
+    "calls": 80,
+    "latency_s": 666.75,
+    "tokens_in": 75158,
+    "tokens_out": 6215,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": 8.33
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/argparser.py",
+      "target": "httpie/cli/argparser.py::_body_from_file@382|httpie/cli/argparser.py::_body_from_input@391",
+      "source": "gate",
+      "reason": "AST similarity 0.88",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/cli/argparser.py::_body_from_file | httpie/cli/argparser.py::_body_from_input",
+            "severity": "low",
+            "evidence": "Both functions perform similar logic to ensure one data source and set data attribute.",
+            "fix": "Extract a helper function to handle the common logic and call it from both methods.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 17.54,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._process_url",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser._process_url",
+            "severity": "low",
+            "evidence": "self.args.url.startswith('://')",
+            "fix": "Add a method on self.args to check if the URL starts with '://' and call that instead.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 8.66,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._setup_standard_streams",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser._setup_standard_streams",
+            "severity": "medium",
+            "evidence": "self.args.output_file.seek and self.args.output_file.truncate",
+            "fix": "Add a method on self.args.output_file to reset and truncate the file.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 8.29,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._process_ssl_cert",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser._process_ssl_cert",
+            "severity": "low",
+            "evidence": "self.args.cert_key_pass.value",
+            "fix": "Add a method on self.args.cert_key_pass to return value.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 6.44,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._guess_method",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser._guess_method",
+            "severity": "medium",
+            "evidence": "self.args.request_items.insert",
+            "fix": "Add a method on self to handle the insertion logic.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 7.41,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._parse_items",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser._parse_items",
+            "severity": "low",
+            "evidence": "self.args.files.items, self.args.files.keys",
+            "fix": "Add a method on self.args.files to return the keys directly.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 7.67,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.print_manual",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser.print_manual",
+            "severity": "medium",
+            "evidence": "self.env.rich_console.pager() and self.env.rich_console.print",
+            "fix": "Add methods on self.env.rich_console to handle paging and printing.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 6.78,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.print_usage",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser.print_usage",
+            "severity": "low",
+            "evidence": "self.env.rich_error_console.print",
+            "fix": "Add a method on self.env to handle printing usage.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 6.49,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.error",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPieArgumentParser.error",
+            "severity": "medium",
+            "evidence": "self.env.rich_error_console.print",
+            "fix": "Add a method on HTTPieArgumentParser to handle error printing.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 5.68,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/cli/argparser.py",
+      "target": "httpie/cli/argparser.py::parse_args@90|httpie/cli/argparser.py::parse_args@151",
+      "source": "gate",
+      "reason": "parameters ['args', 'env', 'namespace'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/cli/argparser.py::parse_args | httpie/cli/argparser.py::parse_args",
+            "severity": "medium",
+            "evidence": "Parameters ['args', 'env', 'namespace'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'ParseArgsParams' with fields 'args', 'env', 'namespace' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/argparser.py"
+          }
+        ],
+        "latency_s": 13.65,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.parse_args",
+      "source": "rule",
+      "reason": "44 lines, cyclomatic complexity 11, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._process_auth",
+      "source": "rule",
+      "reason": "74 lines, cyclomatic complexity 24, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._guess_method",
+      "source": "rule",
+      "reason": "38 lines, cyclomatic complexity 11, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._parse_items",
+      "source": "rule",
+      "reason": "43 lines, cyclomatic complexity 11, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/argtypes.py",
+      "target": "httpie/cli/argtypes.py::__init__@15|httpie/cli/nested_json/errors.py::__init__@7",
+      "source": "gate",
+      "reason": "AST similarity 0.873; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.83,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argtypes.py",
+      "target": "parse_format_options",
+      "source": "rule",
+      "reason": "52 lines, cyclomatic complexity 9, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/cli/definition.py",
+      "target": "format_style_help",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "format_style_help",
+            "severity": "medium",
+            "evidence": "Numeric literal 60 used for text wrapping width",
+            "fix": "Name the text wrapping width as a module constant and use it",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/definition.py"
+          }
+        ],
+        "latency_s": 9.41,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/definition.py",
+      "target": "format_style_help",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['isolation_mode'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "format_style_help",
+            "severity": "medium",
+            "evidence": "The function uses 'isolation_mode' to switch between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/definition.py"
+          }
+        ],
+        "latency_s": 8.66,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/definition.py",
+      "target": "format_auth_help",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['isolation_mode'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "format_auth_help",
+            "severity": "medium",
+            "evidence": "The function uses 'isolation_mode' to switch between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/definition.py"
+          }
+        ],
+        "latency_s": 7.3,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/interpret.py",
+      "target": "interpret",
+      "source": "rule",
+      "reason": "75 lines, cyclomatic complexity 11, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/parse.py",
+      "target": "parse",
+      "source": "rule",
+      "reason": "102 lines, cyclomatic complexity 5, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/parse.py",
+      "target": "tokenize",
+      "source": "rule",
+      "reason": "52 lines, cyclomatic complexity 6, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/options.py",
+      "target": "httpie/cli/options.py::add_group@59|httpie/output/streams.py::decode_chunk@145",
+      "source": "gate",
+      "reason": "AST similarity 0.806",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.35,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/options.py",
+      "target": "Argument.serialize",
+      "source": "rule",
+      "reason": "53 lines, cyclomatic complexity 11, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/requestitems.py",
+      "target": "convert_json_value_to_form_if_needed",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['in_json_mode'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "convert_json_value_to_form_if_needed",
+            "severity": "medium",
+            "evidence": "The function branches based on 'in_json_mode', performing different actions.",
+            "fix": "Split into two functions: one for JSON mode and one for form mode.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/requestitems.py"
+          }
+        ],
+        "latency_s": 6.82,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/requestitems.py",
+      "target": "RequestItems.from_args",
+      "source": "rule",
+      "reason": "84 lines, cyclomatic complexity 7, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/cli/utils.py",
+      "target": "httpie/cli/utils.py::__call__@23|httpie/cli/utils.py::__call__@78",
+      "source": "gate",
+      "reason": "parameters ['namespace', 'option_string', 'parser', 'values'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/cli/utils.py::__call__ | httpie/cli/utils.py::__call__",
+            "severity": "medium",
+            "evidence": "Parameters ['namespace', 'option_string', 'parser', 'values'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'OptionData' with fields 'namespace', 'option_string', 'parser', 'values' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/cli/utils.py"
+          }
+        ],
+        "latency_s": 9.0,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/cli/utils.py",
+      "target": "LazyChoices.__init__",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/client.py",
+      "target": "ensure_path_as_is",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['orig_url', 'prepped_url']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "ensure_path_as_is",
+            "severity": "medium",
+            "evidence": "Function validates and normalises raw values ('orig_url', 'prepped_url').",
+            "fix": "Introduce a URL dataclass to encapsulate validation and formatting.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/client.py"
+          }
+        ],
+        "latency_s": 9.58,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/client.py",
+      "target": "httpie/client.py::collect_messages@43|httpie/client.py::make_request_kwargs@325",
+      "source": "gate",
+      "reason": "parameters ['args', 'env', 'request_body_read_callback'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/client.py::collect_messages | httpie/client.py::make_request_kwargs",
+            "severity": "medium",
+            "evidence": "Parameters ['args', 'env', 'request_body_read_callback'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'RequestContext' with fields 'args', 'env', 'request_body_read_callback' and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/client.py"
+          }
+        ],
+        "latency_s": 15.65,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/client.py",
+      "target": "httpie/client.py::build_requests_session@156|httpie/ssl_.py::__init__@41|httpie/ssl_.py::_create_ssl_context@71",
+      "source": "gate",
+      "reason": "parameters ['ciphers', 'ssl_version', 'verify'] recur in 3 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/client.py::build_requests_session | httpie/ssl_.py::__init__ | httpie/ssl_.py::_create_ssl_context",
+            "severity": "medium",
+            "evidence": "Parameters ['ciphers', 'ssl_version', 'verify'] recur in 3 signatures.",
+            "fix": "Introduce a dataclass named 'SSLConfig' and pass it in each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/client.py"
+          }
+        ],
+        "latency_s": 12.06,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/client.py",
+      "target": "collect_messages",
+      "source": "rule",
+      "reason": "98 lines, cyclomatic complexity 21, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/client.py",
+      "target": "make_request_kwargs",
+      "source": "rule",
+      "reason": "50 lines, cyclomatic complexity 12, nesting 1",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/compat.py",
+      "target": "httpie/compat.py::func@38|httpie/plugins/base.py::get_adapter@87",
+      "source": "gate",
+      "reason": "AST similarity 0.933; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.58,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.ensure_directory",
+      "source": "gate",
+      "reason": "numeric literals [448] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 1.67,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.ensure_directory",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "BaseConfigDict.ensure_directory",
+            "severity": "low",
+            "evidence": "self.path.parent.mkdir",
+            "fix": "Add a method on BaseConfigDict to return the parent directory and call it instead.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/config.py"
+          }
+        ],
+        "latency_s": 6.38,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.save",
+      "source": "gate",
+      "reason": "numeric literals [4] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.56,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.save",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['bump_version'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "BaseConfigDict.save",
+            "severity": "medium",
+            "evidence": "The function has a boolean parameter 'bump_version' that selects between two different branches.",
+            "fix": "Split the function into two well-named functions, one for saving without bumping the version and another for saving with version bump.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/config.py"
+          }
+        ],
+        "latency_s": 8.32,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/core.py",
+      "target": "raw_main",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['use_default_options'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "raw_main",
+            "severity": "medium",
+            "evidence": "The function uses 'use_default_options' to switch between two different behaviors.",
+            "fix": "Split the function into two well-named functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/core.py"
+          }
+        ],
+        "latency_s": 11.38,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/core.py",
+      "target": "raw_main",
+      "source": "rule",
+      "reason": "112 lines, cyclomatic complexity 27, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/core.py",
+      "target": "program",
+      "source": "rule",
+      "reason": "98 lines, cyclomatic complexity 24, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/downloads.py",
+      "target": "filename_from_content_disposition",
+      "source": "gate",
+      "reason": "attribute chain of 4 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "filename_from_content_disposition",
+            "severity": "low",
+            "evidence": "os.path.basename(filename).lstrip('.').strip",
+            "fix": "Add a method on Message to return the sanitized filename.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/downloads.py"
+          }
+        ],
+        "latency_s": 7.15,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/downloads.py",
+      "target": "filename_from_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "filename_from_url",
+            "severity": "medium",
+            "evidence": "url is passed as a raw str and checked or transformed.",
+            "fix": "Introduce a URL dataclass that validates once on creation and formats itself.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/downloads.py"
+          }
+        ],
+        "latency_s": 7.12,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/downloads.py",
+      "target": "get_filename_max_length",
+      "source": "gate",
+      "reason": "numeric literals [255] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "get_filename_max_length",
+            "severity": "medium",
+            "evidence": "Numeric literal 255 used for filename max length",
+            "fix": "Define MAX_FILENAME_LENGTH as a module constant and use it",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/downloads.py"
+          }
+        ],
+        "latency_s": 6.7,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/downloads.py",
+      "target": "parse_content_range",
+      "source": "rule",
+      "reason": "56 lines, cyclomatic complexity 10, nesting 1",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/downloads.py",
+      "target": "Downloader.start",
+      "source": "rule",
+      "reason": "59 lines, cyclomatic complexity 7, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/internal/daemons.py",
+      "target": "httpie/internal/daemons.py::_spawn@102|httpie/internal/update_warnings.py::fetch_updates@55",
+      "source": "gate",
+      "reason": "AST similarity 0.81",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/internal/daemons.py::_spawn | httpie/internal/update_warnings.py::fetch_updates",
+            "severity": "low",
+            "evidence": "Both functions call another function with a parameter for the difference.",
+            "fix": "Extract a helper function and make each call it with the appropriate parameter.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/internal/daemons.py"
+          }
+        ],
+        "latency_s": 8.4,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "httpie/internal/update_warnings.py::_update_checker@91|httpie/internal/update_warnings.py::wrapper@97",
+      "source": "gate",
+      "reason": "AST similarity 0.906",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/internal/update_warnings.py::_update_checker | httpie/internal/update_warnings.py::wrapper",
+            "severity": "medium",
+            "evidence": "Both functions perform the same computation with the same steps.",
+            "fix": "Extract a helper function and make each copy call it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/internal/update_warnings.py"
+          }
+        ],
+        "latency_s": 8.3,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "fetch_updates",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['lazy'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "fetch_updates",
+            "severity": "medium",
+            "evidence": "Boolean parameter 'lazy' selects between two different behaviors.",
+            "fix": "Split into two functions: fetch_updates_lazy and fetch_updates_eager.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/internal/update_warnings.py"
+          }
+        ],
+        "latency_s": 6.33,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/legacy/v3_1_0_session_cookie_format.py",
+      "target": "httpie/legacy/v3_1_0_session_cookie_format.py::post_process@67|httpie/legacy/v3_2_0_session_header_format.py::post_process@49",
+      "source": "gate",
+      "reason": "AST similarity 0.806",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/legacy/v3_1_0_session_cookie_format.py::post_process | httpie/legacy/v3_2_0_session_header_format.py::post_process",
+            "severity": "low",
+            "evidence": "Both functions perform a similar transformation on a list of dictionaries based on the original type.",
+            "fix": "Extract a helper function to handle the transformation and call it from both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/legacy/v3_1_0_session_cookie_format.py"
+          }
+        ],
+        "latency_s": 11.44,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.setup_plugins_dir",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller.setup_plugins_dir",
+            "severity": "low",
+            "evidence": "self.env.stderr.write",
+            "fix": "Add a method on PluginInstaller to handle the error message.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 6.88,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.fail",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller.fail",
+            "severity": "low",
+            "evidence": "self.env.stderr.write",
+            "fix": "Add a method on self.env to write the message.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 6.64,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller._install",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller._install",
+            "severity": "low",
+            "evidence": "self.env.stderr.write and self.env.stdout.write",
+            "fix": "Add methods on PluginInstaller to handle logging.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 8.35,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.install",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller.install",
+            "severity": "low",
+            "evidence": "self.env.stdout.write and self.env.stdout.flush chained through 2 project objects.",
+            "fix": "Add a method on PluginInstaller to handle the output.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 7.5,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller._clear_metadata",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller._clear_metadata",
+            "severity": "medium",
+            "evidence": "PEP_503.sub('-', name).lower().replace('-', '_')",
+            "fix": "Add a method on PEP_503 to handle the transformation.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 9.31,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.upgrade",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller.upgrade",
+            "severity": "low",
+            "evidence": "self.env.stdout.write and self.env.stdout.flush chained through self.env",
+            "fix": "Add a method on PluginInstaller to handle the output",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 8.01,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller._uninstall",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller._uninstall",
+            "severity": "low",
+            "evidence": "self.env.stdout.write",
+            "fix": "Add a method on PluginInstaller to handle the write operation.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 8.77,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.list",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PluginInstaller.list",
+            "severity": "low",
+            "evidence": "self.env.stdout.write is called multiple times",
+            "fix": "Add a method on PluginInstaller to handle the output",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/manager/tasks/plugins.py"
+          }
+        ],
+        "latency_s": 7.9,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/manager/tasks/sessions.py",
+      "target": "httpie/manager/tasks/sessions.py::cli_upgrade_session@63|httpie/output/formatters/colors.py::get_lexer_for_body@105",
+      "source": "gate",
+      "reason": "AST similarity 0.837",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 3.69,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/models.py",
+      "target": "HTTPMessage.content_type",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.3,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/models.py",
+      "target": "HTTPResponse.metadata",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPResponse.metadata",
+            "severity": "low",
+            "evidence": "self._orig.elapsed.total_seconds() involves navigating through multiple objects' internals.",
+            "fix": "Add a method on HTTPResponse to return elapsed time directly.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/models.py"
+          }
+        ],
+        "latency_s": 8.54,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/models.py",
+      "target": "HTTPResponse.version",
+      "source": "gate",
+      "reason": "numeric literals [9, 10, 11, 20, 11] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "HTTPResponse.version",
+            "severity": "medium",
+            "evidence": "Numeric literals 9, 10, 11, 20 used in version mapping.",
+            "fix": "Name each version as a module constant and use the constants in the code.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/models.py"
+          }
+        ],
+        "latency_s": 10.26,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/models.py",
+      "target": "HTTPRequest.headers",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "HTTPRequest.headers",
+            "severity": "low",
+            "evidence": "self._orig.headers.copy",
+            "fix": "Add a method on HTTPRequest to return the headers directly.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/models.py"
+          }
+        ],
+        "latency_s": 8.19,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "httpie/output/formatters/colors.py::format_headers@81|httpie/output/formatters/colors.py::format_metadata@98",
+      "source": "gate",
+      "reason": "AST similarity 0.962",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/output/formatters/colors.py::format_headers | httpie/output/formatters/colors.py::format_metadata",
+            "severity": "low",
+            "evidence": "Both functions use pygments.highlight with different lexers but the same formatter.",
+            "fix": "Extract a helper function that takes code, lexer, and formatter as parameters.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/formatters/colors.py"
+          }
+        ],
+        "latency_s": 11.09,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "ColorFormatter.__init__",
+      "source": "gate",
+      "reason": "numeric literals [256] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "ColorFormatter.__init__",
+            "severity": "medium",
+            "evidence": "Numeric literal 256 used to check for 256 colors",
+            "fix": "Define a constant for 256 colors and use it in the code",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/formatters/colors.py"
+          }
+        ],
+        "latency_s": 10.17,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "get_lexer",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['explicit_json'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "get_lexer",
+            "severity": "medium",
+            "evidence": "The function uses 'explicit_json' to switch between two different behaviors.",
+            "fix": "Split the function into two, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/formatters/colors.py"
+          }
+        ],
+        "latency_s": 10.51,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "get_lexer",
+      "source": "rule",
+      "reason": "53 lines, cyclomatic complexity 15, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/lexers/http.py",
+      "target": "request_method",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.38,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/lexers/http.py",
+      "target": "httpie/output/lexers/http.py::http_response_type@25|httpie/output/lexers/http.py::request_method@45|httpie/output/lexers/metadata.py::speed_based_token@13",
+      "source": "gate",
+      "reason": "parameters ['ctx', 'lexer', 'match'] recur in 3 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/output/lexers/http.py::http_response_type | httpie/output/lexers/http.py::request_method | httpie/output/lexers/metadata.py::speed_based_token",
+            "severity": "medium",
+            "evidence": "Parameters ['ctx', 'lexer', 'match'] recur in 3 signatures",
+            "fix": "Introduce a dataclass named 'LexerContext' with fields 'lexer' and 'match', and pass 'ctx' as an instance of 'LexerContext'",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/lexers/http.py"
+          }
+        ],
+        "latency_s": 15.46,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/lexers/metadata.py",
+      "target": "speed_based_token",
+      "source": "gate",
+      "reason": "attribute chain of 4 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.99,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/processing.py",
+      "target": "httpie/output/processing.py::format_headers@44|httpie/output/processing.py::format_metadata@55",
+      "source": "gate",
+      "reason": "AST similarity 0.958",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "httpie/output/processing.py::format_headers | httpie/output/processing.py::format_metadata",
+            "severity": "low",
+            "evidence": "Both functions iterate over enabled_plugins and apply a method to the input string.",
+            "fix": "Extract a helper method and call it from both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/processing.py"
+          }
+        ],
+        "latency_s": 9.93,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/streams.py",
+      "target": "httpie/cli/nested_json/errors.py::__init__@7|httpie/output/streams.py::__init__@33",
+      "source": "gate",
+      "reason": "AST similarity 0.821; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 4.5,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/streams.py",
+      "target": "BaseStream.get_headers",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "BaseStream.get_headers",
+            "severity": "low",
+            "evidence": "self.msg.headers.encode",
+            "fix": "Add a method on BaseStream to return the encoded headers.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/streams.py"
+          }
+        ],
+        "latency_s": 6.92,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/streams.py",
+      "target": "BaseStream.get_metadata",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "BaseStream.get_metadata",
+            "severity": "low",
+            "evidence": "self.msg.metadata.encode",
+            "fix": "Add a method on BaseStream to return the encoded metadata.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/streams.py"
+          }
+        ],
+        "latency_s": 7.18,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/streams.py",
+      "target": "PrettyStream.get_headers",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PrettyStream.get_headers",
+            "severity": "low",
+            "evidence": "self.formatting.format_headers(self.msg.headers).encode",
+            "fix": "Add a method on PrettyStream to return encoded headers.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/streams.py"
+          }
+        ],
+        "latency_s": 7.6,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/streams.py",
+      "target": "PrettyStream.get_metadata",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PrettyStream.get_metadata",
+            "severity": "low",
+            "evidence": "self.formatting.format_metadata(self.msg.metadata).encode",
+            "fix": "Add a method on PrettyStream to return the encoded metadata.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/streams.py"
+          }
+        ],
+        "latency_s": 7.57,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/output/ui/rich_help.py",
+      "target": "to_usage",
+      "source": "rule",
+      "reason": "52 lines, cyclomatic complexity 12, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/output/ui/rich_help.py",
+      "target": "to_help_message",
+      "source": "rule",
+      "reason": "103 lines, cyclomatic complexity 11, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/ui/rich_palette.py",
+      "target": "httpie/output/ui/rich_palette.py::_translate@32|httpie/uploads.py::as_bytes@65",
+      "source": "gate",
+      "reason": "AST similarity 0.884",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 3.16,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "BaseDisplay._print_summary",
+      "source": "gate",
+      "reason": "numeric literals [60, 60] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "BaseDisplay._print_summary",
+            "severity": "medium",
+            "evidence": "Numeric literals 60 used for time conversion",
+            "fix": "Define constants for time units and use them",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/ui/rich_progress.py"
+          }
+        ],
+        "latency_s": 8.67,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "BaseDisplay._print_summary",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_finished'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "BaseDisplay._print_summary",
+            "severity": "medium",
+            "evidence": "The function uses 'is_finished' to switch between two different behaviors.",
+            "fix": "Split into two functions: '_print_finished_summary' and '_print_interrupted_summary'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/ui/rich_progress.py"
+          }
+        ],
+        "latency_s": 9.52,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "httpie/output/ui/rich_progress.py::start@14|httpie/output/ui/rich_progress.py::start@63|httpie/output/ui/rich_progress.py::start@98",
+      "source": "gate",
+      "reason": "parameters ['at', 'description', 'total'] recur in 3 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/output/ui/rich_progress.py::start | httpie/output/ui/rich_progress.py::start | httpie/output/ui/rich_progress.py::start",
+            "severity": "medium",
+            "evidence": "Parameters ['at', 'description', 'total'] recur in 3 signatures",
+            "fix": "Introduce a dataclass named ProgressData with fields ['at', 'description', 'total'] and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/ui/rich_progress.py"
+          }
+        ],
+        "latency_s": 14.56,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['flush'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "write_stream",
+            "severity": "medium",
+            "evidence": "The function writes to the stream and optionally flushes the output.",
+            "fix": "Split into two functions: write_stream and write_stream_flush.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/writer.py"
+          }
+        ],
+        "latency_s": 7.97,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_with_colors_win",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['flush'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "write_stream_with_colors_win",
+            "severity": "medium",
+            "evidence": "The function has a boolean parameter 'flush' that selects between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/writer.py"
+          }
+        ],
+        "latency_s": 8.82,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::build_output_stream_for_message@122|httpie/output/writer.py::write_message@27",
+      "source": "gate",
+      "reason": "parameters ['env', 'extra_stream_kwargs', 'output_options', 'processing_options', 'requests_message'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/output/writer.py::build_output_stream_for_message | httpie/output/writer.py::write_message",
+            "severity": "medium",
+            "evidence": "Parameters ['env', 'extra_stream_kwargs', 'output_options', 'processing_options', 'requests_message'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'MessageContext' and pass it in each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/writer.py"
+          }
+        ],
+        "latency_s": 15.29,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::write_stream@61|httpie/output/writer.py::write_stream_with_colors_win@79",
+      "source": "gate",
+      "reason": "parameters ['flush', 'outfile', 'stream'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/output/writer.py::write_stream | httpie/output/writer.py::write_stream_with_colors_win",
+            "severity": "medium",
+            "evidence": "Parameters ['flush', 'outfile', 'stream'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'WriteStreamParams' with fields 'flush', 'outfile', 'stream' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/writer.py"
+          }
+        ],
+        "latency_s": 12.84,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::get_stream_type_and_kwargs@153|httpie/output/writer.py::write_raw_data@100",
+      "source": "gate",
+      "reason": "parameters ['env', 'headers', 'processing_options'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/output/writer.py::get_stream_type_and_kwargs | httpie/output/writer.py::write_raw_data",
+            "severity": "medium",
+            "evidence": "Parameters ['env', 'headers', 'processing_options'] recur in 2 signatures.",
+            "fix": "Introduce a dataclass named 'StreamConfig' and pass it in each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/output/writer.py"
+          }
+        ],
+        "latency_s": 14.64,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/output/writer.py",
+      "target": "get_stream_type_and_kwargs",
+      "source": "rule",
+      "reason": "52 lines, cyclomatic complexity 10, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/plugins/base.py",
+      "target": "httpie/plugins/base.py::format_headers@142|httpie/plugins/base.py::format_metadata@159",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 7 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 3.19,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/sessions.py",
+      "target": "get_httpie_session",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "get_httpie_session",
+            "severity": "medium",
+            "evidence": "The function validates and normalises the 'url' parameter itself.",
+            "fix": "Introduce a URL dataclass that validates once on creation and formats itself.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/sessions.py"
+          }
+        ],
+        "latency_s": 9.19,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/sessions.py",
+      "target": "Session.update_headers",
+      "source": "gate",
+      "reason": "attribute chain of 3 hops",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "Session.update_headers",
+            "severity": "medium",
+            "evidence": "self._headers.copy().items",
+            "fix": "Add a method on self to return the headers as a dictionary.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/sessions.py"
+          }
+        ],
+        "latency_s": 8.13,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/sessions.py",
+      "target": "get_httpie_session",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/sessions.py",
+      "target": "Session._compute_new_headers",
+      "source": "rule",
+      "reason": "29 lines, cyclomatic complexity 12, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/ssl_.py",
+      "target": "HTTPieHTTPSAdapter._create_ssl_context",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['verify'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "HTTPieHTTPSAdapter._create_ssl_context",
+            "severity": "medium",
+            "evidence": "The function uses a boolean 'verify' parameter to switch between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for 'verify=True' and one for 'verify=False'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/ssl_.py"
+          }
+        ],
+        "latency_s": 10.24,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/status.py",
+      "target": "http_status_to_exit_status",
+      "source": "gate",
+      "reason": "numeric literals [300, 399, 400, 499, 500, 599] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "http_status_to_exit_status",
+            "severity": "medium",
+            "evidence": "Numeric literals 300, 399, 400, 499, 500, 599 used in status code checks.",
+            "fix": "Define constants for HTTP status ranges and use them in the function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/status.py"
+          }
+        ],
+        "latency_s": 11.94,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/status.py",
+      "target": "http_status_to_exit_status",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['follow'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "http_status_to_exit_status",
+            "severity": "medium",
+            "evidence": "The function uses a boolean 'follow' to switch between two different behaviors.",
+            "fix": "Split the function into two: one for handling redirects and another for handling other HTTP statuses.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/status.py"
+          }
+        ],
+        "latency_s": 9.65,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "_prepare_file_for_upload",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['chunked'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "_prepare_file_for_upload",
+            "severity": "medium",
+            "evidence": "The function has a boolean parameter 'chunked' that selects between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/uploads.py"
+          }
+        ],
+        "latency_s": 10.49,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "prepare_request_body",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['offline', 'chunked'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "prepare_request_body",
+            "severity": "medium",
+            "evidence": "The function handles different behaviors based on 'offline' and 'chunked' flags.",
+            "fix": "Split into two functions: one for 'offline' and one for 'chunked' behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/uploads.py"
+          }
+        ],
+        "latency_s": 10.6,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "compress_request",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['always'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "compress_request",
+            "severity": "medium",
+            "evidence": "The function compress_request has a boolean parameter 'always' that selects between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for compressing the request and one for not compressing it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/uploads.py"
+          }
+        ],
+        "latency_s": 9.87,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/uploads.py",
+      "target": "httpie/uploads.py::_prepare_file_for_upload@146|httpie/uploads.py::prepare_request_body@191",
+      "source": "gate",
+      "reason": "parameters ['chunked', 'content_length_header_value', 'env'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "httpie/uploads.py::_prepare_file_for_upload | httpie/uploads.py::prepare_request_body",
+            "severity": "medium",
+            "evidence": "Parameters 'chunked', 'content_length_header_value', 'env' recur in both functions.",
+            "fix": "Introduce a dataclass for the shared parameters and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/uploads.py"
+          }
+        ],
+        "latency_s": 14.21,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/uploads.py",
+      "target": "prepare_request_body",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/utils.py",
+      "target": "httpie/plugins/base.py::format_headers@142|httpie/utils.py::items@65",
+      "source": "gate",
+      "reason": "AST similarity 0.8; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 2.76,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/utils.py",
+      "target": "humanize_bytes",
+      "source": "gate",
+      "reason": "numeric literals [50, 40, 30, 20, 10] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "humanize_bytes",
+            "severity": "medium",
+            "evidence": "Numeric literals [50, 40, 30, 20, 10] in the function body",
+            "fix": "Name each business value as a module constant or configuration field",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/utils.py"
+          }
+        ],
+        "latency_s": 10.92,
+        "invalid": 0,
+        "retries": 0
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/utils.py",
+      "target": "url_as_host",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "url_as_host",
+            "severity": "low",
+            "evidence": "Function validates and normalises the raw value itself.",
+            "fix": "Introduce a URL dataclass that validates once on creation and formats itself.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "httpie/utils.py"
+          }
+        ],
+        "latency_s": 6.83,
+        "invalid": 0,
+        "retries": 0
+      }
+    }
+  ],
+  "by_smell": {
+    "data_clumps": {
+      "candidates": 10,
+      "decided_by": "slm",
+      "judged": 10,
+      "confirmed": 10,
+      "mean_latency_s": 13.7
+    },
+    "duplicated_logic": {
+      "candidates": 14,
+      "decided_by": "slm",
+      "judged": 14,
+      "confirmed": 1,
+      "mean_latency_s": 6.6
+    },
+    "flag_argument": {
+      "candidates": 15,
+      "decided_by": "slm",
+      "judged": 15,
+      "confirmed": 15,
+      "mean_latency_s": 9.1
+    },
+    "long_method": {
+      "candidates": 21,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_parameter_list": {
+      "candidates": 3,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "magic_numbers": {
+      "candidates": 9,
+      "decided_by": "slm",
+      "judged": 9,
+      "confirmed": 7,
+      "mean_latency_s": 8.0
+    },
+    "message_chains": {
+      "candidates": 28,
+      "decided_by": "slm",
+      "judged": 28,
+      "confirmed": 6,
+      "mean_latency_s": 7.0
+    },
+    "primitive_obsession": {
+      "candidates": 4,
+      "decided_by": "slm",
+      "judged": 4,
+      "confirmed": 3,
+      "mean_latency_s": 8.2
+    }
+  }
+}

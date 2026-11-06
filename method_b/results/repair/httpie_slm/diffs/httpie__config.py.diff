@@ -1,0 +1,19 @@
+--- a/httpie/config.py
++++ b/httpie/config.py
+@@ -107,7 +107,16 @@
+             data = self.pre_process_data(data)
+             self.update(data)
+ 
++    def save_without_version(self):
++        self._save(bump_version=False)
++
++    def save_with_version(self):
++        self._save(bump_version=True)
++
+     def save(self, *, bump_version: bool = False):
++        self._save(bump_version=bump_version)
++
++    def _save(self, *, bump_version: bool = False):
+         self.setdefault('__meta__', {})
+         if bump_version or 'httpie' not in self['__meta__']:
+             self['__meta__']['httpie'] = __version__

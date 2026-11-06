@@ -1,0 +1,975 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/httpie_slm_t02/code",
+  "files": 78,
+  "loc": 10395,
+  "candidates": 112,
+  "candidates_before_sampling": 112,
+  "static_s": 4.593,
+  "slm_model": null,
+  "slm_temperature": null,
+  "slm": {
+    "calls": 0,
+    "latency_s": 0.0,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": null
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/argparser.py",
+      "target": "httpie/cli/argparser.py::parse_args@98|httpie/cli/argparser.py::parse_args@165",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/argparser.py",
+      "target": "httpie/cli/argparser.py::_body_from_file@407|httpie/cli/argparser.py::_body_from_input@416",
+      "source": "gate",
+      "reason": "AST similarity 0.88",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._process_ssl_cert",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.print_manual",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser.print_usage",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/cli/argparser.py",
+      "target": "httpie/cli/argparser.py::parse_args@98|httpie/cli/argparser.py::parse_args@165",
+      "source": "gate",
+      "reason": "parameters ['args', 'env', 'namespace'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._parse_args_with_params",
+      "source": "rule",
+      "reason": "44 lines, cyclomatic complexity 11, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/argparser.py",
+      "target": "HTTPieArgumentParser._finalize_plugin_auth",
+      "source": "rule",
+      "reason": "29 lines, cyclomatic complexity 12, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/argtypes.py",
+      "target": "httpie/cli/argtypes.py::__init__@15|httpie/cli/nested_json/errors.py::__init__@7",
+      "source": "gate",
+      "reason": "AST similarity 0.873; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/cli/argtypes.py",
+      "target": "_validate_and_get_format_value",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/definition.py",
+      "target": "httpie/cli/definition.py::format_style_help@302|httpie/cli/definition.py::format_auth_help@728",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 7 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/definition.py",
+      "target": "httpie/cli/definition.py::format_auth_help_default@654|httpie/cli/definition.py::format_auth_help_isolated@687",
+      "source": "gate",
+      "reason": "AST similarity 0.86",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/cli/definition.py",
+      "target": "format_style_help_default",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/cli/definition.py",
+      "target": "format_style_help_isolation",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/definition.py",
+      "target": "format_style_help",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['isolation_mode'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/definition.py",
+      "target": "format_auth_help",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['isolation_mode'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/cli/nested_json/interpret.py",
+      "target": "interpret",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/interpret.py",
+      "target": "interpret",
+      "source": "rule",
+      "reason": "90 lines, cyclomatic complexity 9, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/parse.py",
+      "target": "parse",
+      "source": "rule",
+      "reason": "107 lines, cyclomatic complexity 2, nesting 1",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/nested_json/parse.py",
+      "target": "tokenize",
+      "source": "rule",
+      "reason": "59 lines, cyclomatic complexity 6, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/options.py",
+      "target": "httpie/cli/options.py::add_group@59|httpie/output/streams.py::decode_chunk@145",
+      "source": "gate",
+      "reason": "AST similarity 0.806",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/requestitems.py",
+      "target": "httpie/cli/definition.py::format_style_help@302|httpie/cli/requestitems.py::convert_json_value_to_form_if_needed@87",
+      "source": "gate",
+      "reason": "AST similarity 0.974; cluster of 6 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/requestitems.py",
+      "target": "httpie/cli/requestitems.py::_convert_form_mode_processor@104|httpie/cli/requestitems.py::wrapper@106",
+      "source": "gate",
+      "reason": "AST similarity 0.943",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/cli/requestitems.py",
+      "target": "httpie/cli/requestitems.py::_from_args@249|httpie/output/formatters/colors.py::get_lexer_explicit_json@211",
+      "source": "gate",
+      "reason": "AST similarity 0.8",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/cli/requestitems.py",
+      "target": "convert_json_value_to_form_if_needed",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['in_json_mode'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/cli/requestitems.py",
+      "target": "httpie/cli/requestitems.py::_process_nested_json_args@218|httpie/cli/requestitems.py::_process_remaining_args@235",
+      "source": "gate",
+      "reason": "parameters ['instance', 'request_item_args', 'rules'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/cli/requestitems.py",
+      "target": "_get_request_item_rules",
+      "source": "rule",
+      "reason": "53 lines, cyclomatic complexity 1, nesting 0",
+      "confirmed": true
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/cli/utils.py",
+      "target": "httpie/cli/utils.py::__call__@23|httpie/cli/utils.py::__call__@78",
+      "source": "gate",
+      "reason": "parameters ['namespace', 'option_string', 'parser', 'values'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/cli/utils.py",
+      "target": "LazyChoices.__init__",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/client.py",
+      "target": "_get_or_create_httpie_session",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/client.py",
+      "target": "_update_httpie_session_with_request",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/client.py",
+      "target": "make_send_kwargs_mergeable_from_env",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/client.py",
+      "target": "ensure_path_as_is",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['orig_url', 'prepped_url']",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/client.py",
+      "target": "httpie/client.py::collect_messages@58|httpie/client.py::make_request_kwargs@347",
+      "source": "gate",
+      "reason": "parameters ['args', 'env', 'request_body_read_callback'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/client.py",
+      "target": "collect_messages",
+      "source": "rule",
+      "reason": "75 lines, cyclomatic complexity 15, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/client.py",
+      "target": "make_request_kwargs",
+      "source": "rule",
+      "reason": "56 lines, cyclomatic complexity 14, nesting 1",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/compat.py",
+      "target": "httpie/compat.py::func@38|httpie/plugins/base.py::get_adapter@87",
+      "source": "gate",
+      "reason": "AST similarity 0.933; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/config.py",
+      "target": "httpie/config.py::save@136|httpie/internal/update_warnings.py::fetch_updates@63",
+      "source": "gate",
+      "reason": "AST similarity 0.85; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.ensure_directory",
+      "source": "gate",
+      "reason": "numeric literals [448] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict._save",
+      "source": "gate",
+      "reason": "numeric literals [4] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict._save",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['bump_version'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/config.py",
+      "target": "BaseConfigDict.save",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['bump_version'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/core.py",
+      "target": "httpie/core.py::_raw_main_with_defaults@43|httpie/core.py::_raw_main_without_defaults@64",
+      "source": "gate",
+      "reason": "AST similarity 0.89",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/core.py",
+      "target": "raw_main",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['use_default_options'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/core.py",
+      "target": "_raw_main_with_defaults",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/core.py",
+      "target": "_raw_main_without_defaults",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/core.py",
+      "target": "_handle_generic_error",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['include_traceback'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/core.py",
+      "target": "print_debug_info",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/core.py",
+      "target": "httpie/core.py::_execute_main_pipeline@82|httpie/core.py::_raw_main_with_defaults@43|httpie/core.py::_raw_main_without_defaults@64",
+      "source": "gate",
+      "reason": "parameters ['args', 'env', 'main_program', 'parser'] recur in 4 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/core.py",
+      "target": "_execute_main_pipeline",
+      "source": "rule",
+      "reason": "83 lines, cyclomatic complexity 24, nesting 5",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/core.py",
+      "target": "program",
+      "source": "rule",
+      "reason": "59 lines, cyclomatic complexity 9, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "httpie/core.py",
+      "target": "_process_messages",
+      "source": "rule",
+      "reason": "41 lines, cyclomatic complexity 16, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/core.py",
+      "target": "_process_messages",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/downloads.py",
+      "target": "filename_from_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/downloads.py",
+      "target": "Downloader.start",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['initial_url']",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/downloads.py",
+      "target": "httpie/downloads.py::_validate_content_range_bounds@100|httpie/downloads.py::_validate_content_range_match@108",
+      "source": "gate",
+      "reason": "parameters ['content_range', 'first_byte_pos', 'instance_length', 'last_byte_pos'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/internal/daemons.py",
+      "target": "httpie/internal/daemons.py::_spawn@102|httpie/uploads.py::compress_request@360",
+      "source": "gate",
+      "reason": "AST similarity 0.905; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "httpie/internal/update_warnings.py::fetch_updates@63|httpie/uploads.py::compress_request@360",
+      "source": "gate",
+      "reason": "AST similarity 0.974; cluster of 7 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "httpie/internal/update_warnings.py::_update_checker@99|httpie/internal/update_warnings.py::wrapper@105",
+      "source": "gate",
+      "reason": "AST similarity 0.906",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "_fetch_updates",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "fetch_updates",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['lazy'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "maybe_fetch_updates",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "_get_suppress_context",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "_get_update_status",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/internal/update_warnings.py",
+      "target": "check_updates",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/legacy/v3_1_0_session_cookie_format.py",
+      "target": "httpie/legacy/v3_1_0_session_cookie_format.py::post_process@67|httpie/legacy/v3_2_0_session_header_format.py::post_process@49",
+      "source": "gate",
+      "reason": "AST similarity 0.806",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/plugins.py",
+      "target": "PluginInstaller.__init__",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/manager/tasks/sessions.py",
+      "target": "httpie/manager/tasks/sessions.py::cli_upgrade_session@63|httpie/output/formatters/colors.py::get_lexer_for_body@105",
+      "source": "gate",
+      "reason": "AST similarity 0.837",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/manager/tasks/sessions.py",
+      "target": "upgrade_session",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/models.py",
+      "target": "HTTPResponse.metadata",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/models.py",
+      "target": "HTTPResponse._get_raw_version",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "httpie/cli/definition.py::format_style_help@302|httpie/output/formatters/colors.py::get_lexer@195",
+      "source": "gate",
+      "reason": "AST similarity 0.909; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "httpie/output/formatters/colors.py::format_headers@81|httpie/output/formatters/colors.py::format_metadata@98",
+      "source": "gate",
+      "reason": "AST similarity 0.962",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "ColorFormatter.__init__",
+      "source": "gate",
+      "reason": "numeric literals [256] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/formatters/colors.py",
+      "target": "get_lexer",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['explicit_json'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/lexers/http.py",
+      "target": "request_method",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/lexers/http.py",
+      "target": "httpie/output/lexers/http.py::http_response_type@35|httpie/output/lexers/http.py::request_method@56|httpie/output/lexers/metadata.py::speed_based_token@13",
+      "source": "gate",
+      "reason": "parameters ['ctx', 'lexer', 'match'] recur in 3 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/lexers/metadata.py",
+      "target": "speed_based_token",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/processing.py",
+      "target": "httpie/output/processing.py::format_headers@44|httpie/output/processing.py::format_metadata@55",
+      "source": "gate",
+      "reason": "AST similarity 0.958",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/streams.py",
+      "target": "httpie/cli/nested_json/errors.py::__init__@7|httpie/output/streams.py::__init__@33",
+      "source": "gate",
+      "reason": "AST similarity 0.821; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/ui/rich_palette.py",
+      "target": "httpie/output/ui/rich_palette.py::_translate@32|httpie/uploads.py::as_bytes@73",
+      "source": "gate",
+      "reason": "AST similarity 0.884",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "BaseDisplay._print_summary",
+      "source": "gate",
+      "reason": "numeric literals [60, 60] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "BaseDisplay._print_summary",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_finished'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/ui/rich_progress.py",
+      "target": "httpie/output/ui/rich_progress.py::start@21|httpie/output/ui/rich_progress.py::start@70|httpie/output/ui/rich_progress.py::start@106",
+      "source": "gate",
+      "reason": "parameters ['at', 'description', 'total'] recur in 3 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::write_stream_flush@92|httpie/output/writer.py::write_stream_no_flush@104",
+      "source": "gate",
+      "reason": "AST similarity 0.905",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::write_stream@115|httpie/output/writer.py::write_stream_with_colors_win@149",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::write_stream_with_colors_win_flush@128|httpie/output/writer.py::write_stream_with_colors_win_no_flush@139",
+      "source": "gate",
+      "reason": "AST similarity 0.934",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/writer.py",
+      "target": "write_message",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_flush",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_no_flush",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['flush'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_with_colors_win_flush",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_with_colors_win_no_flush",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "write_stream_with_colors_win",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['flush'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "_determine_is_stream",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_stream'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/output/writer.py",
+      "target": "_get_raw_stream_kwargs",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_stream'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::write_stream@115|httpie/output/writer.py::write_stream_with_colors_win@149",
+      "source": "gate",
+      "reason": "parameters ['flush', 'outfile', 'stream'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::get_stream_type_and_kwargs@268|httpie/output/writer.py::write_raw_data@166",
+      "source": "gate",
+      "reason": "parameters ['env', 'headers', 'processing_options'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/output/writer.py",
+      "target": "httpie/output/writer.py::_get_encoded_stream_kwargs@243|httpie/output/writer.py::get_stream_type_and_kwargs@268",
+      "source": "gate",
+      "reason": "parameters ['env', 'message_type', 'processing_options'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/plugins/base.py",
+      "target": "httpie/plugins/base.py::format_headers@142|httpie/plugins/base.py::format_metadata@159",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 7 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/sessions.py",
+      "target": "get_httpie_session",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/ssl_.py",
+      "target": "httpie/ssl_.py::_create_ssl_context_verified@80|httpie/ssl_.py::_create_ssl_context_unverified@90",
+      "source": "gate",
+      "reason": "AST similarity 0.972",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/status.py",
+      "target": "_handle_redirect_status",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['follow'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "_prepare_file_for_upload",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['chunked'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "prepare_request_body",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['offline'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "httpie/uploads.py",
+      "target": "compress_request",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['always'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/uploads.py",
+      "target": "httpie/uploads.py::_prepare_chunked_file_for_upload@154|httpie/uploads.py::_prepare_file_for_upload@209|httpie/uploads.py::_prepare_non_chunked_file_for_upload@187",
+      "source": "gate",
+      "reason": "parameters ['callback', 'content_length_header_value', 'env', 'file'] recur in 3 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "httpie/uploads.py",
+      "target": "httpie/uploads.py::_prepare_file_for_upload@209|httpie/uploads.py::prepare_request_body@279",
+      "source": "gate",
+      "reason": "parameters ['chunked', 'content_length_header_value', 'env'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "httpie/uploads.py",
+      "target": "prepare_request_body",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "httpie/utils.py",
+      "target": "httpie/plugins/base.py::format_headers@142|httpie/utils.py::items@65",
+      "source": "gate",
+      "reason": "AST similarity 0.8; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "httpie/utils.py",
+      "target": "humanize_bytes",
+      "source": "gate",
+      "reason": "numeric literals [50, 40, 30, 20, 10] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "httpie/utils.py",
+      "target": "url_as_host",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": null
+    }
+  ],
+  "by_smell": {
+    "data_clumps": {
+      "candidates": 13,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "duplicated_logic": {
+      "candidates": 28,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "flag_argument": {
+      "candidates": 18,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_method": {
+      "candidates": 11,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_parameter_list": {
+      "candidates": 5,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "magic_numbers": {
+      "candidates": 7,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "message_chains": {
+      "candidates": 26,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "primitive_obsession": {
+      "candidates": 4,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    }
+  }
+}

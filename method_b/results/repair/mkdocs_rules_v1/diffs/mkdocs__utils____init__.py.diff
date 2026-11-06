@@ -1,0 +1,69 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -214,6 +214,9 @@
+         return result
+ 
+     return posixpath.join(base, path)
++
++
++_PARENT_DIR_STEP_SIZE = 3
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+@@ -234,7 +237,7 @@
+     # Relative path - preserve information about it
+     norm = posixpath.normpath(path) + '/'
+     relative_level = 0
+-    while norm.startswith('../', relative_level * 3):
++    while norm.startswith('../', relative_level * _PARENT_DIR_STEP_SIZE):
+         relative_level += 1
+     return path, relative_level
+ 
+@@ -256,17 +259,36 @@
+ def get_theme_dir(name: str) -> str:
+     """Return the directory of an installed theme by name."""
+     theme = get_themes()[name]
+-    return os.path.dirname(os.path.abspath(theme.load().__file__))
++    return theme.get_dir()
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+ def get_themes() -> dict[str, EntryPoint]:
+     """Return a dict of all installed themes as {name: EntryPoint}."""
++    class ThemeWrapper:
++        def __init__(self, ep: EntryPoint) -> None:
++            self._ep = ep
++
++        @property
++        def name(self) -> str:
++            return self._ep.name
++
++        @property
++        def dist(self):
++            return self._ep.dist
++
++        def load(self):
++            return self._ep.load()
++
++        def get_dir(self) -> str:
++            return os.path.dirname(os.path.abspath(self.load().__file__))
++
+     themes: dict[str, EntryPoint] = {}
+     eps: dict[EntryPoint, None] = dict.fromkeys(entry_points(group='mkdocs.themes'))
+     builtins = {ep.name for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
+ 
+-    for theme in eps:
++    for ep in eps:
++        theme = ThemeWrapper(ep)
+         assert theme.dist is not None
+ 
+         if theme.name in builtins and theme.dist.name != 'mkdocs':
+@@ -282,7 +304,7 @@
+                 f"and '{other_dist.name}'. The one in '{theme.dist.name}' will be used."
+             )
+ 
+-        themes[theme.name] = theme
++        themes[theme.name] = ep
+ 
+     return themes
+ 

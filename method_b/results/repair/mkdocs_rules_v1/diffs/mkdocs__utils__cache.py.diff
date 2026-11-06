@@ -1,0 +1,24 @@
+--- a/mkdocs/utils/cache.py
++++ b/mkdocs/utils/cache.py
+@@ -7,8 +7,20 @@
+ import mkdocs
+ 
+ 
++class _Url:
++    """A small value type representing a validated URL."""
++    def __init__(self, value: str) -> None:
++        if not value:
++            raise ValueError("URL cannot be empty")
++        self._value = value
++
++    def __str__(self) -> str:
++        return self._value
++
++
+ def download_url(url: str) -> bytes:
+-    req = urllib.request.Request(url, headers={"User-Agent": f"mkdocs/{mkdocs.__version__}"})
++    url_obj = _Url(url)
++    req = urllib.request.Request(str(url_obj), headers={"User-Agent": f"mkdocs/{mkdocs.__version__}"})
+     with urllib.request.urlopen(req) as resp:
+         return resp.read()
+ 

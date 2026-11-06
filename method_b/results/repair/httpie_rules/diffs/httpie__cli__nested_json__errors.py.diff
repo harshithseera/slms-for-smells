@@ -1,0 +1,34 @@
+--- a/httpie/cli/nested_json/errors.py
++++ b/httpie/cli/nested_json/errors.py
+@@ -1,6 +1,19 @@
+ from typing import Optional
+ 
+ from .tokens import Token, HIGHLIGHTER
++
++
++def _init_nested_json_syntax_error(
++    instance,
++    source: str,
++    token: Optional[Token],
++    message: str,
++    message_kind: str = 'Syntax',
++) -> None:
++    instance.source = source
++    instance.token = token
++    instance.message = message
++    instance.message_kind = message_kind
+ 
+ 
+ class NestedJSONSyntaxError(ValueError):
+@@ -11,10 +24,7 @@
+         message: str,
+         message_kind: str = 'Syntax',
+     ) -> None:
+-        self.source = source
+-        self.token = token
+-        self.message = message
+-        self.message_kind = message_kind
++        _init_nested_json_syntax_error(self, source, token, message, message_kind)
+ 
+     def __str__(self):
+         lines = [f'HTTPie {self.message_kind} Error: {self.message}']

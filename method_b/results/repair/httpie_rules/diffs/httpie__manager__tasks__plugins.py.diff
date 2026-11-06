@@ -1,0 +1,42 @@
+--- a/httpie/manager/tasks/plugins.py
++++ b/httpie/manager/tasks/plugins.py
+@@ -34,13 +34,16 @@
+                 parents=True
+             )
+         except OSError:
+-            self.env.stderr.write(
++            self._write_stderr(
+                 f'Couldn\'t create "{self.dir!s}"'
+                 ' directory for plugin installation.'
+                 ' Please re-check the permissions for that directory,'
+                 ' and if needed, allow write-access.'
+             )
+             raise
++
++    def _write_stderr(self, message: str) -> None:
++        self.env.stderr.write(message)
+ 
+     def fail(
+         self,
+@@ -54,7 +57,7 @@
+         if reason:
+             message += f': {reason}'
+ 
+-        self.env.stderr.write(message + '\n')
++        self._write_stderr(message + '\n')
+         return ExitStatus.ERROR
+ 
+     def _install(self, targets: List[str], mode='install') -> Tuple[
+@@ -86,9 +89,9 @@
+                 stderr = error.stderr.decode()
+ 
+                 if self.debug:
+-                    self.env.stderr.write('Command failed: ')
+-                    self.env.stderr.write('pip ' + ' '.join(pip_args) + '\n')
+-                    self.env.stderr.write(textwrap.indent('  ', stderr))
++                    self._write_stderr('Command failed: ')
++                    self._write_stderr('pip ' + ' '.join(pip_args) + '\n')
++                    self._write_stderr(textwrap.indent('  ', stderr))
+ 
+                 last_line = stderr.strip().splitlines()[-1]
+                 severity, _, message = last_line.partition(': ')

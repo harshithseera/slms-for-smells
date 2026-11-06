@@ -1,0 +1,136 @@
+--- a/httpie/cli/nested_json/interpret.py
++++ b/httpie/cli/nested_json/interpret.py
+@@ -34,28 +34,30 @@
+ 
+     # noinspection PyShadowingNames
+     def type_check(index: int, path: Path, expected_type: JSONType):
+-        if not isinstance(cursor, expected_type):
+-            if path.tokens:
+-                pseudo_token = Token(
+-                    kind=TokenKind.PSEUDO,
+-                    value='',
+-                    start=path.tokens[0].start,
+-                    end=path.tokens[-1].end,
+-                )
+-            else:
+-                pseudo_token = None
+-            cursor_type = JSON_TYPE_MAPPING.get(type(cursor), type(cursor).__name__)
+-            required_type = JSON_TYPE_MAPPING[expected_type]
+-            message = f'Cannot perform {path.kind.to_string()!r} based access on '
+-            message += repr(''.join(path.reconstruct() for path in paths[:index]))
+-            message += f' which has a type of {cursor_type!r} but this operation'
+-            message += f' requires a type of {required_type!r}.'
+-            raise NestedJSONSyntaxError(
+-                source=key,
+-                token=pseudo_token,
+-                message=message,
+-                message_kind='Type',
++        if isinstance(cursor, expected_type):
++            return
++
++        pseudo_token = None
++        if path.tokens:
++            pseudo_token = Token(
++                kind=TokenKind.PSEUDO,
++                value='',
++                start=path.start_pos(),
++                end=path.end_pos(),
+             )
++
++        cursor_type = JSON_TYPE_MAPPING.get(type(cursor), type(cursor).__name__)
++        required_type = JSON_TYPE_MAPPING[expected_type]
++        message = f'Cannot perform {path.kind.to_string()!r} based access on '
++        message += repr(''.join(path.reconstruct() for path in paths[:index]))
++        message += f' which has a type of {cursor_type!r} but this operation'
++        message += f' requires a type of {required_type!r}.'
++        raise NestedJSONSyntaxError(
++            source=key,
++            token=pseudo_token,
++            message=message,
++            message_kind='Type',
++        )
+ 
+     def object_for(kind: PathAction) -> Any:
+         if kind is PathAction.KEY:
+@@ -65,39 +67,57 @@
+         else:
+             assert_cant_happen()
+ 
++    def handle_key(index: int, path: Path, next_path: Path) -> Any:
++        nonlocal cursor
++        type_check(index, path, dict)
++        if next_path.kind is PathAction.SET:
++            cursor[path.accessor] = next_path.accessor
++            return True
++        cursor = cursor.setdefault(path.accessor, object_for(next_path.kind))
++        return False
++
++    def handle_index(index: int, path: Path, next_path: Path) -> Any:
++        nonlocal cursor
++        type_check(index, path, list)
++        if path.accessor < 0:
++            raise NestedJSONSyntaxError(
++                source=key,
++                token=path.tokens[1],
++                message='Negative indexes are not supported.',
++                message_kind='Value',
++            )
++        cursor.extend([None] * (path.accessor - len(cursor) + 1))
++        if next_path.kind is PathAction.SET:
++            cursor[path.accessor] = next_path.accessor
++            return True
++        if cursor[path.accessor] is None:
++            cursor[path.accessor] = object_for(next_path.kind)
++        cursor = cursor[path.accessor]
++        return False
++
++    def handle_append(index: int, path: Path, next_path: Path) -> Any:
++        nonlocal cursor
++        type_check(index, path, list)
++        if next_path.kind is PathAction.SET:
++            cursor.append(next_path.accessor)
++            return True
++        cursor.append(object_for(next_path.kind))
++        cursor = cursor[-1]
++        return False
++
+     for index, (path, next_path) in enumerate(zip(paths, paths[1:])):
+-        # If there is no context yet, set it.
+         if cursor is None:
+             context = cursor = object_for(path.kind)
++
+         if path.kind is PathAction.KEY:
+-            type_check(index, path, dict)
+-            if next_path.kind is PathAction.SET:
+-                cursor[path.accessor] = next_path.accessor
++            if handle_key(index, path, next_path):
+                 break
+-            cursor = cursor.setdefault(path.accessor, object_for(next_path.kind))
+         elif path.kind is PathAction.INDEX:
+-            type_check(index, path, list)
+-            if path.accessor < 0:
+-                raise NestedJSONSyntaxError(
+-                    source=key,
+-                    token=path.tokens[1],
+-                    message='Negative indexes are not supported.',
+-                    message_kind='Value',
+-                )
+-            cursor.extend([None] * (path.accessor - len(cursor) + 1))
+-            if next_path.kind is PathAction.SET:
+-                cursor[path.accessor] = next_path.accessor
++            if handle_index(index, path, next_path):
+                 break
+-            if cursor[path.accessor] is None:
+-                cursor[path.accessor] = object_for(next_path.kind)
+-            cursor = cursor[path.accessor]
+         elif path.kind is PathAction.APPEND:
+-            type_check(index, path, list)
+-            if next_path.kind is PathAction.SET:
+-                cursor.append(next_path.accessor)
++            if handle_append(index, path, next_path):
+                 break
+-            cursor.append(object_for(next_path.kind))
+-            cursor = cursor[-1]
+         else:
+             assert_cant_happen()
+ 

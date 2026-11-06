@@ -1,0 +1,112 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -6,6 +6,7 @@
+ """
+ from __future__ import annotations
+ 
++import dataclasses
+ import functools
+ import logging
+ import os
+@@ -174,6 +175,24 @@
+     return path.split('/') if path else []
+ 
+ 
++@dataclasses.dataclass(frozen=True)
++class _Url:
++    raw: str
++
++    def __post_init__(self) -> None:
++        # Validation/normalization placeholder if needed, preserving raw string
++        pass
++
++    @property
++    def is_file(self) -> bool:
++        _, _, basename = self.raw.rpartition('/')
++        return '.' in basename
++
++    def dirname(self) -> str:
++        dirname, _, _ = self.raw.rpartition('/')
++        return dirname
++
++
+ def get_relative_url(url: str, other: str) -> str:
+     """
+     Return given url relative to other.
+@@ -184,10 +203,9 @@
+     Paths are normalized ('..' works as parent directory), but going higher than the
+     root has no effect ('foo/../../bar' ends up just as 'bar').
+     """
+-    # Remove filename from other url if it has one.
+-    dirname, _, basename = other.rpartition('/')
+-    if '.' in basename:
+-        other = dirname
++    other_url = _Url(other)
++    if other_url.is_file:
++        other = other_url.dirname()
+ 
+     other_parts = _norm_parts(other)
+     dest_parts = _norm_parts(url)
+@@ -256,7 +274,7 @@
+ def get_theme_dir(name: str) -> str:
+     """Return the directory of an installed theme by name."""
+     theme = get_themes()[name]
+-    return os.path.dirname(os.path.abspath(theme.load().__file__))
++    return theme.get_file_path()
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+@@ -264,25 +282,44 @@
+     """Return a dict of all installed themes as {name: EntryPoint}."""
+     themes: dict[str, EntryPoint] = {}
+     eps: dict[EntryPoint, None] = dict.fromkeys(entry_points(group='mkdocs.themes'))
+-    builtins = {ep.name for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
++    
++    def get_entrypoint_name(ep: EntryPoint) -> str:
++        return ep.name
++
++    builtins = {get_entrypoint_name(ep) for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
+ 
+     for theme in eps:
+         assert theme.dist is not None
+-
+-        if theme.name in builtins and theme.dist.name != 'mkdocs':
++        t_name = get_entrypoint_name(theme)
++
++        def get_dist_name(e: EntryPoint) -> str:
++            assert e.dist is not None
++            return e.dist.name
++
++        # Add helper methods dynamically or monkeypatch for message chain cleanup if needed,
++        # but since EntryPoint is built-in, we can attach a helper method or use a wrapper/subclass.
++        # Alternatively, let's monkeypatch or wrap EntryPoint or add methods if mutable.
++        # EntryPoint is usually immutable/builtin, so we can define a helper function or wrapper.
++        
++        if not hasattr(theme, 'get_file_path'):
++            def _get_file_path(self):
++                return os.path.dirname(os.path.abspath(self.load().__file__))
++            setattr(theme.__class__, 'get_file_path', _get_file_path)
++
++        if t_name in builtins and get_dist_name(theme) != 'mkdocs':
+             raise exceptions.ConfigurationError(
+-                f"The theme '{theme.name}' is a builtin theme but the package '{theme.dist.name}' "
++                f"The theme '{t_name}' is a builtin theme but the package '{get_dist_name(theme)}' "
+                 "attempts to provide a theme with the same name."
+             )
+-        elif theme.name in themes:
+-            other_dist = themes[theme.name].dist
++        elif t_name in themes:
++            other_dist = themes[t_name].dist
+             assert other_dist is not None
+             log.warning(
+-                f"A theme named '{theme.name}' is provided by the Python packages '{theme.dist.name}' "
+-                f"and '{other_dist.name}'. The one in '{theme.dist.name}' will be used."
++                f"A theme named '{t_name}' is provided by the Python packages '{get_dist_name(theme)}' "
++                f"and '{other_dist.name}'. The one in '{get_dist_name(theme)}' will be used."
+             )
+ 
+-        themes[theme.name] = theme
++        themes[t_name] = theme
+ 
+     return themes
+ 

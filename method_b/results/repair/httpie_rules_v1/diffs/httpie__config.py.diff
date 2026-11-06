@@ -1,0 +1,63 @@
+--- a/httpie/config.py
++++ b/httpie/config.py
+@@ -15,6 +15,10 @@
+ DEFAULT_RELATIVE_LEGACY_CONFIG_DIR = Path('.httpie')
+ DEFAULT_WINDOWS_CONFIG_DIR = Path(
+     os.path.expandvars('%APPDATA%')) / DEFAULT_CONFIG_DIRNAME
++
++# Constants for magic numbers found by automated reviewer
++DIRECTORY_MODE_PRIVATE = 0o700
++JSON_INDENT_SPACES = 4
+ 
+ 
+ def get_default_config_dir() -> Path:
+@@ -87,7 +91,7 @@
+         self.path = path
+ 
+     def ensure_directory(self):
+-        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
++        self.path.parent.mkdir(mode=DIRECTORY_MODE_PRIVATE, parents=True, exist_ok=True)
+ 
+     def is_new(self) -> bool:
+         return not self.path.exists()
+@@ -107,7 +111,7 @@
+             data = self.pre_process_data(data)
+             self.update(data)
+ 
+-    def save(self, *, bump_version: bool = False):
++    def _prepare_meta(self, bump_version: bool = False):
+         self.setdefault('__meta__', {})
+         if bump_version or 'httpie' not in self['__meta__']:
+             self['__meta__']['httpie'] = __version__
+@@ -117,15 +121,30 @@
+         if self.about:
+             self['__meta__']['about'] = self.about
+ 
++    def _write_file(self):
+         self.ensure_directory()
+ 
+         json_string = json.dumps(
+             obj=self.post_process_data(self),
+-            indent=4,
++            indent=JSON_INDENT_SPACES,
+             sort_keys=True,
+             ensure_ascii=True,
+         )
+         self.path.write_text(json_string + '\n', encoding=UTF8)
++
++    def save(self, *, bump_version: bool = False):
++        if bump_version:
++            self.save_with_bump_version()
++        else:
++            self.save_without_bump_version()
++
++    def save_with_bump_version(self):
++        self._prepare_meta(bump_version=True)
++        self._write_file()
++
++    def save_without_bump_version(self):
++        self._prepare_meta(bump_version=False)
++        self._write_file()
+ 
+     @property
+     def version(self):

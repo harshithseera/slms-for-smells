@@ -1,0 +1,166 @@
+--- a/mkdocs/structure/pages.py
++++ b/mkdocs/structure/pages.py
+@@ -30,6 +30,16 @@
+ 
+ 
+ log = logging.getLogger(__name__)
++
++# Constants for priorities and magic numbers
++_EXTRACT_ANCHORS_PRIORITY = 5
++_RAW_HTML_PRIORITY = 21
++
++
++def _set_title(self) -> None:
++    warnings.warn(
++        "_set_title is no longer used in MkDocs and will be removed soon.", DeprecationWarning
++    )
+ 
+ 
+ class Page(StructureItem):
+@@ -220,9 +230,7 @@
+         self.markdown, self.meta = meta.get_data(source)
+ 
+     def _set_title(self) -> None:
+-        warnings.warn(
+-            "_set_title is no longer used in MkDocs and will be removed soon.", DeprecationWarning
+-        )
++        _set_title(self)
+ 
+     @weak_property
+     def title(self) -> str | None:  # type: ignore[override]
+@@ -271,16 +279,16 @@
+         )
+ 
+         raw_html_ext = _RawHTMLPreprocessor()
+-        raw_html_ext._register(md)
++        raw_html_ext.register_processor(md)
+ 
+         extract_anchors_ext = _ExtractAnchorsTreeprocessor(self.file, files, config)
+-        extract_anchors_ext._register(md)
++        extract_anchors_ext.register_processor(md)
+ 
+         relative_path_ext = _RelativePathTreeprocessor(self.file, files, config)
+-        relative_path_ext._register(md)
++        relative_path_ext.register_processor(md)
+ 
+         extract_title_ext = _ExtractTitleTreeprocessor()
+-        extract_title_ext._register(md)
++        extract_title_ext.register_processor(md)
+ 
+         self.content = md.convert(self.markdown)
+         self.toc = get_toc(getattr(md, 'toc_tokens', []))
+@@ -340,7 +348,10 @@
+                     add(anchor)
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+-        md.treeprocessors.register(self, "mkdocs_extract_anchors", priority=5)  # Same as 'toc'.
++        md.treeprocessors.register(self, "mkdocs_extract_anchors", priority=_EXTRACT_ANCHORS_PRIORITY)
++
++    def register_processor(self, md: markdown.Markdown) -> None:
++        self._register(md)
+ 
+ 
+ class _RelativePathTreeprocessor(markdown.treeprocessors.Treeprocessor):
+@@ -383,11 +394,16 @@
+         cls, file: File, path: str, use_directory_urls: bool, suggest_absolute: bool = False
+     ) -> Iterator[str]:
+         """First yields the resolved file uri for the link, then proceeds to yield guesses for possible mistakes."""
++        if use_directory_urls:
++            return cls._possible_target_uris_directory_urls(file, path)
++        return cls._possible_target_uris_standard(file, path)
++
++    @classmethod
++    def _possible_target_uris_directory_urls(cls, file: File, path: str) -> Iterator[str]:
+         target_uri = cls._target_uri(file.src_uri, path)
+         yield target_uri
+ 
+         if posixpath.normpath(path) == '.':
+-            # Explicitly link to current file.
+             yield file.src_uri
+             return
+         tried = {target_uri}
+@@ -396,16 +412,45 @@
+         if prefixes[0] == prefixes[1]:
+             prefixes.pop()
+ 
+-        suffixes: list[Callable[[str], str]] = []
+-        if use_directory_urls:
+-            suffixes.append(lambda p: p)
++        suffixes: list[Callable[[str], str]] = [lambda p: p]
+         if not posixpath.splitext(target_uri)[-1]:
+             suffixes.append(lambda p: posixpath.join(p, 'index.md'))
+             suffixes.append(lambda p: posixpath.join(p, 'README.md'))
+         if (
+             not target_uri.endswith('.')
+             and not path.endswith('.md')
+-            and (use_directory_urls or not path.endswith('/'))
++        ):
++            suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
++
++        for pref in prefixes:
++            for suf in suffixes:
++                guess = posixpath.normpath(suf(pref))
++                if guess not in tried and not guess.startswith('../'):
++                    yield guess
++                    tried.add(guess)
++
++    @classmethod
++    def _possible_target_uris_standard(cls, file: File, path: str) -> Iterator[str]:
++        target_uri = cls._target_uri(file.src_uri, path)
++        yield target_uri
++
++        if posixpath.normpath(path) == '.':
++            yield file.src_uri
++            return
++        tried = {target_uri}
++
++        prefixes = [target_uri, cls._target_uri(file.url, path)]
++        if prefixes[0] == prefixes[1]:
++            prefixes.pop()
++
++        suffixes: list[Callable[[str], str]] = []
++        if not posixpath.splitext(target_uri)[-1]:
++            suffixes.append(lambda p: posixpath.join(p, 'index.md'))
++            suffixes.append(lambda p: posixpath.join(p, 'README.md'))
++        if (
++            not target_uri.endswith('.')
++            and not path.endswith('.md')
++            and not path.endswith('/')
+         ):
+             suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
+ 
+@@ -518,6 +563,9 @@
+     def _register(self, md: markdown.Markdown) -> None:
+         md.treeprocessors.register(self, "relpath", 0)
+ 
++    def register_processor(self, md: markdown.Markdown) -> None:
++        self._register(md)
++
+ 
+ class _RawHTMLPreprocessor(markdown.preprocessors.Preprocessor):
+     def __init__(self) -> None:
+@@ -533,8 +581,11 @@
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+         md.preprocessors.register(
+-            self, "mkdocs_raw_html", priority=21  # Right before 'html_block'.
++            self, "mkdocs_raw_html", priority=_RAW_HTML_PRIORITY
+         )
++
++    def register_processor(self, md: markdown.Markdown) -> None:
++        self._register(md)
+ 
+ 
+ class _HTMLHandler(markdown.htmlparser.htmlparser.HTMLParser):  # type: ignore[name-defined]
+@@ -562,7 +613,10 @@
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+         self.md = md
+-        md.treeprocessors.register(self, "mkdocs_extract_title", priority=1)  # Close to the end.
++        md.treeprocessors.register(self, "mkdocs_extract_title", priority=1)
++
++    def register_processor(self, md: markdown.Markdown) -> None:
++        self._register(md)
+ 
+ 
+ class _AbsoluteLinksValidationValue(enum.IntEnum):

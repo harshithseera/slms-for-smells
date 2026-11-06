@@ -1,0 +1,643 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/results/repair/gymdesk_slm/code",
+  "files": 10,
+  "loc": 634,
+  "candidates": 27,
+  "candidates_before_sampling": 27,
+  "static_s": 0.109,
+  "slm_model": null,
+  "slm": {
+    "calls": 0,
+    "latency_s": 0.0,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": null
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::monthly_fee@34|gymdesk/club.py::find_member@49",
+      "source": "gate",
+      "reason": "AST similarity 0.902",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::_calculate_total@41|gymdesk/reports.py::_calculate_total@40",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/billing.py",
+      "target": "Currency.validate",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['currency']",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/billing.py",
+      "target": "format_amount",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['currency']",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/billing.py",
+      "target": "convert_amount",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['from_currency', 'to_currency']",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::_calculate_total@41|gymdesk/reports.py::_calculate_total@40",
+      "source": "gate",
+      "reason": "parameters ['discount_rate', 'payments', 'tax_rate'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "gymdesk/billing.py",
+      "target": "gymdesk/billing.py::compute_late_fee@71|gymdesk/billing.py::days_overdue@66",
+      "source": "gate",
+      "reason": "parameters ['due_date', 'grace_days', 'paid_date'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "gymdesk/billing.py",
+      "target": "compute_late_fee",
+      "source": "rule",
+      "reason": "8 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "CheckInDesk.room_for",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/checkin.py",
+      "target": "CheckInDesk.trainer_name_for",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/checkin.py",
+      "target": "normalise_email",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/checkin.py",
+      "target": "email_domain",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": null
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/club.py",
+      "target": "gymdesk/club.py::charge_member@119|gymdesk/club.py::refund_member@125",
+      "source": "gate",
+      "reason": "AST similarity 0.981; cluster of 3 similar functions",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.apply_charge",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['refund'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.find_by_email",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['email']",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.send_reminders",
+      "source": "gate",
+      "reason": "numeric literals [24] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.send_reminders",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dry_run'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.send_reminders_dry_run",
+      "source": "gate",
+      "reason": "numeric literals [24] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "data_clumps",
+      "file": "gymdesk/club.py",
+      "target": "gymdesk/club.py::schedule_class@63|gymdesk/scheduling.py::room_free@22",
+      "source": "gate",
+      "reason": "parameters ['duration_min', 'room', 'start'] recur in 2 signatures",
+      "confirmed": null
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "gymdesk/club.py",
+      "target": "GymClub.schedule_class",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "gymdesk/notifications.py",
+      "target": "gymdesk/notifications.py::booking_email@7|gymdesk/notifications.py::cancellation_email@17",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/reports.py",
+      "target": "MonthlyReport.loyalty_score",
+      "source": "gate",
+      "reason": "numeric literals [12] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "message_chains",
+      "file": "gymdesk/reports.py",
+      "target": "report_filename",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/scheduling.py",
+      "target": "Scheduler.plan_week",
+      "source": "gate",
+      "reason": "numeric literals [7] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "flag_argument",
+      "file": "gymdesk/stats.py",
+      "target": "session_summary",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['as_text'] select a branch",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/timeslot.py",
+      "target": "TimeSlot.minutes",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": null
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "gymdesk/timeslot.py",
+      "target": "TimeSlot.gap_to",
+      "source": "gate",
+      "reason": "numeric literals [60] in the function body",
+      "confirmed": null
+    }
+  ],
+  "scores": {
+    "rules": {
+      "data_clumps": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [
+          "gymdesk/billing.py::_calculate_total@41|gymdesk/reports.py::_calculate_total@40"
+        ],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "duplicated_logic": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 1,
+        "fp": 3,
+        "fn": 1,
+        "unlabelled_fp": [
+          "gymdesk/billing.py::_calculate_total@41|gymdesk/reports.py::_calculate_total@40",
+          "gymdesk/club.py::charge_member@119|gymdesk/club.py::refund_member@125"
+        ],
+        "precision": 0.25,
+        "recall": 0.5
+      },
+      "flag_argument": {
+        "positives": 2,
+        "negatives": 1,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "long_method": {
+        "positives": 1,
+        "negatives": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "unlabelled_fp": [],
+        "precision": null,
+        "recall": 0.0
+      },
+      "long_parameter_list": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "magic_numbers": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 1,
+        "fp": 5,
+        "fn": 1,
+        "unlabelled_fp": [
+          "GymClub.send_reminders_dry_run"
+        ],
+        "precision": 0.16666666666666666,
+        "recall": 0.5
+      },
+      "message_chains": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "primitive_obsession": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "unlabelled_fp": [
+          "Currency.validate"
+        ],
+        "precision": 0.4,
+        "recall": 1.0
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "id": "C1",
+      "kind": "smells",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/billing.py::invoice_total|gymdesk/reports.py::revenue_for_member",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C2",
+      "kind": "smells",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/notifications.py::booking_email|gymdesk/notifications.py::cancellation_email",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C3",
+      "kind": "smells",
+      "smell": "long_method",
+      "target": "Scheduler.plan_week",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C4",
+      "kind": "smells",
+      "smell": "long_parameter_list",
+      "target": "compute_late_fee",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C5",
+      "kind": "smells",
+      "smell": "long_parameter_list",
+      "target": "GymClub.schedule_class",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C6",
+      "kind": "smells",
+      "smell": "magic_numbers",
+      "target": "GymClub.charge_monthly_fees",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C7",
+      "kind": "smells",
+      "smell": "magic_numbers",
+      "target": "MonthlyReport.loyalty_score",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C8",
+      "kind": "smells",
+      "smell": "primitive_obsession",
+      "target": "format_amount",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C9",
+      "kind": "smells",
+      "smell": "primitive_obsession",
+      "target": "convert_amount",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C10",
+      "kind": "smells",
+      "smell": "data_clumps",
+      "target": "gymdesk/billing.py::compute_late_fee|gymdesk/billing.py::days_overdue",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C11",
+      "kind": "smells",
+      "smell": "data_clumps",
+      "target": "gymdesk/club.py::schedule_class|gymdesk/scheduling.py::room_free",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C12",
+      "kind": "smells",
+      "smell": "message_chains",
+      "target": "CheckInDesk.room_for",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C13",
+      "kind": "smells",
+      "smell": "message_chains",
+      "target": "CheckInDesk.trainer_name_for",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C14",
+      "kind": "smells",
+      "smell": "flag_argument",
+      "target": "GymClub.apply_charge",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "C15",
+      "kind": "smells",
+      "smell": "flag_argument",
+      "target": "session_summary",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N2",
+      "kind": "negatives",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/stats.py::mean_session_minutes|gymdesk/stats.py::geometric_mean_session_minutes",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N3",
+      "kind": "negatives",
+      "smell": "duplicated_logic",
+      "target": "gymdesk/billing.py::monthly_fee|gymdesk/club.py::find_member",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N9",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "GymClub.send_reminders",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N10",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "Scheduler.plan_week",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N11",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "TimeSlot.minutes",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N12",
+      "kind": "negatives",
+      "smell": "magic_numbers",
+      "target": "TimeSlot.gap_to",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N13",
+      "kind": "negatives",
+      "smell": "primitive_obsession",
+      "target": "GymClub.find_by_email",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N14",
+      "kind": "negatives",
+      "smell": "primitive_obsession",
+      "target": "normalise_email",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N15",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "class_day",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N16",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "email_domain",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N17",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "report_filename",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N18",
+      "kind": "negatives",
+      "smell": "message_chains",
+      "target": "MonthlyReport.lines",
+      "rules": false,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "N19",
+      "kind": "negatives",
+      "smell": "flag_argument",
+      "target": "GymClub.send_reminders",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    },
+    {
+      "id": "B3",
+      "kind": "borderline",
+      "smell": "primitive_obsession",
+      "target": "email_domain",
+      "rules": true,
+      "slm": null,
+      "slm_evidence": null
+    }
+  ],
+  "by_smell": {
+    "data_clumps": {
+      "candidates": 3,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "duplicated_logic": {
+      "candidates": 4,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "flag_argument": {
+      "candidates": 3,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_parameter_list": {
+      "candidates": 2,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "magic_numbers": {
+      "candidates": 6,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "message_chains": {
+      "candidates": 3,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "primitive_obsession": {
+      "candidates": 6,
+      "decided_by": "slm",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    }
+  }
+}

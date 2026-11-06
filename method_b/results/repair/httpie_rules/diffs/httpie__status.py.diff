@@ -1,0 +1,52 @@
+--- a/httpie/status.py
++++ b/httpie/status.py
+@@ -1,4 +1,13 @@
+ from enum import IntEnum, unique
++
++
++# Magic numbers constants for HTTP status ranges
++HTTP_REDIRECT_MIN = 300
++HTTP_REDIRECT_MAX = 399
++HTTP_CLIENT_ERROR_MIN = 400
++HTTP_CLIENT_ERROR_MAX = 499
++HTTP_SERVER_ERROR_MIN = 500
++HTTP_SERVER_ERROR_MAX = 599
+ 
+ 
+ @unique
+@@ -20,6 +29,18 @@
+     ERROR_CTRL_C = 130
+ 
+ 
++def _http_status_to_exit_status_base(http_status: int) -> ExitStatus:
++    """Translate HTTP status code to exit status code without follow logic."""
++    if HTTP_CLIENT_ERROR_MIN <= http_status <= HTTP_CLIENT_ERROR_MAX:
++        # Client Error
++        return ExitStatus.ERROR_HTTP_4XX
++    elif HTTP_SERVER_ERROR_MIN <= http_status <= HTTP_SERVER_ERROR_MAX:
++        # Server Error
++        return ExitStatus.ERROR_HTTP_5XX
++    else:
++        return ExitStatus.SUCCESS
++
++
+ def http_status_to_exit_status(http_status: int, follow=False) -> ExitStatus:
+     """
+     Translate HTTP status code to exit status code.
+@@ -27,14 +48,7 @@
+     (Relevant only when invoked with --check-status or --download.)
+ 
+     """
+-    if 300 <= http_status <= 399 and not follow:
++    if HTTP_REDIRECT_MIN <= http_status <= HTTP_REDIRECT_MAX and not follow:
+         # Redirect
+         return ExitStatus.ERROR_HTTP_3XX
+-    elif 400 <= http_status <= 499:
+-        # Client Error
+-        return ExitStatus.ERROR_HTTP_4XX
+-    elif 500 <= http_status <= 599:
+-        # Server Error
+-        return ExitStatus.ERROR_HTTP_5XX
+-    else:
+-        return ExitStatus.SUCCESS
++    return _http_status_to_exit_status_base(http_status)

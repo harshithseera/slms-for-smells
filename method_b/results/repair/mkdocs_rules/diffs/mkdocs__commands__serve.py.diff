@@ -1,0 +1,154 @@
+--- a/mkdocs/commands/serve.py
++++ b/mkdocs/commands/serve.py
+@@ -3,6 +3,7 @@
+ import logging
+ import shutil
+ import tempfile
++from dataclasses import dataclass
+ from os.path import isdir, isfile, join
+ from typing import TYPE_CHECKING
+ from urllib.parse import urlsplit
+@@ -15,6 +16,25 @@
+     from mkdocs.config.defaults import MkDocsConfig
+ 
+ log = logging.getLogger(__name__)
++
++DEFAULT_HTTP_ERROR_CODES = (404, 500)
++
++
++@dataclass
++class ServeOptions:
++    config_file: str | None = None
++    livereload: bool = True
++    build_type: str | None = None
++    watch_theme: bool = False
++    watch: list[str] = None
++    open_in_browser: bool = False
++    kwargs: dict = None
++
++    def __post_init__(self):
++        if self.watch is None:
++            self.watch = []
++        if self.kwargs is None:
++            self.kwargs = {}
+ 
+ 
+ def serve(
+@@ -34,20 +54,35 @@
+     it will rebuild the documentation and refresh the page automatically
+     whenever a file is edited.
+     """
+-    # Create a temporary build directory, and set some options to serve it
++    options = ServeOptions(
++        config_file=config_file,
++        livereload=livereload,
++        build_type=build_type,
++        watch_theme=watch_theme,
++        watch=watch,
++        open_in_browser=open_in_browser,
++        kwargs=kwargs,
++    )
++    if options.livereload:
++        _serve_with_livereload(options)
++    else:
++        _serve_without_livereload(options)
++
++
++def _setup_server_environment(options: ServeOptions):
+     site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+ 
+     def get_config():
+         config = load_config(
+-            config_file=config_file,
++            config_file=options.config_file,
+             site_dir=site_dir,
+-            **kwargs,
++            **options.kwargs,
+         )
+-        config.watch.extend(watch)
++        config.watch.extend(options.watch)
+         return config
+ 
+-    is_clean = build_type == 'clean'
+-    is_dirty = build_type == 'dirty'
++    is_clean = options.build_type == 'clean'
++    is_dirty = options.build_type == 'dirty'
+ 
+     config = get_config()
+     config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+@@ -69,7 +104,7 @@
+     )
+ 
+     def error_handler(code) -> bytes | None:
+-        if code in (404, 500):
++        if code in DEFAULT_HTTP_ERROR_CODES:
+             error_page = join(site_dir, f'{code}.html')
+             if isfile(error_page):
+                 with open(error_page, 'rb') as f:
+@@ -77,29 +112,30 @@
+         return None
+ 
+     server.error_handler = error_handler
++    return site_dir, config, builder, server, is_clean, is_dirty
++
++
++def _serve_with_livereload(options: ServeOptions) -> None:
++    site_dir, config, builder, server, is_clean, is_dirty = _setup_server_environment(options)
+ 
+     try:
+-        # Perform the initial build
+         builder(config)
+ 
+-        if livereload:
+-            # Watch the documentation files, the config file and the theme files.
+-            server.watch(config.docs_dir)
+-            if config.config_file_path:
+-                server.watch(config.config_file_path)
++        server.watch(config.docs_dir)
++        if config.config_file_path:
++            server.watch(config.config_file_path)
+ 
+-            if watch_theme:
+-                for d in config.theme.dirs:
+-                    server.watch(d)
++        if options.watch_theme:
++            for d in config.theme.dirs:
++                server.watch(d)
+ 
+-            # Run `serve` plugin events.
+-            server = config.plugins.on_serve(server, config=config, builder=builder)
++        server = config.plugins.on_serve(server, config=config, builder=builder)
+ 
+-            for item in config.watch:
+-                server.watch(item)
++        for item in config.watch:
++            server.watch(item)
+ 
+         try:
+-            server.serve(open_in_browser=open_in_browser)
++            server.serve(open_in_browser=options.open_in_browser)
+         except KeyboardInterrupt:
+             log.info("Shutting down...")
+         finally:
+@@ -108,3 +144,21 @@
+         config.plugins.on_shutdown()
+         if isdir(site_dir):
+             shutil.rmtree(site_dir)
++
++
++def _serve_without_livereload(options: ServeOptions) -> None:
++    site_dir, config, builder, server, is_clean, is_dirty = _setup_server_environment(options)
++
++    try:
++        builder(config)
++
++        try:
++            server.serve(open_in_browser=options.open_in_browser)
++        except KeyboardInterrupt:
++            log.info("Shutting down...")
++        finally:
++            server.shutdown()
++    finally:
++        config.plugins.on_shutdown()
++        if isdir(site_dir):
++            shutil.rmtree(site_dir)

@@ -1,0 +1,124 @@
+--- a/mkdocs/structure/nav.py
++++ b/mkdocs/structure/nav.py
+@@ -138,19 +138,19 @@
+     if not isinstance(items, list):
+         items = [items]
+ 
+-    # Get only the pages from the navigation, ignoring any sections and links.
+     pages = _get_by_type(items, Page)
+-
+-    # Include next, previous and parent links.
+     _add_previous_and_next_links(pages)
+     _add_parent_links(items)
+ 
++    _process_missing_pages(documentation_pages, config)
++    _process_nav_links(items, config)
++    return Navigation(items, pages)
++
++
++def _process_missing_pages(documentation_pages, config: MkDocsConfig) -> None:
+     missing_from_config = []
+     for file in documentation_pages:
+         if file.page is None:
+-            # Any documentation files not found in the nav should still have an associated page, so we
+-            # create them here. The Page object will automatically be assigned to `file.page` during
+-            # its creation (and this is the only way in which these page objects are accessible).
+             Page(None, file, config)
+             if file.inclusion.is_in_nav():
+                 missing_from_config.append(file.src_path)
+@@ -161,6 +161,8 @@
+             'included in the "nav" configuration:\n  - ' + '\n  - '.join(missing_from_config),
+         )
+ 
++
++def _process_nav_links(items, config: MkDocsConfig) -> None:
+     links = _get_by_type(items, Link)
+     for link in links:
+         scheme, netloc, path, query, fragment = urlsplit(link.url)
+@@ -182,24 +184,35 @@
+                 f"A reference to '{link.url}' is included in the 'nav' "
+                 "configuration, which is not found in the documentation files.",
+             )
+-    return Navigation(items, pages)
+ 
+ 
+ def _data_to_navigation(data, files: Files, config: MkDocsConfig):
+     if isinstance(data, dict):
+-        return [
+-            _data_to_navigation((key, value), files, config)
+-            if isinstance(value, str)
+-            else Section(title=key, children=_data_to_navigation(value, files, config))
+-            for key, value in data.items()
+-        ]
++        return _parse_nav_dict(data, files, config)
+     elif isinstance(data, list):
+-        return [
+-            _data_to_navigation(item, files, config)[0]
+-            if isinstance(item, dict) and len(item) == 1
+-            else _data_to_navigation(item, files, config)
+-            for item in data
+-        ]
++        return _parse_nav_list(data, files, config)
++    return _parse_nav_item(data, files, config)
++
++
++def _parse_nav_dict(data: dict, files: Files, config: MkDocsConfig) -> list:
++    return [
++        _data_to_navigation((key, value), files, config)
++        if isinstance(value, str)
++        else Section(title=key, children=_data_to_navigation(value, files, config))
++        for key, value in data.items()
++    ]
++
++
++def _parse_nav_list(data: list, files: Files, config: MkDocsConfig) -> list:
++    return [
++        _data_to_navigation(item, files, config)[0]
++        if isinstance(item, dict) and len(item) == 1
++        else _data_to_navigation(item, files, config)
++        for item in data
++    ]
++
++
++def _parse_nav_item(data, files: Files, config: MkDocsConfig):
+     title, path = data if isinstance(data, tuple) else (None, data)
+     lookup_path = path
+     if (
+@@ -207,20 +220,23 @@
+         and config.validation.nav.absolute_links is _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS
+     ):
+         lookup_path = lookup_path.lstrip('/')
+-    if file := files.get_file_from_path(lookup_path):
+-        if file.inclusion.is_excluded():
+-            log.log(
+-                min(logging.INFO, config.validation.nav.not_found),
+-                f"A reference to '{file.src_path}' is included in the 'nav' "
+-                "configuration, but this file is excluded from the built site.",
+-            )
+-        page = file.page
+-        if page is not None:
+-            if not isinstance(page, Page):
+-                raise BuildError("A plugin has set File.page to a type other than Page.")
+-            return page
+-        return Page(title, file, config)
+-    return Link(title, path)
++    
++    file = files.get_file_from_path(lookup_path)
++    if not file:
++        return Link(title, path)
++
++    if file.inclusion.is_excluded():
++        log.log(
++            min(logging.INFO, config.validation.nav.not_found),
++            f"A reference to '{file.src_path}' is included in the 'nav' "
++            "configuration, but this file is excluded from the built site.",
++        )
++    page = file.page
++    if page is not None:
++        if not isinstance(page, Page):
++            raise BuildError("A plugin has set File.page to a type other than Page.")
++        return page
++    return Page(title, file, config)
+ 
+ 
+ T = TypeVar('T')

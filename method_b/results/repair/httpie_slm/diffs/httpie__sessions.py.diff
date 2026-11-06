@@ -1,0 +1,137 @@
+--- a/httpie/sessions.py
++++ b/httpie/sessions.py
+@@ -5,6 +5,7 @@
+ import os
+ import re
+ 
++from dataclasses import dataclass
+ from http.cookies import SimpleCookie
+ from http.cookiejar import Cookie
+ from pathlib import Path
+@@ -37,6 +38,31 @@
+ # Cookie related options
+ KEPT_COOKIE_OPTIONS = ['name', 'expires', 'path', 'value', 'domain', 'secure']
+ DEFAULT_COOKIE_PATH = '/'
++
++
++@dataclass
++class URL:
++    value: str
++
++    def __post_init__(self):
++        if not self.value:
++            self.value = ''
++
++    def as_host(self) -> str:
++        bound_hostname = url_as_host(self.value)
++        if not bound_hostname:
++            bound_hostname = 'localhost'
++        return bound_hostname
++
++
++@dataclass
++class SessionParams:
++    env: Environment
++    config_dir: Path
++    session_name: str
++    host: Optional[str]
++    url: str
++    suppress_legacy_warnings: bool = False
+ 
+ 
+ def is_anonymous_session(session_name: str) -> bool:
+@@ -98,24 +124,30 @@
+     *,
+     suppress_legacy_warnings: bool = False
+ ) -> 'Session':
+-    bound_hostname = host or url_as_host(url)
+-    if not bound_hostname:
+-        # HACK/FIXME: httpie-unixsocket's URLs have no hostname.
+-        bound_hostname = 'localhost'
+-
+-    if is_anonymous_session(session_name):
+-        path = os.path.expanduser(session_name)
++    params = SessionParams(
++        env=env,
++        config_dir=config_dir,
++        session_name=session_name,
++        host=host,
++        url=url,
++        suppress_legacy_warnings=suppress_legacy_warnings
++    )
++    url_obj = URL(params.url)
++    bound_hostname = params.host or url_obj.as_host()
++
++    if is_anonymous_session(params.session_name):
++        path = os.path.expanduser(params.session_name)
+         session_id = path
+     else:
+-        path = config_dir / session_hostname_to_dirname(bound_hostname, session_name)
+-        session_id = session_name
++        path = params.config_dir / session_hostname_to_dirname(bound_hostname, params.session_name)
++        session_id = params.session_name
+ 
+     session = Session(
+         path,
+-        env=env,
++        env=params.env,
+         session_id=session_id,
+         bound_host=strip_port(bound_hostname),
+-        suppress_legacy_warnings=suppress_legacy_warnings
++        suppress_legacy_warnings=params.suppress_legacy_warnings
+     )
+     session.load()
+     return session
+@@ -197,11 +229,24 @@
+ 
+         return data
+ 
++    def _is_ignored_header(self, name: str) -> bool:
++        for prefix in SESSION_IGNORED_HEADER_PREFIXES:
++            if name.lower().startswith(prefix.lower()):
++                return True
++        return False
++
++    def _process_cookie_header(self, name: str, value: str, request_headers: HTTPHeadersDict, original_value: Any) -> None:
++        for cookie_name, morsel in SimpleCookie(value).items():
++            if not morsel['path']:
++                morsel['path'] = DEFAULT_COOKIE_PATH
++            self.cookie_jar.set(cookie_name, morsel)
++        request_headers.remove_item(name, original_value)
++
+     def _compute_new_headers(self, request_headers: HTTPHeadersDict) -> HTTPHeadersDict:
+         new_headers = HTTPHeadersDict()
+         for name, value in request_headers.copy().items():
+             if value is None:
+-                continue  # Ignore explicitly unset headers
++                continue
+ 
+             original_value = value
+             if type(value) is not str:
+@@ -211,19 +256,13 @@
+                 continue
+ 
+             if name.lower() == 'cookie':
+-                for cookie_name, morsel in SimpleCookie(value).items():
+-                    if not morsel['path']:
+-                        morsel['path'] = DEFAULT_COOKIE_PATH
+-                    self.cookie_jar.set(cookie_name, morsel)
+-
+-                request_headers.remove_item(name, original_value)
+-                continue
+-
+-            for prefix in SESSION_IGNORED_HEADER_PREFIXES:
+-                if name.lower().startswith(prefix.lower()):
+-                    break
+-            else:
+-                new_headers.add(name, value)
++                self._process_cookie_header(name, value, request_headers, original_value)
++                continue
++
++            if self._is_ignored_header(name):
++                continue
++
++            new_headers.add(name, value)
+ 
+         return new_headers
+ 

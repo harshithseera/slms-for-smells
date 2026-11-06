@@ -1,0 +1,46 @@
+--- a/httpie/cli/definition.py
++++ b/httpie/cli/definition.py
+@@ -246,7 +246,21 @@
+ #######################################################################
+ 
+ 
++def format_style_help_default(available_styles):
++    return _format_style_help(available_styles, isolation_mode=False)
++
++
++def format_style_help_isolation(available_styles):
++    return _format_style_help(available_styles, isolation_mode=True)
++
++
+ def format_style_help(available_styles, *, isolation_mode: bool = False):
++    if isolation_mode:
++        return format_style_help_isolation(available_styles)
++    return format_style_help_default(available_styles)
++
++
++def _format_style_help(available_styles, *, isolation_mode: bool = False):
+     text = """
+     Output coloring style (default is "{default}"). It can be one of:
+ 
+@@ -623,7 +637,21 @@
+ #######################################################################
+ 
+ 
++def format_auth_help_default(auth_plugins_mapping):
++    return _format_auth_help(auth_plugins_mapping, isolation_mode=False)
++
++
++def format_auth_help_isolated(auth_plugins_mapping):
++    return _format_auth_help(auth_plugins_mapping, isolation_mode=True)
++
++
+ def format_auth_help(auth_plugins_mapping, *, isolation_mode: bool = False):
++    if isolation_mode:
++        return format_auth_help_isolated(auth_plugins_mapping)
++    return format_auth_help_default(auth_plugins_mapping)
++
++
++def _format_auth_help(auth_plugins_mapping, *, isolation_mode: bool = False):
+     text = """
+     The authentication mechanism to be used. Defaults to "{default}".
+ 

@@ -1,0 +1,12 @@
+--- a/mkdocs/theme.py
++++ b/mkdocs/theme.py
+@@ -85,8 +85,7 @@
+     @property
+     def _vars(self) -> dict[str, Any]:
+         warnings.warn(
+-            "Do not access Theme._vars, instead access the keys of Theme directly.",
+-            DeprecationWarning,
++            "user_configs is never used in MkDocs and will be removed soon.", DeprecationWarning
+         )
+         return self.__vars
+ 

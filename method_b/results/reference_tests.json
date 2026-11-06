@@ -1,0 +1,14 @@
+{
+  "library_system": {
+    "tests": 21,
+    "passed": 21
+  },
+  "shop_orders": {
+    "tests": 20,
+    "passed": 20
+  },
+  "event_scheduler": {
+    "tests": 22,
+    "passed": 22
+  }
+}

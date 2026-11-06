@@ -1,0 +1,378 @@
+--- a/httpie/cli/argparser.py
++++ b/httpie/cli/argparser.py
+@@ -4,6 +4,7 @@
+ import re
+ import sys
+ from argparse import RawDescriptionHelpFormatter
++from dataclasses import dataclass
+ from textwrap import dedent
+ from urllib.parse import urlsplit
+ 
+@@ -29,6 +30,13 @@
+ from ..utils import ExplicitNullAuth, get_content_type
+ 
+ 
++@dataclass
++class ParseArgsParams:
++    env: Environment
++    args: list = None
++    namespace: argparse.Namespace = None
++
++
+ class HTTPieHelpFormatter(RawDescriptionHelpFormatter):
+     """A nicer help formatter.
+ 
+@@ -93,8 +101,14 @@
+         args=None,
+         namespace=None
+     ) -> argparse.Namespace:
+-        self.env = env
+-        self.args, no_options = self.parse_known_args(args, namespace)
++        return self._parse_args_with_params(ParseArgsParams(env=env, args=args, namespace=namespace))
++
++    def _parse_args_with_params(
++        self,
++        params: ParseArgsParams
++    ) -> argparse.Namespace:
++        self.env = params.env
++        self.args, no_options = self.parse_known_args(params.args, params.namespace)
+         if self.args.debug:
+             self.args.traceback = True
+         self.has_stdin_data = (
+@@ -154,17 +168,26 @@
+         args=None,
+         namespace=None
+     ) -> argparse.Namespace:
+-        self.env = env
+-        self.env.args = namespace = namespace or argparse.Namespace()
+-        self.args, no_options = super().parse_known_args(args, namespace)
++        return self._parse_args_with_params(ParseArgsParams(env=env, args=args, namespace=namespace))
++
++    def _parse_args_with_params(
++        self,
++        params: ParseArgsParams
++    ) -> argparse.Namespace:
++        self.env = params.env
++        self.env.args = namespace = params.namespace or argparse.Namespace()
++        self.args, no_options = super().parse_known_args(params.args, namespace)
++        
+         if self.args.debug:
+             self.args.traceback = True
++            
+         self.has_stdin_data = (
+             self.env.stdin
+             and not self.args.ignore_stdin
+             and not self.env.stdin_isatty
+         )
+         self.has_input_data = self.has_stdin_data or self.args.raw is not None
++        
+         # Arguments processing and environment setup.
+         self._apply_no_options(no_options)
+         self._process_request_type()
+@@ -185,7 +208,6 @@
+             self._body_from_file(self.env.stdin)
+ 
+         if self.args.compress:
+-            # TODO: allow --compress with --chunked / --multipart
+             if self.args.chunked:
+                 self.error('cannot combine --compress and --chunked')
+             if self.args.multipart:
+@@ -279,79 +301,82 @@
+         ):
+             self.args.cert_key_pass.prompt_password(self.args.cert_key)
+ 
+-    def _process_auth(self):
+-        # TODO: refactor & simplify this method.
++    def _init_auth_state(self):
+         self.args.auth_plugin = None
+         default_auth_plugin = plugin_manager.get_auth_plugins()[0]
+         auth_type_set = self.args.auth_type is not None
+         url = urlsplit(self.args.url)
+-
+-        if self.args.auth is None and not auth_type_set:
+-            if url.username is not None:
+-                # Handle http://username:password@hostname/
+-                username = url.username
+-                password = url.password or ''
+-                self.args.auth = AuthCredentials(
+-                    key=username,
+-                    value=password,
+-                    sep=SEPARATOR_CREDENTIALS,
+-                    orig=SEPARATOR_CREDENTIALS.join([username, password])
+-                )
+-
++        return default_auth_plugin, auth_type_set, url
++
++    def _handle_url_auth(self, url, auth_type_set):
++        if self.args.auth is None and not auth_type_set and url.username is not None:
++            username = url.username
++            password = url.password or ''
++            self.args.auth = AuthCredentials(
++                key=username,
++                value=password,
++                sep=SEPARATOR_CREDENTIALS,
++                orig=SEPARATOR_CREDENTIALS.join([username, password])
++            )
++
++    def _resolve_auth_plugin(self, default_auth_plugin, auth_type_set):
+         if self.args.auth is not None or auth_type_set:
+             if not self.args.auth_type:
+                 self.args.auth_type = default_auth_plugin.auth_type
+-            plugin = plugin_manager.get_auth_plugin(self.args.auth_type)()
+-
+-            if (not self.args.ignore_netrc
+-                    and self.args.auth is None
+-                    and plugin.netrc_parse):
+-                # Only host needed, so it’s OK URL not finalized.
+-                netrc_credentials = get_netrc_auth(self.args.url)
+-                if netrc_credentials:
+-                    self.args.auth = AuthCredentials(
+-                        key=netrc_credentials[0],
+-                        value=netrc_credentials[1],
+-                        sep=SEPARATOR_CREDENTIALS,
+-                        orig=SEPARATOR_CREDENTIALS.join(netrc_credentials)
++            return plugin_manager.get_auth_plugin(self.args.auth_type)()
++        return None
++
++    def _apply_netrc_auth(self, plugin):
++        if (plugin and not self.args.ignore_netrc
++                and self.args.auth is None
++                and plugin.netrc_parse):
++            netrc_credentials = get_netrc_auth(self.args.url)
++            if netrc_credentials:
++                self.args.auth = AuthCredentials(
++                    key=netrc_credentials[0],
++                    value=netrc_credentials[1],
++                    sep=SEPARATOR_CREDENTIALS,
++                    orig=SEPARATOR_CREDENTIALS.join(netrc_credentials)
++                )
++
++    def _finalize_plugin_auth(self, plugin, url):
++        if not plugin:
++            return
++        if plugin.auth_require and self.args.auth is None:
++            self.error('--auth required')
++
++        plugin.raw_auth = self.args.auth
++        self.args.auth_plugin = plugin
++        already_parsed = isinstance(self.args.auth, AuthCredentials)
++
++        if self.args.auth is None or not plugin.auth_parse:
++            self.args.auth = plugin.get_auth()
++        else:
++            credentials = self.args.auth if already_parsed else parse_auth(self.args.auth)
++            if not credentials.has_password() and plugin.prompt_password:
++                if self.args.ignore_stdin:
++                    self.error(
++                        'Unable to prompt for passwords because'
++                        ' --ignore-stdin is set.'
+                     )
+-
+-            if plugin.auth_require and self.args.auth is None:
+-                self.error('--auth required')
+-
+-            plugin.raw_auth = self.args.auth
+-            self.args.auth_plugin = plugin
+-            already_parsed = isinstance(self.args.auth, AuthCredentials)
+-
+-            if self.args.auth is None or not plugin.auth_parse:
+-                self.args.auth = plugin.get_auth()
+-            else:
+-                if already_parsed:
+-                    # from the URL
+-                    credentials = self.args.auth
+-                else:
+-                    credentials = parse_auth(self.args.auth)
+-
+-                if (not credentials.has_password()
+-                        and plugin.prompt_password):
+-                    if self.args.ignore_stdin:
+-                        # Non-tty stdin read by now
+-                        self.error(
+-                            'Unable to prompt for passwords because'
+-                            ' --ignore-stdin is set.'
+-                        )
+-                    credentials.prompt_password(url.netloc)
+-
+-                if (credentials.key and credentials.value):
+-                    plugin.raw_auth = credentials.key + ":" + credentials.value
+-
+-                self.args.auth = plugin.get_auth(
+-                    username=credentials.key,
+-                    password=credentials.value,
+-                )
++                credentials.prompt_password(url.netloc)
++
++            if credentials.key and credentials.value:
++                plugin.raw_auth = credentials.key + ":" + credentials.value
++
++            self.args.auth = plugin.get_auth(
++                username=credentials.key,
++                password=credentials.value,
++            )
++
++    def _process_auth(self):
++        default_auth_plugin, auth_type_set, url = self._init_auth_state()
++        self._handle_url_auth(url, auth_type_set)
++        plugin = self._resolve_auth_plugin(default_auth_plugin, auth_type_set)
++        self._apply_netrc_auth(plugin)
++        self._finalize_plugin_auth(plugin, url)
++
+         if not self.args.auth and self.args.ignore_netrc:
+-            # Set a no-op auth to force requests to ignore .netrc
+-            # <https://github.com/psf/requests/issues/2773#issuecomment-174312831>
+             self.args.auth = ExplicitNullAuth()
+ 
+     def _apply_no_options(self, no_options):
+@@ -406,53 +431,40 @@
+                        '--ignore-stdin to let key/value take priority. '
+                        'See https://httpie.io/docs#scripting for details.')
+ 
++    def _handle_missing_method(self):
++        if self.has_input_data:
++            self.args.method = HTTP_POST
++        else:
++            self.args.method = HTTP_GET
++
++    def _handle_shorthand_method(self):
++        try:
++            self.args.request_items.insert(0, KeyValueArgType(
++                *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
++        except argparse.ArgumentTypeError as e:
++            if self.args.traceback:
++                raise
++            self.error(e.args[0])
++        else:
++            self.args.url = self.args.method
++            has_data = (
++                self.has_input_data
++                or any(
++                    item.sep in SEPARATOR_GROUP_DATA_ITEMS
++                    for item in self.args.request_items)
++            )
++            self.args.method = HTTP_POST if has_data else HTTP_GET
++
+     def _guess_method(self):
+-        """Set `args.method` if not specified to either POST or GET
+-        based on whether the request has data or not.
+-
+-        """
+         if self.args.method is None:
+-            # Invoked as `http URL'.
+             assert not self.args.request_items
+-            if self.has_input_data:
+-                self.args.method = HTTP_POST
+-            else:
+-                self.args.method = HTTP_GET
+-
+-        # FIXME: False positive, e.g., "localhost" matches but is a valid URL.
++            self._handle_missing_method()
+         elif not re.match('^[a-zA-Z]+$', self.args.method):
+-            # Invoked as `http URL item+'. The URL is now in `args.method`
+-            # and the first ITEM is now incorrectly in `args.url`.
+-            try:
+-                # Parse the URL as an ITEM and store it as the first ITEM arg.
+-                self.args.request_items.insert(0, KeyValueArgType(
+-                    *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
+-
+-            except argparse.ArgumentTypeError as e:
+-                if self.args.traceback:
+-                    raise
+-                self.error(e.args[0])
+-
+-            else:
+-                # Set the URL correctly
+-                self.args.url = self.args.method
+-                # Infer the method
+-                has_data = (
+-                    self.has_input_data
+-                    or any(
+-                        item.sep in SEPARATOR_GROUP_DATA_ITEMS
+-                        for item in self.args.request_items)
+-                )
+-                self.args.method = HTTP_POST if has_data else HTTP_GET
+-
+-    def _parse_items(self):
+-        """
+-        Parse `args.request_items` into `args.headers`, `args.data`,
+-        `args.params`, and `args.files`.
+-
+-        """
++            self._handle_shorthand_method()
++
++    def _extract_request_items(self):
+         try:
+-            request_items = RequestItems.from_args(
++            return RequestItems.from_args(
+                 request_item_args=self.args.request_items,
+                 request_type=self.args.request_type,
+             )
+@@ -460,34 +472,40 @@
+             if self.args.traceback:
+                 raise
+             self.error(e.args[0])
+-        else:
+-            self.args.headers = request_items.headers
+-            self.args.data = request_items.data
+-            self.args.files = request_items.files
+-            self.args.params = request_items.params
+-            self.args.multipart_data = request_items.multipart_data
+-
+-        if self.args.files and not self.args.form:
+-            # `http url @/path/to/file`
+-            request_file = None
+-            for key, file in self.args.files.items():
+-                if key != '':
+-                    self.error(
+-                        'Invalid file fields (perhaps you meant --form?):'
+-                        f' {",".join(self.args.files.keys())}')
+-                if request_file is not None:
+-                    self.error("Can't read request from multiple files")
+-                request_file = file
+-
+-            fn, fd, ct = request_file
+-            self.args.files = {}
+-
+-            self._body_from_file(fd)
+-
+-            if 'Content-Type' not in self.args.headers:
+-                content_type = get_content_type(fn)
+-                if content_type:
+-                    self.args.headers['Content-Type'] = content_type
++
++    def _assign_request_items(self, request_items):
++        self.args.headers = request_items.headers
++        self.args.data = request_items.data
++        self.args.files = request_items.files
++        self.args.params = request_items.params
++        self.args.multipart_data = request_items.multipart_data
++
++    def _process_single_file_fallback(self):
++        if not self.args.files or self.args.form:
++            return
++        request_file = None
++        for key, file in self.args.files.items():
++            if key != '':
++                self.error(
++                    'Invalid file fields (perhaps you meant --form?):'
++                    f' {",".join(self.args.files.keys())}')
++            if request_file is not None:
++                self.error("Can't read request from multiple files")
++            request_file = file
++
++        fn, fd, ct = request_file
++        self.args.files = {}
++        self._body_from_file(fd)
++
++        if 'Content-Type' not in self.args.headers:
++            content_type = get_content_type(fn)
++            if content_type:
++                self.args.headers['Content-Type'] = content_type
++
++    def _parse_items(self):
++        request_items = self._extract_request_items()
++        self._assign_request_items(request_items)
++        self._process_single_file_fallback()
+ 
+     def _process_output_options(self):
+         """Apply defaults to output options, or validate the provided ones.

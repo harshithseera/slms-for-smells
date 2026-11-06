@@ -1,0 +1,237 @@
+--- a/mkdocs/livereload/__init__.py
++++ b/mkdocs/livereload/__init__.py
+@@ -73,6 +73,11 @@
+ """
+ _SCRIPT_TEMPLATE = string.Template(_SCRIPT_TEMPLATE_STR)
+ 
++_DEFAULT_BUILD_DELAY = 0.1
++_MILLISECONDS_PER_SECOND = 1000
++_HTTP_INTERNAL_SERVER_ERROR = 500
++_HTTP_NOT_FOUND = 404
++
+ 
+ class _LoggerAdapter(logging.LoggerAdapter):
+     def process(self, msg: str, kwargs: dict) -> tuple[str, dict]:  # type: ignore[override]
+@@ -114,7 +119,7 @@
+         self.root = os.path.abspath(root)
+         self.mount_path = _normalize_mount_path(mount_path)
+         self.url = _serve_url(host, port, mount_path)
+-        self.build_delay = 0.1
++        self.build_delay = _DEFAULT_BUILD_DELAY
+         self.shutdown_delay = shutdown_delay
+         # To allow custom error pages.
+         self.error_handler: Callable[[int], bytes | None] = lambda code: None
+@@ -170,6 +175,12 @@
+             self.observer.unschedule(self._watch_refs.pop(path))
+ 
+     def serve(self, *, open_in_browser=False):
++        if open_in_browser:
++            self._serve_with_browser()
++        else:
++            self._serve_without_browser()
++
++    def _prepare_server_start(self):
+         self.server_bind()
+         self.server_activate()
+ 
+@@ -179,14 +190,17 @@
+             paths_str = ", ".join(f"'{_try_relativize_path(path)}'" for path in self._watched_paths)
+             log.info(f"Watching paths for changes: {paths_str}")
+ 
+-        if open_in_browser:
+-            log.info(f"Serving on {self.url} and opening it in a browser")
+-        else:
+-            log.info(f"Serving on {self.url}")
++    def _serve_with_browser(self):
++        self._prepare_server_start()
++        log.info(f"Serving on {self.url} and opening it in a browser")
+         self.serve_thread.start()
+-        if open_in_browser:
+-            webbrowser.open(self.url)
+-
++        webbrowser.open(self.url)
++        self._build_loop()
++
++    def _serve_without_browser(self):
++        self._prepare_server_start()
++        log.info(f"Serving on {self.url}")
++        self.serve_thread.start()
+         self._build_loop()
+ 
+     def _build_loop(self):
+@@ -225,6 +239,12 @@
+                 self._epoch_cond.notify_all()
+ 
+     def shutdown(self, wait=False) -> None:
++        if wait:
++            self._shutdown_and_wait()
++        else:
++            self._shutdown_nowait()
++
++    def _shutdown_common(self):
+         self.observer.stop()
+         with self._rebuild_cond:
+             self._shutdown = True
+@@ -233,21 +253,26 @@
+         if self.serve_thread.is_alive():
+             super().shutdown()
+         self.server_close()
+-        if wait:
+-            self.serve_thread.join()
+-            self.observer.join()
++
++    def _shutdown_nowait(self) -> None:
++        self._shutdown_common()
++
++    def _shutdown_and_wait(self) -> None:
++        self._shutdown_common()
++        self.serve_thread.join()
++        self.observer.join()
+ 
+     def serve_request(self, environ, start_response) -> Iterable[bytes]:
+         try:
+             result = self._serve_request(environ, start_response)
+         except Exception:
+-            code = 500
++            code = _HTTP_INTERNAL_SERVER_ERROR
+             msg = "500 Internal Server Error"
+             log.exception(msg)
+         else:
+             if result is not None:
+                 return result
+-            code = 404
++            code = _HTTP_NOT_FOUND
+             msg = "404 Not Found"
+ 
+         error_content = None
+@@ -262,41 +287,51 @@
+         return [error_content]
+ 
+     def _serve_request(self, environ, start_response) -> Iterable[bytes] | None:
+-        # https://bugs.python.org/issue16679
+-        # https://github.com/bottlepy/bottle/blob/f9b1849db4/bottle.py#L984
+         path = environ["PATH_INFO"].encode("latin-1").decode("utf-8", "ignore")
+ 
+         if path.startswith("/livereload/"):
+-            if m := re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path):
+-                epoch = int(m[1])
+-                start_response("200 OK", [("Content-Type", "text/plain")])
+-
+-                def condition():
+-                    return self._visible_epoch > epoch
+-
+-                with self._epoch_cond:
+-                    if not condition():
+-                        # Stall the browser, respond as soon as there's something new.
+-                        # If there's not, respond anyway after a minute.
+-                        self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
+-                        self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
+-                    return [b"%d" % self._visible_epoch]
+-
++            return self._handle_livereload_request(path, environ, start_response)
++
++        file_info = self._resolve_file_path(path, start_response)
++        if file_info is None:
++            return None
++        file_path, file, content_length, epoch = file_info
++
++        content_type = self._guess_type(file_path)
++        start_response(
++            "200 OK", [("Content-Type", content_type), ("Content-Length", str(content_length))]
++        )
++        return wsgiref.util.FileWrapper(file)
++
++    def _handle_livereload_request(self, path: str, environ: dict, start_response: Callable) -> Iterable[bytes] | None:
++        if m := re.fullmatch(r"/livereload/([0-9]+)/[0-9]+", path):
++            epoch = int(m[1])
++            start_response("200 OK", [("Content-Type", "text/plain")])
++
++            def condition():
++                return self._visible_epoch > epoch
++
++            with self._epoch_cond:
++                if not condition():
++                    self._log_poll_request(environ.get("HTTP_REFERER"), request_id=path)
++                    self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
++                return [b"%d" % self._visible_epoch]
++        return None
++
++    def _resolve_file_path(self, path: str, start_response: Callable) -> tuple[str, BinaryIO, int, int] | None:
+         if (path + "/").startswith(self.mount_path):
+             rel_file_path = path[len(self.mount_path) :]
+ 
+             if path.endswith("/"):
+                 rel_file_path += "index.html"
+-            # Prevent directory traversal - normalize the path.
+             rel_file_path = posixpath.normpath("/" + rel_file_path).lstrip("/")
+             file_path = os.path.join(self.root, rel_file_path)
+         elif path == "/":
+             start_response("302 Found", [("Location", urllib.parse.quote(self.mount_path))])
+-            return []
++            return None
+         else:
+-            return None  # Not found
+-
+-        # Wait until the ongoing rebuild (if any) finishes, so we're not serving a half-built site.
++            return None
++
+         with self._epoch_cond:
+             self._epoch_cond.wait_for(lambda: self._visible_epoch == self._wanted_epoch)
+             epoch = self._visible_epoch
+@@ -306,8 +341,8 @@
+         except OSError:
+             if not path.endswith("/") and os.path.isfile(os.path.join(file_path, "index.html")):
+                 start_response("302 Found", [("Location", urllib.parse.quote(path) + "/")])
+-                return []
+-            return None  # Not found
++                return None
++            return None
+ 
+         if self._watched_paths and file_path.endswith(".html"):
+             with file:
+@@ -318,19 +353,13 @@
+         else:
+             content_length = os.path.getsize(file_path)
+ 
+-        content_type = self._guess_type(file_path)
+-        start_response(
+-            "200 OK", [("Content-Type", content_type), ("Content-Length", str(content_length))]
+-        )
+-        return wsgiref.util.FileWrapper(file)
++        return file_path, file, content_length, epoch
+ 
+     def _inject_js_into_html(self, content, epoch):
+         try:
+             body_end = content.rindex(b"</body>")
+         except ValueError:
+             body_end = len(content)
+-        # The page will reload if the livereload poller returns a newer epoch than what it knows.
+-        # The other timestamp becomes just a unique identifier for the initiating page.
+         script = _SCRIPT_TEMPLATE.substitute(epoch=epoch, request_id=_timestamp())
+         return b"%b<script>%b</script>%b" % (
+             content[:body_end],
+@@ -339,14 +368,12 @@
+         )
+ 
+     @classmethod
+-    @functools.lru_cache  # "Cache" to not repeat the same message for the same browser tab.
++    @functools.lru_cache
+     def _log_poll_request(cls, url, request_id):
+         log.info(f"Browser connected: {url}")
+ 
+     @classmethod
+     def _guess_type(cls, path):
+-        # MkDocs only ensures a few common types (as seen in livereload_tests.py::test_mime_types).
+-        # Other uncommon types will not be accepted.
+         if path.endswith((".js", ".JS", ".mjs")):
+             return "application/javascript"
+         if path.endswith(".gz"):
+@@ -368,7 +395,7 @@
+ 
+ 
+ def _timestamp() -> int:
+-    return round(time.monotonic() * 1000)
++    return round(time.monotonic() * _MILLISECONDS_PER_SECOND)
+ 
+ 
+ def _try_relativize_path(path: str) -> str:

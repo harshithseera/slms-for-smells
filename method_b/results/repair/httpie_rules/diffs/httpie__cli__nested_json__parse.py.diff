@@ -1,0 +1,154 @@
+--- a/httpie/cli/nested_json/parse.py
++++ b/httpie/cli/nested_json/parse.py
+@@ -66,62 +66,70 @@
+         message = f'Expecting {suffix}'
+         raise NestedJSONSyntaxError(source, token, message)
+ 
++    def _parse_root_literal(token, path_tokens):
++        return Path(
++            kind=PathAction.KEY,
++            accessor=str(token.value),
++            tokens=path_tokens,
++            is_root=True
++        )
++
++    def _parse_root_bracket(path_tokens):
++        token = expect(TokenKind.NUMBER, TokenKind.RIGHT_BRACKET)
++        path_tokens.append(token)
++        if token.kind is TokenKind.NUMBER:
++            value = token.value
++            path_tokens.append(expect(TokenKind.RIGHT_BRACKET))
++            return Path(
++                kind=PathAction.INDEX,
++                accessor=value,
++                tokens=path_tokens,
++                is_root=True
++            )
++        if token.kind is TokenKind.RIGHT_BRACKET:
++            return Path(
++                kind=PathAction.APPEND,
++                accessor=None,
++                tokens=path_tokens,
++                is_root=True
++            )
++        assert_cant_happen()
++
+     # noinspection PyShadowingNames
+     def parse_root():
+-        tokens = []
+         if not can_advance():
+             return Path(
+                 kind=PathAction.KEY,
+                 accessor=EMPTY_STRING,
+                 is_root=True
+             )
+-        # (literal | index_path | append_path)?
+         token = expect(*LITERAL_TOKENS, TokenKind.LEFT_BRACKET)
+-        tokens.append(token)
++        path_tokens = [token]
+         if token.kind in LITERAL_TOKENS:
+-            action = PathAction.KEY
+-            value = str(token.value)
+-        elif token.kind is TokenKind.LEFT_BRACKET:
+-            token = expect(TokenKind.NUMBER, TokenKind.RIGHT_BRACKET)
+-            tokens.append(token)
+-            if token.kind is TokenKind.NUMBER:
+-                action = PathAction.INDEX
+-                value = token.value
+-                tokens.append(expect(TokenKind.RIGHT_BRACKET))
+-            elif token.kind is TokenKind.RIGHT_BRACKET:
+-                action = PathAction.APPEND
+-                value = None
+-            else:
+-                assert_cant_happen()
+-        else:
+-            assert_cant_happen()
+-        # noinspection PyUnboundLocalVariable
+-        return Path(
+-            kind=action,
+-            accessor=value,
+-            tokens=tokens,
+-            is_root=True
+-        )
++            return _parse_root_literal(token, path_tokens)
++        if token.kind is TokenKind.LEFT_BRACKET:
++            return _parse_root_bracket(path_tokens)
++        assert_cant_happen()
+ 
+     yield parse_root()
+ 
+-    # path*
+-    while can_advance():
++    def _parse_next_path():
+         path_tokens = [expect(TokenKind.LEFT_BRACKET)]
+         token = expect(TokenKind.TEXT, TokenKind.NUMBER, TokenKind.RIGHT_BRACKET)
+         path_tokens.append(token)
+         if token.kind is TokenKind.RIGHT_BRACKET:
+-            path = Path(PathAction.APPEND, tokens=path_tokens)
+-        elif token.kind is TokenKind.TEXT:
+-            path = Path(PathAction.KEY, token.value, tokens=path_tokens)
++            return Path(PathAction.APPEND, tokens=path_tokens)
++        if token.kind is TokenKind.TEXT:
+             path_tokens.append(expect(TokenKind.RIGHT_BRACKET))
+-        elif token.kind is TokenKind.NUMBER:
+-            path = Path(PathAction.INDEX, token.value, tokens=path_tokens)
++            return Path(PathAction.KEY, token.value, tokens=path_tokens)
++        if token.kind is TokenKind.NUMBER:
+             path_tokens.append(expect(TokenKind.RIGHT_BRACKET))
+-        else:
+-            assert_cant_happen()
+-        # noinspection PyUnboundLocalVariable
+-        yield path
++            return Path(PathAction.INDEX, token.value, tokens=path_tokens)
++        assert_cant_happen()
++
++    # path*
++    while can_advance():
++        yield _parse_next_path()
+ 
+ 
+ def tokenize(source: str) -> Iterator[Token]:
+@@ -132,7 +140,7 @@
+     def send_buffer() -> Iterator[Token]:
+         nonlocal backslashes
+         if not buffer:
+-            return None
++            return
+ 
+         value = ''.join(buffer)
+         kind = TokenKind.TEXT
+@@ -159,18 +167,25 @@
+     def can_advance() -> bool:
+         return cursor < len(source)
+ 
++    def _process_operator(index):
++        yield from send_buffer()
++        yield Token(OPERATORS[index], index, cursor, cursor + 1)
++
++    def _process_backslash():
++        nonlocal backslashes, cursor
++        if source[cursor + 1] in SPECIAL_CHARS:
++            backslashes += 1
++        else:
++            buffer.append(BACKSLASH)
++        buffer.append(source[cursor + 1])
++        cursor += 1
++
+     while can_advance():
+         index = source[cursor]
+         if index in OPERATORS:
+-            yield from send_buffer()
+-            yield Token(OPERATORS[index], index, cursor, cursor + 1)
+-        elif index == BACKSLASH and can_advance():
+-            if source[cursor + 1] in SPECIAL_CHARS:
+-                backslashes += 1
+-            else:
+-                buffer.append(index)
+-            buffer.append(source[cursor + 1])
+-            cursor += 1
++            yield from _process_operator(index)
++        elif index == BACKSLASH and cursor + 1 < len(source):
++            _process_backslash()
+         else:
+             buffer.append(index)
+         cursor += 1

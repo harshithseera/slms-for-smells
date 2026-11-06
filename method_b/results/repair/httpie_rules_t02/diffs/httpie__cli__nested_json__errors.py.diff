@@ -1,0 +1,32 @@
+--- a/httpie/cli/nested_json/errors.py
++++ b/httpie/cli/nested_json/errors.py
+@@ -1,6 +1,11 @@
+ from typing import Optional
+ 
+ from .tokens import Token, HIGHLIGHTER
++
++
++def _init_attributes(obj, **kwargs):
++    for key, value in kwargs.items():
++        setattr(obj, key, value)
+ 
+ 
+ class NestedJSONSyntaxError(ValueError):
+@@ -11,10 +16,13 @@
+         message: str,
+         message_kind: str = 'Syntax',
+     ) -> None:
+-        self.source = source
+-        self.token = token
+-        self.message = message
+-        self.message_kind = message_kind
++        _init_attributes(
++            self,
++            source=source,
++            token=token,
++            message=message,
++            message_kind=message_kind,
++        )
+ 
+     def __str__(self):
+         lines = [f'HTTPie {self.message_kind} Error: {self.message}']

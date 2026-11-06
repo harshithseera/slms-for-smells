@@ -1,0 +1,193 @@
+--- a/httpie/core.py
++++ b/httpie/core.py
+@@ -28,7 +28,6 @@
+ from .internal.daemon_runner import is_daemon_mode, run_daemon_task
+ 
+ 
+-# noinspection PyDefaultArgument
+ def raw_main(
+     parser: argparse.ArgumentParser,
+     main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
+@@ -36,6 +35,17 @@
+     env: Environment = Environment(),
+     use_default_options: bool = True,
+ ) -> ExitStatus:
++    if use_default_options:
++        return _raw_main_with_defaults(parser, main_program, args, env)
++    return _raw_main_without_defaults(parser, main_program, args, env)
++
++
++def _raw_main_with_defaults(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[Union[str, bytes]],
++    env: Environment,
++) -> ExitStatus:
+     program_name, *args = args
+     env.program_name = os.path.basename(program_name)
+     args = decode_raw_args(args, env.stdin_encoding)
+@@ -45,26 +55,38 @@
+ 
+     plugin_manager.load_installed_plugins(env.config.plugins_dir)
+ 
+-    if use_default_options and env.config.default_options:
++    if env.config.default_options:
+         args = env.config.default_options + args
+ 
++    return _execute_main_pipeline(parser, main_program, args, env)
++
++
++def _raw_main_without_defaults(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[Union[str, bytes]],
++    env: Environment,
++) -> ExitStatus:
++    program_name, *args = args
++    env.program_name = os.path.basename(program_name)
++    args = decode_raw_args(args, env.stdin_encoding)
++
++    if is_daemon_mode(args):
++        return run_daemon_task(env, args)
++
++    plugin_manager.load_installed_plugins(env.config.plugins_dir)
++
++    return _execute_main_pipeline(parser, main_program, args, env)
++
++
++def _execute_main_pipeline(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[str],
++    env: Environment,
++) -> ExitStatus:
+     include_debug_info = '--debug' in args
+     include_traceback = include_debug_info or '--traceback' in args
+-
+-    def handle_generic_error(e, annotation=None):
+-        msg = str(e)
+-        if hasattr(e, 'request'):
+-            request = e.request
+-            if hasattr(request, 'url'):
+-                msg = (
+-                    f'{msg} while doing a {request.method}'
+-                    f' request to URL: {request.url}'
+-                )
+-        if annotation:
+-            msg += annotation
+-        env.log_error(f'{type(e).__name__}: {msg}')
+-        if include_traceback:
+-            raise
+ 
+     if include_debug_info:
+         print_debug_info(env)
+@@ -133,14 +155,29 @@
+             else:
+                 propagated_exc = exc
+ 
+-            handle_generic_error(propagated_exc, annotation=annotation)
++            _handle_generic_error(env, propagated_exc, include_traceback, annotation=annotation)
+             exit_status = ExitStatus.ERROR
+         except Exception as e:
+-            # TODO: Further distinction between expected and unexpected errors.
+-            handle_generic_error(e)
++            _handle_generic_error(env, e, include_traceback)
+             exit_status = ExitStatus.ERROR
+ 
+     return exit_status
++
++
++def _handle_generic_error(env: Environment, e, include_traceback: bool, annotation=None):
++    msg = str(e)
++    if hasattr(e, 'request'):
++        request = e.request
++        if hasattr(request, 'url'):
++            msg = (
++                f'{msg} while doing a {request.method}'
++                f' request to URL: {request.url}'
++            )
++    if annotation:
++        msg += annotation
++    env.log_error(f'{type(e).__name__}: {msg}')
++    if include_traceback:
++        raise
+ 
+ 
+ def main(
+@@ -172,7 +209,6 @@
+     The main program without error handling.
+ 
+     """
+-    # TODO: Refactor and drastically simplify, especially so that the separator logic is elsewhere.
+     exit_status = ExitStatus.SUCCESS
+     downloader = None
+     initial_request: Optional[requests.PreparedRequest] = None
+@@ -184,11 +220,8 @@
+ 
+     def request_body_read_callback(chunk: bytes):
+         should_pipe_to_stdout = bool(
+-            # Request body output desired
+             OUT_REQ_BODY in args.output_options
+-            # & not `.read()` already pre-request (e.g., for  compression)
+             and initial_request
+-            # & non-EOF chunk
+             and chunk
+         )
+         if should_pipe_to_stdout:
+@@ -204,20 +237,20 @@
+             args.follow = True  # --download implies --follow.
+             downloader = Downloader(env, output_file=args.output_file, resume=args.download_resume)
+             downloader.pre_request(args.headers)
++        
+         messages = collect_messages(env, args=args,
+                                     request_body_read_callback=request_body_read_callback)
+         force_separator = False
+         prev_with_body = False
+ 
+-        # Process messages as they’re generated
+         for message in messages:
+             output_options = OutputOptions.from_message(message, args.output_options)
+ 
+             do_write_body = output_options.body
+             if prev_with_body and output_options.any() and (force_separator or not env.stdout_isatty):
+-                # Separate after a previous message with body, if needed. See test_tokens.py.
+                 separate()
+             force_separator = False
++            
+             if output_options.kind is RequestsMessageKind.REQUEST:
+                 if not initial_request:
+                     initial_request = message
+@@ -230,7 +263,8 @@
+                 if args.check_status or downloader:
+                     exit_status = http_status_to_exit_status(http_status=message.status_code, follow=args.follow)
+                     if exit_status != ExitStatus.SUCCESS and (not env.stdout_isatty or args.quiet == 1):
+-                        env.log_error(f'HTTP {message.raw.status} {message.raw.reason}', level=LogLevel.WARNING)
++                        env.log_error(f'HTTP {message.status_line}', level=LogLevel.WARNING)
++
+             write_message(
+                 requests_message=message,
+                 env=env,
+@@ -241,11 +275,10 @@
+             )
+             prev_with_body = output_options.body
+ 
+-        # Cleanup
+         if force_separator:
+             separate()
++            
+         if downloader and exit_status == ExitStatus.SUCCESS:
+-            # Last response body download.
+             download_stream, download_to = downloader.start(
+                 initial_url=initial_request.url,
+                 final_response=final_response,
+@@ -255,8 +288,8 @@
+             if downloader.interrupted:
+                 exit_status = ExitStatus.ERROR
+                 env.log_error(
+-                    f'Incomplete download: size={downloader.status.total_size};'
+-                    f' downloaded={downloader.status.downloaded}'
++                    f'Incomplete download: size={downloader.total_size};'
++                    f' downloaded={downloader.downloaded}'
+                 )
+         return exit_status
+ 

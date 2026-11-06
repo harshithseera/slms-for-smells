@@ -1,0 +1,55 @@
+--- a/gymdesk/reports.py
++++ b/gymdesk/reports.py
+@@ -7,6 +7,12 @@
+ from gymdesk import club as club_module
+ from gymdesk.models import Member, Payment
+ 
++# Constants for loyalty_score calculation
++_MONTHS_MULTIPLIER = 0.5
++_VISIT_RATE_MULTIPLIER = 2.0
++_BALANCE_PENALTY = 5
++_TIER_BONUSES = {"basic": 0, "plus": 5, "premium": 10}
++
+ 
+ class MonthlyReport:
+     def __init__(self, club: club_module.GymClub) -> None:
+@@ -15,10 +21,10 @@
+ 
+     def loyalty_score(self, member: Member, today: date) -> float:
+         months = (today.year - member.joined.year) * 12 + today.month - member.joined.month
+-        tier_bonus = {"basic": 0, "plus": 5, "premium": 10}[member.plan]
++        tier_bonus = _TIER_BONUSES[member.plan]
+         visit_rate = member.visits / max(months, 1)
+-        penalty = 5 if member.balance > 0 else 0
+-        return round(months * 0.5 + visit_rate * 2 + tier_bonus - penalty, 1)
++        penalty = _BALANCE_PENALTY if member.balance > 0 else 0
++        return round(months * _MONTHS_MULTIPLIER + visit_rate * _VISIT_RATE_MULTIPLIER + tier_bonus - penalty, 1)
+ 
+     def member_row(self, member: Member) -> str:
+         return (f"{member.member_id},{member.first_name} {member.last_name},"
+@@ -32,14 +38,18 @@
+         return out
+ 
+ 
++def _calculate_total(payments: list[Payment], discount_rate: float, tax_rate: float) -> float:
++    total = 0.0
++    for item in payments:
++        if item.amount <= 0:
++            continue
++        total += item.amount * (1 - discount_rate)
++    total = total * (1 + tax_rate)
++    return round(total, 2)
++
++
+ def revenue_for_member(payments: list[Payment], rebate: float, vat: float) -> float:
+-    acc = 0.0
+-    for p in payments:
+-        if p.amount <= 0:
+-            continue
+-        acc += p.amount * (1 - rebate)
+-    acc = acc * (1 + vat)
+-    return round(acc, 2)
++    return _calculate_total(payments, rebate, vat)
+ 
+ 
+ def report_filename(path: str) -> str:

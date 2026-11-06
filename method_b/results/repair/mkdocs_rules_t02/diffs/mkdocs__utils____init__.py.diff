@@ -1,0 +1,52 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -214,6 +214,9 @@
+         return result
+ 
+     return posixpath.join(base, path)
++
++
++_PARENT_PREFIX_LENGTH = 3
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+@@ -234,7 +237,7 @@
+     # Relative path - preserve information about it
+     norm = posixpath.normpath(path) + '/'
+     relative_level = 0
+-    while norm.startswith('../', relative_level * 3):
++    while norm.startswith('../', relative_level * _PARENT_PREFIX_LENGTH):
+         relative_level += 1
+     return path, relative_level
+ 
+@@ -256,7 +259,7 @@
+ def get_theme_dir(name: str) -> str:
+     """Return the directory of an installed theme by name."""
+     theme = get_themes()[name]
+-    return os.path.dirname(os.path.abspath(theme.load().__file__))
++    return theme.get_dir()
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+@@ -282,9 +285,20 @@
+                 f"and '{other_dist.name}'. The one in '{theme.dist.name}' will be used."
+             )
+ 
+-        themes[theme.name] = theme
++        themes[theme.name] = _ThemeEntryPoint(theme)
+ 
+     return themes
++
++
++class _ThemeEntryPoint:
++    def __init__(self, ep: EntryPoint) -> None:
++        self._ep = ep
++
++    def __getattr__(self, name: str):
++        return getattr(self._ep, name)
++
++    def get_dir(self) -> str:
++        return os.path.dirname(os.path.abspath(self._ep.load().__file__))
+ 
+ 
+ def get_theme_names() -> Collection[str]:

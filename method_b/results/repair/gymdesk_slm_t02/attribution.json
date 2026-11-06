@@ -1,0 +1,48 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/gymdesk_slm_t02",
+  "fixed_set": 20,
+  "files": [
+    {
+      "file": "gymdesk/billing.py",
+      "findings": 5,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/club.py",
+      "findings": 5,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/reports.py",
+      "findings": 2,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/scheduling.py",
+      "findings": 2,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/stats.py",
+      "findings": 2,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    }
+  ],
+  "files_safe": 5,
+  "files_breaking": 0
+}

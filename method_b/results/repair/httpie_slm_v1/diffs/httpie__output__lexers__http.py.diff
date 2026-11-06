@@ -1,0 +1,54 @@
+--- a/httpie/output/lexers/http.py
++++ b/httpie/output/lexers/http.py
+@@ -1,3 +1,4 @@
++from dataclasses import dataclass
+ import re
+ import pygments
+ from httpie.output.lexers.common import precise
+@@ -22,14 +23,22 @@
+ }
+ 
+ 
++@dataclass
++class LexerContext:
++    lexer: object
++    match: object
++    ctx: object
++
++
+ def http_response_type(lexer, match, ctx):
+-    status_match = RE_STATUS_LINE.match(match.group())
++    lc = LexerContext(lexer=lexer, match=match, ctx=ctx)
++    status_match = RE_STATUS_LINE.match(lc.match.group())
+     if status_match is None:
+         return None
+ 
+     status_code, text, reason = status_match.groups()
+     status_type = precise(
+-        lexer,
++        lc.lexer,
+         STATUS_TYPES.get(status_code[0]),
+         pygments.token.Number
+     )
+@@ -39,16 +48,17 @@
+         pygments.token.Text,
+         status_type
+     )
+-    yield from groups(lexer, status_match, ctx)
++    yield from groups(lc.lexer, status_match, lc.ctx)
+ 
+ 
+ def request_method(lexer, match, ctx):
++    lc = LexerContext(lexer=lexer, match=match, ctx=ctx)
+     response_type = precise(
+-        lexer,
+-        RESPONSE_TYPES.get(match.group()),
++        lc.lexer,
++        RESPONSE_TYPES.get(lc.match.group()),
+         pygments.token.Name.Function
+     )
+-    yield match.start(), response_type, match.group()
++    yield lc.match.start(), response_type, lc.match.group()
+ 
+ 
+ class SimplifiedHTTPLexer(pygments.lexer.RegexLexer):

@@ -1,0 +1,12 @@
+--- a/httpie/uploads.py
++++ b/httpie/uploads.py
+@@ -65,8 +65,7 @@
+ def as_bytes(data: Union[str, bytes]) -> bytes:
+     if isinstance(data, str):
+         return data.encode()
+-    else:
+-        return data
++    return data
+ 
+ 
+ CallbackT = Callable[[bytes], bytes]

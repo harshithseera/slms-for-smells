@@ -1,0 +1,85 @@
+--- a/httpie/ssl_.py
++++ b/httpie/ssl_.py
+@@ -1,4 +1,5 @@
+ import ssl
++from dataclasses import dataclass
+ from typing import NamedTuple, Optional
+ 
+ # noinspection PyPackageRequirements
+@@ -26,6 +27,13 @@
+ }
+ 
+ 
++@dataclass
++class SSLContextOptions:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
+ class HTTPieCertificate(NamedTuple):
+     cert_file: Optional[str] = None
+     key_file: Optional[str] = None
+@@ -45,11 +53,12 @@
+         ciphers: str = None,
+         **kwargs
+     ):
+-        self._ssl_context = self._create_ssl_context(
++        options = SSLContextOptions(
+             verify=verify,
+             ssl_version=ssl_version,
+             ciphers=ciphers,
+         )
++        self._ssl_context = self._create_ssl_context(options)
+         super().__init__(**kwargs)
+ 
+     def init_poolmanager(self, *args, **kwargs):
+@@ -68,25 +77,36 @@
+         return super().cert_verify(conn, url, verify, cert)
+ 
+     @staticmethod
+-    def _create_ssl_context(
+-        verify: bool,
+-        ssl_version: str = None,
+-        ciphers: str = None,
+-    ) -> 'ssl.SSLContext':
++    def _create_ssl_context(options: SSLContextOptions) -> 'ssl.SSLContext':
++        if options.verify:
++            return HTTPieHTTPSAdapter._create_verified_ssl_context(options)
++        else:
++            return HTTPieHTTPSAdapter._create_unverified_ssl_context(options)
++
++    @staticmethod
++    def _create_verified_ssl_context(options: SSLContextOptions) -> 'ssl.SSLContext':
+         ssl_context = create_urllib3_context(
+-            ciphers=ciphers,
+-            ssl_version=resolve_ssl_version(ssl_version),
+-            # Since we are using a custom SSL context, we need to pass this
+-            # here manually, even though it’s also passed to the connection
+-            # in `super().cert_verify()`.
+-            cert_reqs=ssl.CERT_REQUIRED if verify else ssl.CERT_NONE
++            ciphers=options.ciphers,
++            ssl_version=resolve_ssl_version(options.ssl_version),
++            cert_reqs=ssl.CERT_REQUIRED
++        )
++        ensure_default_certs_loaded(ssl_context)
++        return ssl_context
++
++    @staticmethod
++    def _create_unverified_ssl_context(options: SSLContextOptions) -> 'ssl.SSLContext':
++        ssl_context = create_urllib3_context(
++            ciphers=options.ciphers,
++            ssl_version=resolve_ssl_version(options.ssl_version),
++            cert_reqs=ssl.CERT_NONE
+         )
+         ensure_default_certs_loaded(ssl_context)
+         return ssl_context
+ 
+     @classmethod
+     def get_default_ciphers_names(cls):
+-        return [cipher['name'] for cipher in cls._create_ssl_context(verify=False).get_ciphers()]
++        options = SSLContextOptions(verify=False)
++        return [cipher['name'] for cipher in cls._create_ssl_context(options).get_ciphers()]
+ 
+ 
+ def _is_key_file_encrypted(key_file):

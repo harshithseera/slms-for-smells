@@ -1,0 +1,190 @@
+--- a/httpie/core.py
++++ b/httpie/core.py
+@@ -28,7 +28,6 @@
+ from .internal.daemon_runner import is_daemon_mode, run_daemon_task
+ 
+ 
+-# noinspection PyDefaultArgument
+ def raw_main(
+     parser: argparse.ArgumentParser,
+     main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
+@@ -36,18 +35,77 @@
+     env: Environment = Environment(),
+     use_default_options: bool = True,
+ ) -> ExitStatus:
+-    program_name, *args = args
++    if use_default_options:
++        return _raw_main_with_defaults(parser, main_program, args, env)
++    return _raw_main_without_defaults(parser, main_program, args, env)
++
++
++def _raw_main_setup(
++    args: List[Union[str, bytes]],
++    env: Environment,
++    use_default_options: bool,
++) -> List[str]:
++    program_name, *args_tail = args
+     env.program_name = os.path.basename(program_name)
+-    args = decode_raw_args(args, env.stdin_encoding)
+-
+-    if is_daemon_mode(args):
+-        return run_daemon_task(env, args)
++    decoded_args = decode_raw_args(args_tail, env.stdin_encoding)
++
++    if is_daemon_mode(decoded_args):
++        # We handle daemon mode outside or let it run
++        pass
+ 
+     plugin_manager.load_installed_plugins(env.config.plugins_dir)
+ 
+     if use_default_options and env.config.default_options:
+-        args = env.config.default_options + args
+-
++        decoded_args = env.config.default_options + decoded_args
++
++    return decoded_args
++
++
++def _raw_main_with_defaults(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[Union[str, bytes]],
++    env: Environment,
++) -> ExitStatus:
++    program_name, *args_tail = args
++    env.program_name = os.path.basename(program_name)
++    decoded_args = decode_raw_args(args_tail, env.stdin_encoding)
++
++    if is_daemon_mode(decoded_args):
++        return run_daemon_task(env, decoded_args)
++
++    plugin_manager.load_installed_plugins(env.config.plugins_dir)
++
++    if env.config.default_options:
++        decoded_args = env.config.default_options + decoded_args
++
++    return _execute_main_pipeline(parser, main_program, decoded_args, env)
++
++
++def _raw_main_without_defaults(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[Union[str, bytes]],
++    env: Environment,
++) -> ExitStatus:
++    program_name, *args_tail = args
++    env.program_name = os.path.basename(program_name)
++    decoded_args = decode_raw_args(args_tail, env.stdin_encoding)
++
++    if is_daemon_mode(decoded_args):
++        return run_daemon_task(env, decoded_args)
++
++    plugin_manager.load_installed_plugins(env.config.plugins_dir)
++
++    return _execute_main_pipeline(parser, main_program, decoded_args, env)
++
++
++def _execute_main_pipeline(
++    parser: argparse.ArgumentParser,
++    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
++    args: List[str],
++    env: Environment,
++) -> ExitStatus:
+     include_debug_info = '--debug' in args
+     include_traceback = include_debug_info or '--traceback' in args
+ 
+@@ -136,7 +194,6 @@
+             handle_generic_error(propagated_exc, annotation=annotation)
+             exit_status = ExitStatus.ERROR
+         except Exception as e:
+-            # TODO: Further distinction between expected and unexpected errors.
+             handle_generic_error(e)
+             exit_status = ExitStatus.ERROR
+ 
+@@ -172,7 +229,6 @@
+     The main program without error handling.
+ 
+     """
+-    # TODO: Refactor and drastically simplify, especially so that the separator logic is elsewhere.
+     exit_status = ExitStatus.SUCCESS
+     downloader = None
+     initial_request: Optional[requests.PreparedRequest] = None
+@@ -180,15 +236,13 @@
+     processing_options = ProcessingOptions.from_raw_args(args)
+ 
+     def separate():
+-        getattr(env.stdout, 'buffer', env.stdout).write(MESSAGE_SEPARATOR_BYTES)
++        output_stream = env.stdout if not hasattr(env.stdout, 'buffer') else env.stdout.buffer
++        output_stream.write(MESSAGE_SEPARATOR_BYTES)
+ 
+     def request_body_read_callback(chunk: bytes):
+         should_pipe_to_stdout = bool(
+-            # Request body output desired
+             OUT_REQ_BODY in args.output_options
+-            # & not `.read()` already pre-request (e.g., for  compression)
+             and initial_request
+-            # & non-EOF chunk
+             and chunk
+         )
+         if should_pipe_to_stdout:
+@@ -201,7 +255,7 @@
+ 
+     try:
+         if args.download:
+-            args.follow = True  # --download implies --follow.
++            args.follow = True
+             downloader = Downloader(env, output_file=args.output_file, resume=args.download_resume)
+             downloader.pre_request(args.headers)
+         messages = collect_messages(env, args=args,
+@@ -209,13 +263,11 @@
+         force_separator = False
+         prev_with_body = False
+ 
+-        # Process messages as they’re generated
+         for message in messages:
+             output_options = OutputOptions.from_message(message, args.output_options)
+ 
+             do_write_body = output_options.body
+             if prev_with_body and output_options.any() and (force_separator or not env.stdout_isatty):
+-                # Separate after a previous message with body, if needed. See test_tokens.py.
+                 separate()
+             force_separator = False
+             if output_options.kind is RequestsMessageKind.REQUEST:
+@@ -241,11 +293,9 @@
+             )
+             prev_with_body = output_options.body
+ 
+-        # Cleanup
+         if force_separator:
+             separate()
+         if downloader and exit_status == ExitStatus.SUCCESS:
+-            # Last response body download.
+             download_stream, download_to = downloader.start(
+                 initial_url=initial_request.url,
+                 final_response=final_response,
+@@ -268,18 +318,19 @@
+ 
+ 
+ def print_debug_info(env: Environment):
+-    env.stderr.writelines([
++    stderr = env.stderr
++    stderr.writelines([
+         f'HTTPie {httpie_version}\n',
+         f'Requests {requests_version}\n',
+         f'Pygments {pygments_version}\n',
+         f'Python {sys.version}\n{sys.executable}\n',
+         f'{platform.system()} {platform.release()}',
+     ])
+-    env.stderr.write('\n\n')
+-    env.stderr.write(repr(env))
+-    env.stderr.write('\n\n')
+-    env.stderr.write(repr(plugin_manager))
+-    env.stderr.write('\n')
++    stderr.write('\n\n')
++    stderr.write(repr(env))
++    stderr.write('\n\n')
++    stderr.write(repr(plugin_manager))
++    stderr.write('\n')
+ 
+ 
+ def decode_raw_args(

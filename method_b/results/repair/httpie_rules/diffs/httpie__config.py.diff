@@ -1,0 +1,56 @@
+--- a/httpie/config.py
++++ b/httpie/config.py
+@@ -15,6 +15,9 @@
+ DEFAULT_RELATIVE_LEGACY_CONFIG_DIR = Path('.httpie')
+ DEFAULT_WINDOWS_CONFIG_DIR = Path(
+     os.path.expandvars('%APPDATA%')) / DEFAULT_CONFIG_DIRNAME
++
++DEFAULT_CONFIG_DIR_MODE = 0o700
++DEFAULT_JSON_INDENT = 4
+ 
+ 
+ def get_default_config_dir() -> Path:
+@@ -87,7 +90,7 @@
+         self.path = path
+ 
+     def ensure_directory(self):
+-        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
++        self.path.parent.mkdir(mode=DEFAULT_CONFIG_DIR_MODE, parents=True, exist_ok=True)
+ 
+     def is_new(self) -> bool:
+         return not self.path.exists()
+@@ -107,6 +110,17 @@
+             data = self.pre_process_data(data)
+             self.update(data)
+ 
++    def _write_file(self):
++        self.ensure_directory()
++
++        json_string = json.dumps(
++            obj=self.post_process_data(self),
++            indent=DEFAULT_JSON_INDENT,
++            sort_keys=True,
++            ensure_ascii=True,
++        )
++        self.path.write_text(json_string + '\n', encoding=UTF8)
++
+     def save(self, *, bump_version: bool = False):
+         self.setdefault('__meta__', {})
+         if bump_version or 'httpie' not in self['__meta__']:
+@@ -117,15 +131,7 @@
+         if self.about:
+             self['__meta__']['about'] = self.about
+ 
+-        self.ensure_directory()
+-
+-        json_string = json.dumps(
+-            obj=self.post_process_data(self),
+-            indent=4,
+-            sort_keys=True,
+-            ensure_ascii=True,
+-        )
+-        self.path.write_text(json_string + '\n', encoding=UTF8)
++        self._write_file()
+ 
+     @property
+     def version(self):

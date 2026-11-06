@@ -1,0 +1,51 @@
+--- a/gymdesk/checkin.py
++++ b/gymdesk/checkin.py
+@@ -5,15 +5,35 @@
+ from gymdesk.models import GymClass
+ 
+ 
++class Email:
++    def __init__(self, value: str) -> None:
++        self.value = value.strip().lower()
++
++    def __str__(self) -> str:
++        return self.value
++
++    def normalise(self) -> str:
++        return self.value
++
++    def domain(self) -> str:
++        return self.value.split("@")[1]
++
++
+ class CheckInDesk:
+     def __init__(self, club: GymClub) -> None:
+         self.club = club
+ 
++    def _class_for_booking(self, booking_id: str) -> GymClass:
++        booking = self.club.bookings[booking_id]
++        return self.club.classes[booking.class_id]
++
+     def room_for(self, booking_id: str) -> str:
+-        return self.club.classes[self.club.bookings[booking_id].class_id].room
++        return self._class_for_booking(booking_id).room
+ 
+     def trainer_name_for(self, booking_id: str) -> str:
+-        return self.club.trainers[self.club.classes[self.club.bookings[booking_id].class_id].trainer_id].name
++        class_id = self.club.bookings[booking_id].class_id
++        trainer_id = self.club.classes[class_id].trainer_id
++        return self.club.trainers[trainer_id].name
+ 
+     def check_in(self, booking_id: str) -> str:
+         booking = self.club.bookings[booking_id]
+@@ -28,8 +48,8 @@
+ 
+ 
+ def normalise_email(email: str) -> str:
+-    return email.strip().lower()
++    return Email(email).normalise()
+ 
+ 
+ def email_domain(email: str) -> str:
+-    return email.strip().lower().split("@")[1]
++    return Email(email).domain()

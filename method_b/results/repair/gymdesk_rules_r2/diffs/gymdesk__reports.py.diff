@@ -1,0 +1,55 @@
+--- a/gymdesk/reports.py
++++ b/gymdesk/reports.py
+@@ -5,7 +5,15 @@
+ from pathlib import Path
+ 
+ from gymdesk import club as club_module
++from gymdesk.billing import invoice_total
+ from gymdesk.models import Member, Payment
++
++# Constants for MonthlyReport.loyalty_score magic numbers
++MONTHS_IN_YEAR = 12
++PLUS_TIER_BONUS = 5
++PREMIUM_TIER_BONUS = 10
++BALANCE_PENALTY = 5
++MONTHS_WEIGHT = 0.5
+ 
+ 
+ class MonthlyReport:
+@@ -14,11 +22,11 @@
+         self.title = f"{club.name} monthly report"
+ 
+     def loyalty_score(self, member: Member, today: date) -> float:
+-        months = (today.year - member.joined.year) * 12 + today.month - member.joined.month
+-        tier_bonus = {"basic": 0, "plus": 5, "premium": 10}[member.plan]
++        months = (today.year - member.joined.year) * MONTHS_IN_YEAR + today.month - member.joined.month
++        tier_bonus = {"basic": 0, "plus": PLUS_TIER_BONUS, "premium": PREMIUM_TIER_BONUS}[member.plan]
+         visit_rate = member.visits / max(months, 1)
+-        penalty = 5 if member.balance > 0 else 0
+-        return round(months * 0.5 + visit_rate * 2 + tier_bonus - penalty, 1)
++        penalty = BALANCE_PENALTY if member.balance > 0 else 0
++        return round(months * MONTHS_WEIGHT + visit_rate * 2 + tier_bonus - penalty, 1)
+ 
+     def member_row(self, member: Member) -> str:
+         return (f"{member.member_id},{member.first_name} {member.last_name},"
+@@ -33,14 +41,12 @@
+ 
+ 
+ def revenue_for_member(payments: list[Payment], rebate: float, vat: float) -> float:
+-    acc = 0.0
+-    for p in payments:
+-        if p.amount <= 0:
+-            continue
+-        acc += p.amount * (1 - rebate)
+-    acc = acc * (1 + vat)
+-    return round(acc, 2)
++    return invoice_total(payments, rebate, vat)
++
++
++def _resolve_path_name(path: str) -> str:
++    return Path(path).expanduser().resolve().name
+ 
+ 
+ def report_filename(path: str) -> str:
+-    return Path(path).expanduser().resolve().name
++    return _resolve_path_name(path)

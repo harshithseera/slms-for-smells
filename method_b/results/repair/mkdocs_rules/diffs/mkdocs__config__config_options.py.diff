@@ -1,0 +1,477 @@
+--- a/mkdocs/config/config_options.py
++++ b/mkdocs/config/config_options.py
+@@ -49,6 +49,16 @@
+ log = logging.getLogger(__name__)
+ 
+ 
++def _class_getitem_helper(cls, config_class: type[Config]):
++    """Eliminates the need to write `config_class = FooConfig` when subclassing SubConfig[FooConfig]."""
++    return type(
++        f'{cls.__name__}[{config_class.__name__}]',
++        (cls,),
++        {'config_class': config_class},
++        # TODO: Ideally we'd pass any __orig_bases__ here, but typing.Generic doesn't make it easy.
++    )
++
++
+ class SubConfig(Generic[SomeConfig], BaseConfigOption[SomeConfig]):
+     """
+     Subconfig Config Option.
+@@ -97,8 +107,7 @@
+ 
+     def __class_getitem__(cls, config_class: type[Config]):
+         """Eliminates the need to write `config_class = FooConfig` when subclassing SubConfig[FooConfig]."""
+-        name = f'{cls.__name__}[{config_class.__name__}]'
+-        return type(name, (cls,), dict(config_class=config_class))
++        return _class_getitem_helper(cls, config_class)
+ 
+     def pre_validation(self, config: Config, key_name: str):
+         self._config_file_path = config.config_file_path
+@@ -129,19 +138,22 @@
+     Any value set on the top config gets moved to sub-configs with matching keys.
+     """
+ 
++    def _propagate_values(self, value: dict):
++        to_discard = set()
++        for k1, v1 in self.config_class._schema:
++            if isinstance(v1, SubConfig):
++                for k2, _ in v1.config_class._schema:
++                    if k2 in value:
++                        subdict = value.setdefault(k1, {})
++                        if isinstance(subdict, dict):
++                            to_discard.add(k2)
++                            subdict.setdefault(k2, value[k2])
++        for k in to_discard:
++            del value[k]
++
+     def run_validation(self, value: object):
+         if isinstance(value, dict):
+-            to_discard = set()
+-            for k1, v1 in self.config_class._schema:
+-                if isinstance(v1, SubConfig):
+-                    for k2, _ in v1.config_class._schema:
+-                        if k2 in value:
+-                            subdict = value.setdefault(k1, {})
+-                            if isinstance(subdict, dict):
+-                                to_discard.add(k2)
+-                                subdict.setdefault(k2, value[k2])
+-            for k in to_discard:
+-                del value[k]
++            self._propagate_values(value)
+         return super().run_validation(value)
+ 
+ 
+@@ -208,6 +220,14 @@
+         self._config = config
+         self._key_name = key_name
+ 
++    def _validate_items(self, fake_config):
++        for key_name in fake_config:
++            self.option_type.pre_validation(fake_config, key_name)
++        for key_name in fake_config:
++            fake_config[key_name] = self.option_type.run_validation(fake_config[key_name])
++        for key_name in fake_config:
++            self.option_type.post_validation(fake_config, key_name)
++
+     def run_validation(self, value: object) -> list[T]:
+         if value is None:
+             if self.required or self.default is None:
+@@ -224,19 +244,12 @@
+         except AttributeError:
+             pass
+ 
+-        # Emulate a config-like environment for pre_validation and post_validation.
+         parent_key_name = getattr(self, '_key_name', '')
+         fake_keys = [f'{parent_key_name}[{i}]' for i in range(len(value))]
+         fake_config.data = dict(zip(fake_keys, value))
+ 
+         self.option_type.warnings = self.warnings
+-        for key_name in fake_config:
+-            self.option_type.pre_validation(fake_config, key_name)
+-        for key_name in fake_config:
+-            # Specifically not running `validate` to avoid the OptionallyRequired effect.
+-            fake_config[key_name] = self.option_type.run_validation(fake_config[key_name])
+-        for key_name in fake_config:
+-            self.option_type.post_validation(fake_config, key_name)
++        self._validate_items(fake_config)
+ 
+         return [fake_config[k] for k in fake_keys]
+ 
+@@ -262,6 +275,19 @@
+     def pre_validation(self, config: Config, key_name: str):
+         self._config = config
+         self._key_name = key_name
++
++    def _validate_dict_items(self, fake_config):
++        for key in fake_config:
++            self.option_type.pre_validation(fake_config, key)
++        for key in fake_config:
++            if not isinstance(key, str):
++                raise ValidationError(
++                    f"Expected type: {str} for keys, but received: {type(key)} (key={key})"
++                )
++        for key in fake_config:
++            fake_config[key] = self.option_type.run_validation(fake_config[key])
++        for key in fake_config:
++            self.option_type.post_validation(fake_config, key)
+ 
+     def run_validation(self, value: object) -> dict[str, T]:
+         if value is None:
+@@ -279,21 +305,8 @@
+         except AttributeError:
+             pass
+ 
+-        # Emulate a config-like environment for pre_validation and post_validation.
+         fake_config.data = value
+-
+-        for key in fake_config:
+-            self.option_type.pre_validation(fake_config, key)
+-        for key in fake_config:
+-            if not isinstance(key, str):
+-                raise ValidationError(
+-                    f"Expected type: {str} for keys, but received: {type(key)} (key={key})"
+-                )
+-        for key in fake_config:
+-            # Specifically not running `validate` to avoid the OptionallyRequired effect.
+-            fake_config[key] = self.option_type.run_validation(fake_config[key])
+-        for key in fake_config:
+-            self.option_type.post_validation(fake_config, key)
++        self._validate_dict_items(fake_config)
+ 
+         return value
+ 
+@@ -577,7 +590,6 @@
+         repo_host = urlsplit(config['repo_url']).netloc.lower()
+         edit_uri = config.get('edit_uri')
+ 
+-        # derive repo_name from repo_url if unset
+         if config['repo_url'] is not None and config.get('repo_name') is None:
+             if repo_host == 'github.com':
+                 config['repo_name'] = 'GitHub'
+@@ -588,7 +600,6 @@
+             else:
+                 config['repo_name'] = repo_host.split('.')[0].title()
+ 
+-        # derive edit_uri from repo_name if unset
+         if config['repo_url'] is not None and edit_uri is None:
+             if repo_host == 'github.com' or repo_host == 'gitlab.com':
+                 edit_uri = 'edit/master/docs/'
+@@ -597,7 +608,6 @@
+             else:
+                 edit_uri = ''
+ 
+-        # ensure a well-formed edit_uri
+         if edit_uri and not edit_uri.endswith('/'):
+             edit_uri += '/'
+ 
+@@ -620,7 +630,6 @@
+             elif repo_host == 'bitbucket.org':
+                 edit_uri = 'src/default/docs/'
+ 
+-        # ensure a well-formed edit_uri
+         if edit_uri and not edit_uri.endswith('/'):
+             edit_uri += '/'
+ 
+@@ -672,7 +681,6 @@
+         repo_name = config.get(key_name)
+         repo_url = config.get(self.repo_url_key)
+ 
+-        # derive repo_name from repo_url if unset
+         if repo_url is not None and repo_name is None:
+             repo_host = urlsplit(config['repo_url']).netloc.lower()
+             if repo_host == 'github.com':
+@@ -727,7 +735,6 @@
+         if not config.config_file_path:
+             return
+ 
+-        # Validate that the dir is not the parent dir of the config file.
+         if os.path.dirname(config.config_file_path) == config[key_name]:
+             raise ValidationError(
+                 f"The '{key_name}' should not be the parent directory of the"
+@@ -783,9 +790,6 @@
+         docs_dir = config['docs_dir']
+         site_dir = config['site_dir']
+ 
+-        # Validate that the docs_dir and site_dir don't contain the
+-        # other as this will lead to copying back and forth on each
+-        # and eventually make a deep nested mess.
+         if (docs_dir + os.sep).startswith(site_dir.rstrip(os.sep) + os.sep):
+             raise ValidationError(
+                 f"The 'docs_dir' should not be within the 'site_dir' as this "
+@@ -816,20 +820,21 @@
+     def pre_validation(self, config: Config, key_name: str):
+         self.config_file_path = config.config_file_path
+ 
+-    def run_validation(self, value: object) -> theme.Theme:
++    def _parse_theme_config(self, value: object) -> dict:
+         if value is None and self.default is not None:
+-            theme_config = {'name': self.default}
++            return {'name': self.default}
+         elif isinstance(value, str):
+-            theme_config = {'name': value}
++            return {'name': value}
+         elif isinstance(value, dict):
+             if 'name' not in value:
+                 raise ValidationError("No theme name set.")
+-            theme_config = value
++            return value
+         else:
+             raise ValidationError(
+                 f'Invalid type {type(value)}. Expected a string or key/value pairs.'
+             )
+ 
++    def _validate_theme_fields(self, theme_config: dict):
+         themes = utils.get_theme_names()
+         if theme_config['name'] is not None and theme_config['name'] not in themes:
+             raise ValidationError(
+@@ -840,7 +845,6 @@
+         if not theme_config['name'] and 'custom_dir' not in theme_config:
+             raise ValidationError("At least one of 'name' or 'custom_dir' must be defined.")
+ 
+-        # Ensure custom_dir is an absolute path
+         if 'custom_dir' in theme_config and not os.path.isabs(theme_config['custom_dir']):
+             config_dir = os.path.dirname(self.config_file_path)
+             theme_config['custom_dir'] = os.path.join(config_dir, theme_config['custom_dir'])
+@@ -855,6 +859,9 @@
+         if 'locale' in theme_config and not isinstance(theme_config['locale'], str):
+             raise ValidationError("'locale' must be a string.")
+ 
++    def run_validation(self, value: object) -> theme.Theme:
++        theme_config = self._parse_theme_config(value)
++        self._validate_theme_fields(theme_config)
+         return theme.Theme(**theme_config)
+ 
+ 
+@@ -866,17 +873,29 @@
+     """
+ 
+     def run_validation(self, value: object, *, top=True):
++        if top:
++            return self._run_top_validation(value)
++        return self._run_sub_validation(value)
++
++    def _run_top_validation(self, value: object):
+         if isinstance(value, list):
+             for subitem in value:
+                 self._validate_nav_item(subitem)
+-            if top and not value:
++            if not value:
+                 value = None
+-        elif isinstance(value, dict) and value and not top:
+-            # TODO: this should be an error.
++        else:
++            raise ValidationError(f"Expected nav to be a list, got {self._repr_item(value)}")
++        return value
++
++    def _run_sub_validation(self, value: object):
++        if isinstance(value, list):
++            for subitem in value:
++                self._validate_nav_item(subitem)
++        elif isinstance(value, dict) and value:
+             self.warnings.append(f"Expected nav to be a list, got {self._repr_item(value)}")
+             for subitem in value.values():
+                 self.run_validation(subitem, top=False)
+-        elif isinstance(value, str) and not top:
++        elif isinstance(value, str):
+             pass
+         else:
+             raise ValidationError(f"Expected nav to be a list, got {self._repr_item(value)}")
+@@ -919,13 +938,9 @@
+     """An extra script to be added to the page. The `extra_javascript` config is a list of these."""
+ 
+     path = Type(str)
+-    """The value of the `src` tag of the script."""
+     type = Type(str, default='')
+-    """The value of the `type` tag of the script."""
+     defer = Type(bool, default=False)
+-    """Whether to add the `defer` tag to the script."""
+     async_ = Type(bool, default=False)
+-    """Whether to add the `async` tag to the script."""
+ 
+     def __init__(self, path: str = '', config_file_path=None):
+         super().__init__(config_file_path=config_file_path)
+@@ -955,13 +970,6 @@
+ class MarkdownExtensions(OptionallyRequired[List[str]]):
+     """
+     Markdown Extensions Config Option.
+-
+-    A list or dict of extensions. Each list item may contain either a string or a one item dict.
+-    A string must be a valid Markdown extension name with no config options defined. The key of
+-    a dict item must be a valid Markdown extension name and the value must be a dict of config
+-    options for that extension. Extension configs are set on the private setting passed to
+-    `configkey`. The `builtins` keyword accepts a list of extensions which cannot be overridden by
+-    the user. However, builtins can be duplicated to define config options for them if desired.
+     """
+ 
+     def __init__(
+@@ -985,13 +993,11 @@
+         self.configdata[ext] = cfg
+ 
+     def pre_validation(self, config, key_name):
+-        # To appease validation in case it involves the `!relative` tag.
+-        config._current_page = current_page = SimpleNamespace()  # type: ignore[attr-defined]
++        config._current_page = current_page = SimpleNamespace()
+         current_page.file = SimpleNamespace()
+         current_page.file.src_path = ''
+ 
+-    def run_validation(self, value: object) -> list[str]:
+-        self.configdata: dict[str, dict] = {}
++    def _parse_extensions_value(self, value: object) -> list[str]:
+         if not isinstance(value, (list, tuple, dict)):
+             raise ValidationError('Invalid Markdown Extensions configuration')
+         extensions = []
+@@ -1011,10 +1017,9 @@
+                     extensions.append(item)
+                 else:
+                     raise ValidationError('Invalid Markdown Extensions configuration')
+-
+-        extensions = utils.reduce_list(self.builtins + extensions)
+-
+-        # Confirm that Markdown considers extensions to be valid
++        return extensions
++
++    def _register_extensions(self, extensions: list[str]):
+         md = markdown.Markdown()
+         for ext in extensions:
+             try:
+@@ -1022,7 +1027,7 @@
+             except Exception as e:
+                 stack: list = []
+                 for frame in reversed(traceback.extract_tb(sys.exc_info()[2])):
+-                    if not frame.line:  # Ignore frames before <frozen importlib._bootstrap>
++                    if not frame.line:
+                         break
+                     stack.insert(0, frame)
+                 tb = ''.join(traceback.format_list(stack))
+@@ -1031,19 +1036,21 @@
+                     f"Failed to load extension '{ext}'.\n{tb}{type(e).__name__}: {e}"
+                 )
+ 
++    def run_validation(self, value: object) -> list[str]:
++        self.configdata: dict[str, dict] = {}
++        extensions = self._parse_extensions_value(value)
++        extensions = utils.reduce_list(self.builtins + extensions)
++        self._register_extensions(extensions)
+         return extensions
+ 
+     def post_validation(self, config: Config, key_name: str):
+-        config._current_page = None  # type: ignore[attr-defined]
++        config._current_page = None
+         config[self.configkey] = self.configdata
+ 
+ 
+ class Plugins(OptionallyRequired[plugins.PluginCollection]):
+     """
+     Plugins config option.
+-
+-    A list or dict of plugins. If a plugin defines config options those are used when
+-    initializing the plugin class.
+     """
+ 
+     def __init__(self, theme_key: str | None = None, **kwargs) -> None:
+@@ -1086,12 +1093,10 @@
+                 yield name, cfg
+ 
+     def load_plugin_with_namespace(self, name: str, config) -> tuple[str, plugins.BasePlugin]:
+-        if '/' in name:  # It's already specified with a namespace.
+-            # Special case: allow to explicitly skip namespaced loading:
++        if '/' in name:
+             if name.startswith('/'):
+                 name = name[1:]
+         else:
+-            # Attempt to load with prepended namespace for the current theme.
+             if self.theme_key and self._config:
+                 current_theme = self._config[self.theme_key]
+                 if not isinstance(current_theme, str):
+@@ -1102,42 +1107,7 @@
+                         name = expanded_name
+         return (name, self.load_plugin(name, config))
+ 
+-    def load_plugin(self, name: str, config) -> plugins.BasePlugin:
+-        if name not in self.installed_plugins:
+-            raise ValidationError(f'The "{name}" plugin is not installed')
+-
+-        config = config or {}  # Users may define a null (None) config
+-        if not isinstance(config, dict):
+-            raise ValidationError(f"Invalid config options for the '{name}' plugin.")
+-
+-        self._instance_counter[name] += 1
+-        inst_number = self._instance_counter[name]
+-        inst_name = name
+-        if inst_number > 1:
+-            inst_name += f' #{inst_number}'
+-
+-        plugin = self.plugin_cache.get(inst_name)
+-        if plugin is None:
+-            plugin_cls = self.installed_plugins[name].load()
+-
+-            if not issubclass(plugin_cls, plugins.BasePlugin):
+-                raise ValidationError(
+-                    f'{plugin_cls.__module__}.{plugin_cls.__name__} must be a subclass of'
+-                    f' {plugins.BasePlugin.__module__}.{plugins.BasePlugin.__name__}'
+-                )
+-
+-            plugin = plugin_cls()
+-
+-            if hasattr(plugin, 'on_startup') or hasattr(plugin, 'on_shutdown'):
+-                self.plugin_cache[inst_name] = plugin
+-
+-        if inst_number > 1 and not getattr(plugin, 'supports_multiple_instances', False):
+-            self.warnings.append(
+-                f"Plugin '{name}' was specified multiple times - this is likely a mistake, "
+-                "because the plugin doesn't declare `supports_multiple_instances`."
+-            )
+-
+-        # Only if the plugin doesn't have its own "enabled" config, apply a generic one.
++    def _check_plugin_enabled(self, name: str, config: dict, inst_name: str, plugin: plugins.BasePlugin) -> bool:
+         if 'enabled' in config and not any(pair[0] == 'enabled' for pair in plugin.config_scheme):
+             enabled = config.pop('enabled')
+             if not isinstance(enabled, bool):
+@@ -1146,7 +1116,46 @@
+                 )
+             if not enabled:
+                 log.debug(f"Plugin '{inst_name}' is disabled in the config, skipping.")
+-                return plugin
++                return False
++        return True
++
++    def load_plugin(self, name: str, config) -> plugins.BasePlugin:
++        if name not in self.installed_plugins:
++            raise ValidationError(f'The "{name}" plugin is not installed')
++
++        config = config or {}
++        if not isinstance(config, dict):
++            raise ValidationError(f"Invalid config options for the '{name}' plugin.")
++
++        self._instance_counter[name] += 1
++        inst_number = self._instance_counter[name]
++        inst_name = name
++        if inst_number > 1:
++            inst_name += f' #{inst_number}'
++
++        plugin = self.plugin_cache.get(inst_name)
++        if plugin is None:
++            plugin_cls = self.installed_plugins[name].load()
++
++            if not issubclass(plugin_cls, plugins.BasePlugin):
++                raise ValidationError(
++                    f'{plugin_cls.__module__}.{plugin_cls.__name__} must be a subclass of'
++                    f' {plugins.BasePlugin.__module__}.{plugins.BasePlugin.__name__}'
++                )
++
++            plugin = plugin_cls()
++
++            if hasattr(plugin, 'on_startup') or hasattr(plugin, 'on_shutdown'):
++                self.plugin_cache[inst_name] = plugin
++
++        if inst_number > 1 and not getattr(plugin, 'supports_multiple_instances', False):
++            self.warnings.append(
++                f"Plugin '{name}' was specified multiple times - this is likely a mistake, "
++                "because the plugin doesn't declare `supports_multiple_instances`."
++            )
++
++        if not self._check_plugin_enabled(name, config, inst_name, plugin):
++            return plugin
+ 
+         errors, warns = plugin.load_config(
+             config, self._config.config_file_path if self._config else None

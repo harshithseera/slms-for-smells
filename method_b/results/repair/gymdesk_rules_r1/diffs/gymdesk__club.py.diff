@@ -1,0 +1,129 @@
+--- a/gymdesk/club.py
++++ b/gymdesk/club.py
+@@ -1,11 +1,40 @@
+ """The club: members, trainers, classes, bookings, fees and reports."""
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ from datetime import date, datetime, timedelta
+ 
+ from gymdesk import billing, reports
+ from gymdesk.models import Booking, GymClass, Member, Payment, Trainer
+ from gymdesk.notifications import booking_email, cancellation_email
++
++VISIT_THRESHOLD_FOR_DISCOUNT = 20
++DISCOUNT_RATE = 0.9
++REMINDER_HOURS_AHEAD = 24
++
++
++@dataclass(frozen=True)
++class TimeSlotParams:
++    start: datetime
++    duration_min: int
++    room: str
++
++
++class EmailAddress:
++    def __init__(self, value: str) -> None:
++        if "@" not in value:
++            raise ValueError(f"invalid email {value!r}")
++        self.value = value
++
++    def __str__(self) -> str:
++        return self.value
++
++    def __eq__(self, other: object) -> bool:
++        if isinstance(other, EmailAddress):
++            return self.value == other.value
++        if isinstance(other, str):
++            return self.value == other
++        return False
+ 
+ 
+ class GymClub:
+@@ -50,9 +79,10 @@
+ 
+     def schedule_class(self, class_id: str, title: str, trainer_id: str, start: datetime,
+                        duration_min: int, capacity: int, room: str) -> GymClass:
++        params = TimeSlotParams(start, duration_min, room)
+         if trainer_id not in self.trainers:
+             raise LookupError(f"no trainer {trainer_id}")
+-        gc = GymClass(class_id, title, trainer_id, start, duration_min, capacity, room)
++        gc = GymClass(class_id, title, trainer_id, params.start, params.duration_min, capacity, params.room)
+         self.classes[class_id] = gc
+         return gc
+ 
+@@ -85,8 +115,8 @@
+         total = 0.0
+         for m in self.members.values():
+             fee = billing.monthly_fee(m.plan)
+-            if m.visits > 20:
+-                fee = round(fee * 0.9, 2)
++            if m.visits > VISIT_THRESHOLD_FOR_DISCOUNT:
++                fee = round(fee * DISCOUNT_RATE, 2)
+             m.balance = round(m.balance + fee, 2)
+             total += fee
+         self.audit(f"fees charged {today.isoformat()}")
+@@ -99,18 +129,26 @@
+         return member.balance
+ 
+     def apply_charge(self, member_id: str, amount: float, refund: bool = False) -> float:
++        if refund:
++            return self.apply_refund(member_id, amount)
++        return self._apply_charge_direct(member_id, amount)
++
++    def _apply_charge_direct(self, member_id: str, amount: float) -> float:
+         member = self.find_member(member_id)
+-        if refund:
+-            member.balance = round(member.balance - amount, 2)
+-            self.audit(f"refund {member_id} {amount:.2f}")
+-        else:
+-            member.balance = round(member.balance + amount, 2)
+-            self.audit(f"charge {member_id} {amount:.2f}")
++        member.balance = round(member.balance + amount, 2)
++        self.audit(f"charge {member_id} {amount:.2f}")
+         return member.balance
+ 
+-    def find_by_email(self, email: str) -> Member | None:
++    def apply_refund(self, member_id: str, amount: float) -> float:
++        member = self.find_member(member_id)
++        member.balance = round(member.balance - amount, 2)
++        self.audit(f"refund {member_id} {amount:.2f}")
++        return member.balance
++
++    def find_by_email(self, email: str | EmailAddress) -> Member | None:
++        addr = email if isinstance(email, EmailAddress) else EmailAddress(email)
+         for m in self.members.values():
+-            if m.email == email:
++            if m.email == addr.value:
+                 return m
+         return None
+ 
+@@ -118,12 +156,24 @@
+         return self.find_member(member_id).balance
+ 
+     def send_reminders(self, now: datetime, dry_run: bool = False) -> int:
++        if dry_run:
++            return self._send_reminders_dry_run(now)
++        return self._send_reminders_live(now)
++
++    def _send_reminders_live(self, now: datetime) -> int:
+         sent = 0
+         for b in self.bookings.values():
+             gc = self.classes[b.class_id]
+-            if not b.cancelled and now <= gc.start <= now + timedelta(hours=24):
+-                if not dry_run:
+-                    self.outbox.append(booking_email(self.members[b.member_id], gc))
++            if not b.cancelled and now <= gc.start <= now + timedelta(hours=REMINDER_HOURS_AHEAD):
++                self.outbox.append(booking_email(self.members[b.member_id], gc))
++                sent += 1
++        return sent
++
++    def _send_reminders_dry_run(self, now: datetime) -> int:
++        sent = 0
++        for b in self.bookings.values():
++            gc = self.classes[b.class_id]
++            if not b.cancelled and now <= gc.start <= now + timedelta(hours=REMINDER_HOURS_AHEAD):
+                 sent += 1
+         return sent
+ 

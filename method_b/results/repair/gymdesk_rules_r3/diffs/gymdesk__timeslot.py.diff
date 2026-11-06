@@ -1,0 +1,29 @@
+--- a/gymdesk/timeslot.py
++++ b/gymdesk/timeslot.py
+@@ -2,6 +2,8 @@
+ from __future__ import annotations
+ 
+ from datetime import datetime, timedelta
++
++_SECONDS_PER_MINUTE = 60
+ 
+ 
+ class TimeSlot:
+@@ -18,7 +20,7 @@
+         return cls(start, start + timedelta(minutes=minutes))
+ 
+     def minutes(self) -> int:
+-        return int((self.end - self.start).total_seconds() // 60)
++        return int((self.end - self.start).total_seconds() // _SECONDS_PER_MINUTE)
+ 
+     def overlaps(self, other: TimeSlot) -> bool:
+         return self.start < other.end and other.start < self.end
+@@ -54,7 +56,7 @@
+         if self.overlaps(other):
+             return 0
+         later, earlier = (other, self) if other.start >= self.end else (self, other)
+-        return int((later.start - earlier.end).total_seconds() // 60)
++        return int((later.start - earlier.end).total_seconds() // _SECONDS_PER_MINUTE)
+ 
+     def same_day(self) -> bool:
+         return self.start.date() == (self.end - timedelta(microseconds=1)).date()

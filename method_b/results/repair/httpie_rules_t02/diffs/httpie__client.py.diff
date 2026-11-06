@@ -1,0 +1,167 @@
+--- a/httpie/client.py
++++ b/httpie/client.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ from contextlib import contextmanager
++from dataclasses import dataclass
+ from time import monotonic
+ from typing import Any, Dict, Callable, Iterable
+ from urllib.parse import urlparse, urlunparse
+@@ -40,11 +41,53 @@
+ IGNORE_CONTENT_LENGTH_METHODS = frozenset([HTTP_OPTIONS])
+ 
+ 
++@dataclass
++class RequestContext:
++    env: Environment
++    args: argparse.Namespace
++    request_body_read_callback: Callable[[bytes], None] = None
++
++
++@dataclass
++class SSLContextConfig:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
++@dataclass
++class URLPath:
++    orig_url: str
++    prepped_url: str
++
++    def as_is(self) -> str:
++        parsed_orig, parsed_prepped = urlparse(self.orig_url), urlparse(self.prepped_url)
++        final_dict = {
++            # noinspection PyProtectedMember
++            **parsed_prepped._asdict(),
++            'path': parsed_orig.path,
++        }
++        return urlunparse(tuple(final_dict.values()))
++
++
+ def collect_messages(
+     env: Environment,
+     args: argparse.Namespace,
+     request_body_read_callback: Callable[[bytes], None] = None,
+ ) -> Iterable[RequestsMessage]:
++    context = RequestContext(env=env, args=args, request_body_read_callback=request_body_read_callback)
++    return _collect_messages_impl(context)
++
++
++def _get_verify_from_send_kwargs(send_kwargs_mergeable_from_env: dict) -> bool:
++    return bool(send_kwargs_mergeable_from_env['verify'])
++
++
++def _collect_messages_impl(context: RequestContext) -> Iterable[RequestsMessage]:
++    env = context.env
++    args = context.args
++    request_body_read_callback = context.request_body_read_callback
++
+     httpie_session = None
+     httpie_session_headers = None
+     if args.session or args.session_read_only:
+@@ -65,11 +108,12 @@
+     )
+     send_kwargs = make_send_kwargs(args)
+     send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+-    requests_session = build_requests_session(
++    ssl_config = SSLContextConfig(
+         ssl_version=args.ssl_version,
+         ciphers=args.ciphers,
+-        verify=bool(send_kwargs_mergeable_from_env['verify'])
++        verify=_get_verify_from_send_kwargs(send_kwargs_mergeable_from_env)
+     )
++    requests_session = build_requests_session(ssl_config)
+ 
+     if httpie_session:
+         httpie_session.update_headers(request_kwargs['headers'])
+@@ -154,20 +198,18 @@
+ 
+ 
+ def build_requests_session(
+-    verify: bool,
+-    ssl_version: str = None,
+-    ciphers: str = None,
++    ssl_config: SSLContextConfig,
+ ) -> requests.Session:
+     requests_session = requests.Session()
+ 
+     # Install our adapter.
+     http_adapter = HTTPieHTTPAdapter()
+     https_adapter = HTTPieHTTPSAdapter(
+-        ciphers=ciphers,
+-        verify=verify,
++        ciphers=ssl_config.ciphers,
++        verify=ssl_config.verify,
+         ssl_version=(
+-            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+-            if ssl_version else None
++            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_config.ssl_version]
++            if ssl_config.ssl_version else None
+         ),
+     )
+     requests_session.mount('http://', http_adapter)
+@@ -322,6 +364,24 @@
+     return data
+ 
+ 
++def _process_request_data(args: argparse.Namespace) -> Any:
++    data = args.data
++    auto_json = data and not args.form
++    if (args.json or auto_json) and isinstance(data, dict):
++        data = json_dict_to_request_body(data)
++    return data
++
++
++def _process_request_headers(args: argparse.Namespace, base_headers: HTTPHeadersDict = None) -> HTTPHeadersDict:
++    headers = make_default_headers(args)
++    if base_headers:
++        headers.update(base_headers)
++    headers.update(args.headers)
++    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
++        headers['Transfer-Encoding'] = 'chunked'
++    return finalize_headers(headers)
++
++
+ def make_request_kwargs(
+     env: Environment,
+     args: argparse.Namespace,
+@@ -333,22 +393,8 @@
+ 
+     """
+     files = args.files
+-    # Serialize JSON data, if needed.
+-    data = args.data
+-    auto_json = data and not args.form
+-    if (args.json or auto_json) and isinstance(data, dict):
+-        data = json_dict_to_request_body(data)
+-
+-    # Finalize headers.
+-    headers = make_default_headers(args)
+-    if base_headers:
+-        headers.update(base_headers)
+-    headers.update(args.headers)
+-    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
+-        # When online, we let requests set the header instead to be able more
+-        # easily verify chunking is taking place.
+-        headers['Transfer-Encoding'] = 'chunked'
+-    headers = finalize_headers(headers)
++    data = _process_request_data(args)
++    headers = _process_request_headers(args, base_headers)
+ 
+     if (args.form and files) or args.multipart:
+         data, headers['Content-Type'] = get_multipart_data_and_content_type(
+@@ -391,10 +437,4 @@
+     'http://foo/../?foo=bar'
+ 
+     """
+-    parsed_orig, parsed_prepped = urlparse(orig_url), urlparse(prepped_url)
+-    final_dict = {
+-        # noinspection PyProtectedMember
+-        **parsed_prepped._asdict(),
+-        'path': parsed_orig.path,
+-    }
+-    return urlunparse(tuple(final_dict.values()))
++    return URLPath(orig_url=orig_url, prepped_url=prepped_url).as_is()

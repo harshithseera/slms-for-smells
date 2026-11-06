@@ -1,0 +1,44 @@
+--- a/httpie/legacy/v3_2_0_session_header_format.py
++++ b/httpie/legacy/v3_2_0_session_header_format.py
+@@ -21,6 +21,21 @@
+ '''
+ 
+ OLD_HEADER_STORE_LINK = '\nSee $INSERT_LINK for more information.'
++
++
++def _post_process_dict_or_list(
++    normalized_items: List[Dict[str, Any]],
++    *,
++    original_type: Type[Any],
++    transform_item: Any
++) -> Any:
++    if issubclass(original_type, dict):
++        return {
++            transform_item(item)[0]: transform_item(item)[1]
++            for item in normalized_items
++        }
++    else:
++        return normalized_items
+ 
+ 
+ def pre_process(session: 'Session', headers: Any) -> List[Dict[str, Any]]:
+@@ -54,14 +69,11 @@
+     """Deserialize given header store into the original form it was
+     used in."""
+ 
+-    if issubclass(original_type, dict):
+-        # For the legacy behavior, preserve the last value.
+-        return {
+-            item['name']: item['value']
+-            for item in normalized_headers
+-        }
+-    else:
+-        return normalized_headers
++    return _post_process_dict_or_list(
++        normalized_headers,
++        original_type=original_type,
++        transform_item=lambda item: (item['name'], item['value'])
++    )
+ 
+ 
+ def fix_layout(session: 'Session', *args, **kwargs) -> None:

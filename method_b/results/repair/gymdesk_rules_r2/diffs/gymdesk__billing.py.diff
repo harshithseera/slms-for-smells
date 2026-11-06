@@ -1,0 +1,100 @@
+--- a/gymdesk/billing.py
++++ b/gymdesk/billing.py
+@@ -1,12 +1,38 @@
+ """Membership fees, invoices and late fees."""
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ from datetime import date
+ 
+ from gymdesk.models import Payment
+ 
+ PLAN_PRICES = {"basic": 29.0, "plus": 49.0, "premium": 79.0}
+ EUR_RATES = {"EUR": 1.0, "GBP": 0.86, "USD": 1.08}
++
++
++@dataclass(frozen=True)
++class Currency:
++    code: str
++
++    def __post_init__(self) -> None:
++        object.__setattr__(self, "code", self.code.strip().upper())
++        if self.code not in EUR_RATES:
++            raise ValueError(f"unsupported currency {self.code!r}")
++
++    def format(self, amount: float) -> str:
++        return f"{round(amount, 2):.2f} {self.code}"
++
++    def convert_from(self, amount: float, other: Currency) -> float:
++        if other.code not in EUR_RATES or self.code not in EUR_RATES:
++            raise ValueError(f"unsupported currency")
++        return round(amount / EUR_RATES[other.code] * EUR_RATES[self.code], 2)
++
++
++@dataclass(frozen=True)
++class OverdueInfo:
++    due_date: date
++    paid_date: date
++    grace_days: int
+ 
+ 
+ def monthly_fee(plan: str) -> float:
+@@ -16,36 +42,40 @@
+         raise ValueError(f"unknown plan {plan!r}") from None
+ 
+ 
++def _calculate_revenue(payments: list[Payment], rebate: float, vat: float) -> float:
++    acc = 0.0
++    for p in payments:
++        if p.amount <= 0:
++            continue
++        acc += p.amount * (1 - rebate)
++    acc = acc * (1 + vat)
++    return round(acc, 2)
++
++
+ def invoice_total(payments_due: list[Payment], discount_rate: float, tax_rate: float) -> float:
+-    total = 0.0
+-    for item in payments_due:
+-        if item.amount <= 0:
+-            continue
+-        total += item.amount * (1 - discount_rate)
+-    total = total * (1 + tax_rate)
+-    return round(total, 2)
++    return _calculate_revenue(payments_due, discount_rate, tax_rate)
+ 
+ 
+ def format_amount(amount: float, currency: str) -> str:
+-    code = currency.strip().upper()
+-    if code not in EUR_RATES:
+-        raise ValueError(f"unsupported currency {currency!r}")
+-    return f"{round(amount, 2):.2f} {code}"
++    curr = Currency(currency)
++    return curr.format(amount)
+ 
+ 
+ def convert_amount(amount: float, from_currency: str, to_currency: str) -> float:
+-    src, dst = from_currency.strip().upper(), to_currency.strip().upper()
+-    if src not in EUR_RATES or dst not in EUR_RATES:
+-        raise ValueError(f"unsupported currency {from_currency!r} or {to_currency!r}")
+-    return round(amount / EUR_RATES[src] * EUR_RATES[dst], 2)
++    src = Currency(from_currency)
++    dst = Currency(to_currency)
++    return dst.convert_from(amount, src)
+ 
+ 
+ def days_overdue(due_date: date, paid_date: date, grace_days: int) -> int:
+-    return max(0, (paid_date - due_date).days - grace_days)
++    info = OverdueInfo(due_date=due_date, paid_date=paid_date, grace_days=grace_days)
++    return max(0, (info.paid_date - info.due_date).days - info.grace_days)
+ 
+ 
+ def compute_late_fee(member_id: str, amount: float, due_date: date, paid_date: date, daily_rate: float,
+                      grace_days: int, cap: float, currency: str) -> dict:
+-    days_late = days_overdue(due_date, paid_date, grace_days)
++    info = OverdueInfo(due_date=due_date, paid_date=paid_date, grace_days=grace_days)
++    days_late = days_overdue(info.due_date, info.paid_date, info.grace_days)
+     fee = 0.0 if days_late <= 0 else min(days_late * daily_rate * amount, cap)
+-    return {"member_id": member_id, "fee": round(fee, 2), "currency": currency}
++    curr = Currency(currency)
++    return {"member_id": member_id, "fee": round(fee, 2), "currency": curr.code}

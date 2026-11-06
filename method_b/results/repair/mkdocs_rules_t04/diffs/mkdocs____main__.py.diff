@@ -1,0 +1,130 @@
+--- a/mkdocs/__main__.py
++++ b/mkdocs/__main__.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ import logging
+ import os
+ import shutil
+@@ -23,6 +24,15 @@
+         colorama.init()
+ 
+ log = logging.getLogger(__name__)
++
++
++@dataclass
++class GhDeployParams:
++    message: str | None
++    force: bool
++    no_history: bool
++    ignore_version: bool
++    shell: bool
+ 
+ 
+ def _showwarning(message, category, filename, lineno, file=None, line=None):
+@@ -150,6 +160,8 @@
+     "URL or local path of the registry file that declares all known MkDocs-related projects."
+ )
+ 
++HELP_MAX_CONTENT_WIDTH = 120
++
+ 
+ def add_options(*opts):
+     def inner(f):
+@@ -160,11 +172,15 @@
+     return inner
+ 
+ 
++def _set_log_level(ctx, value, level):
++    state = ctx.ensure_object(State)
++    if value:
++        state.logger.setLevel(level)
++
++
+ def verbose_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.DEBUG)
++        _set_log_level(ctx, value, logging.DEBUG)
+ 
+     return click.option(
+         '-v',
+@@ -178,9 +194,7 @@
+ 
+ def quiet_option(f):
+     def callback(ctx, param, value):
+-        state = ctx.ensure_object(State)
+-        if value:
+-            state.logger.setLevel(logging.ERROR)
++        _set_log_level(ctx, value, logging.ERROR)
+ 
+     return click.option(
+         '-q',
+@@ -237,7 +251,7 @@
+ PKG_DIR = os.path.dirname(os.path.abspath(__file__))
+ 
+ 
+-@click.group(context_settings=dict(help_option_names=['-h', '--help'], max_content_width=120))
++@click.group(context_settings=dict(help_option_names=['-h', '--help'], max_content_width=HELP_MAX_CONTENT_WIDTH))
+ @click.version_option(
+     __version__,
+     '-V',
+@@ -283,11 +297,12 @@
+ 
+     _enable_warnings()
+     cfg = config.load_config(**kwargs)
+-    cfg.plugins.on_startup(command='build', dirty=not clean)
++    plugins = cfg.plugins
++    plugins.on_startup(command='build', dirty=not clean)
+     try:
+         build.build(cfg, dirty=not clean)
+     finally:
+-        cfg.plugins.on_shutdown()
++        plugins.on_shutdown()
+ 
+ 
+ @cli.command(name="gh-deploy")
+@@ -310,18 +325,26 @@
+ 
+     _enable_warnings()
+     cfg = config.load_config(remote_branch=remote_branch, remote_name=remote_name, **kwargs)
+-    cfg.plugins.on_startup(command='gh-deploy', dirty=not clean)
++    plugins = cfg.plugins
++    plugins.on_startup(command='gh-deploy', dirty=not clean)
+     try:
+         build.build(cfg, dirty=not clean)
+     finally:
+-        cfg.plugins.on_shutdown()
+-    gh_deploy.gh_deploy(
+-        cfg,
++        plugins.on_shutdown()
++    gh_params = GhDeployParams(
+         message=message,
+         force=force,
+         no_history=no_history,
+         ignore_version=ignore_version,
+         shell=shell,
++    )
++    gh_deploy.gh_deploy(
++        cfg,
++        message=gh_params.message,
++        force=gh_params.force,
++        no_history=gh_params.no_history,
++        ignore_version=gh_params.ignore_version,
++        shell=gh_params.shell,
+     )
+ 
+ 
+@@ -363,6 +386,9 @@
+     """Create a new MkDocs project."""
+     from mkdocs.commands import new
+ 
++    warnings.warn(
++        "_set_title is no longer used in MkDocs and will be removed soon.", DeprecationWarning
++    )
+     new.new(project_directory)
+ 
+ 

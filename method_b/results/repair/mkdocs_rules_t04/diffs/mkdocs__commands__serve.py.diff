@@ -1,0 +1,151 @@
+--- a/mkdocs/commands/serve.py
++++ b/mkdocs/commands/serve.py
+@@ -3,6 +3,7 @@
+ import logging
+ import shutil
+ import tempfile
++from dataclasses import dataclass
+ from os.path import isdir, isfile, join
+ from typing import TYPE_CHECKING
+ from urllib.parse import urlsplit
+@@ -15,6 +16,57 @@
+     from mkdocs.config.defaults import MkDocsConfig
+ 
+ log = logging.getLogger(__name__)
++
++DEFAULT_ERROR_CODES = (404, 500)
++
++
++@dataclass
++class ServeOptions:
++    config_file: str | None = None
++    livereload: bool = True
++    build_type: str | None = None
++    watch_theme: bool = False
++    watch: list[str] = None
++    open_in_browser: bool = False
++    kwargs: dict = None
++
++    def __post_init__(self):
++        if self.watch is None:
++            self.watch = []
++        if self.kwargs is None:
++            self.kwargs = {}
++
++
++def _get_error_page_content(site_dir: str, code: int) -> bytes | None:
++    if code not in DEFAULT_ERROR_CODES:
++        return None
++    error_page = join(site_dir, f'{code}.html')
++    if not isfile(error_page):
++        return None
++    with open(error_page, 'rb') as f:
++        return f.read()
++
++
++def _setup_livereload_watches(server: LiveReloadServer, config: MkDocsConfig, watch_theme: bool) -> None:
++    server.watch(config.docs_dir)
++    if config.config_file_path:
++        server.watch(config.config_file_path)
++
++    if watch_theme:
++        for d in config.theme.dirs:
++            server.watch(d)
++
++    for item in config.watch:
++        server.watch(item)
++
++
++def _run_server(server: LiveReloadServer, open_in_browser: bool) -> None:
++    try:
++        server.serve(open_in_browser=open_in_browser)
++    except KeyboardInterrupt:
++        log.info("Shutting down...")
++    finally:
++        server.shutdown()
+ 
+ 
+ def serve(
+@@ -34,20 +86,29 @@
+     it will rebuild the documentation and refresh the page automatically
+     whenever a file is edited.
+     """
+-    # Create a temporary build directory, and set some options to serve it
++    options = ServeOptions(
++        config_file=config_file,
++        livereload=livereload,
++        build_type=build_type,
++        watch_theme=watch_theme,
++        watch=watch,
++        open_in_browser=open_in_browser,
++        kwargs=kwargs,
++    )
++
+     site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+ 
+     def get_config():
+         config = load_config(
+-            config_file=config_file,
++            config_file=options.config_file,
+             site_dir=site_dir,
+-            **kwargs,
++            **options.kwargs,
+         )
+-        config.watch.extend(watch)
++        config.watch.extend(options.watch)
+         return config
+ 
+-    is_clean = build_type == 'clean'
+-    is_dirty = build_type == 'dirty'
++    is_clean = options.build_type == 'clean'
++    is_dirty = options.build_type == 'dirty'
+ 
+     config = get_config()
+     config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+@@ -68,42 +129,16 @@
+         builder=builder, host=host, port=port, root=site_dir, mount_path=mount_path
+     )
+ 
+-    def error_handler(code) -> bytes | None:
+-        if code in (404, 500):
+-            error_page = join(site_dir, f'{code}.html')
+-            if isfile(error_page):
+-                with open(error_page, 'rb') as f:
+-                    return f.read()
+-        return None
+-
+-    server.error_handler = error_handler
++    server.error_handler = lambda code: _get_error_page_content(site_dir, code)
+ 
+     try:
+-        # Perform the initial build
+         builder(config)
+ 
+-        if livereload:
+-            # Watch the documentation files, the config file and the theme files.
+-            server.watch(config.docs_dir)
+-            if config.config_file_path:
+-                server.watch(config.config_file_path)
+-
+-            if watch_theme:
+-                for d in config.theme.dirs:
+-                    server.watch(d)
+-
+-            # Run `serve` plugin events.
++        if options.livereload:
++            _setup_livereload_watches(server, config, options.watch_theme)
+             server = config.plugins.on_serve(server, config=config, builder=builder)
+ 
+-            for item in config.watch:
+-                server.watch(item)
+-
+-        try:
+-            server.serve(open_in_browser=open_in_browser)
+-        except KeyboardInterrupt:
+-            log.info("Shutting down...")
+-        finally:
+-            server.shutdown()
++        _run_server(server, options.open_in_browser)
+     finally:
+         config.plugins.on_shutdown()
+         if isdir(site_dir):

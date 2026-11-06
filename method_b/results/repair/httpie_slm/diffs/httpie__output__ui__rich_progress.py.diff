@@ -1,0 +1,50 @@
+--- a/httpie/output/ui/rich_progress.py
++++ b/httpie/output/ui/rich_progress.py
+@@ -5,6 +5,13 @@
+ 
+ if TYPE_CHECKING:
+     from rich.console import Console
++
++
++@dataclass
++class ProgressData:
++    total: Optional[float]
++    at: float
++    description: str
+ 
+ 
+ @dataclass
+@@ -63,9 +70,10 @@
+     def start(
+         self, *, total: Optional[float], at: float, description: str
+     ) -> None:
+-        self.observed = at
++        data = ProgressData(total=total, at=at, description=description)
++        self.observed = data.at
+         self.description = (
+-            f'[progress.description]{description}[/progress.description]'
++            f'[progress.description]{data.description}[/progress.description]'
+         )
+ 
+         self.status = self.console.status(self.description, spinner='line')
+@@ -106,8 +114,9 @@
+             TransferSpeedColumn,
+         )
+ 
+-        assert total is not None
+-        self.console.print(f'[progress.description]{description}')
++        data = ProgressData(total=total, at=at, description=description)
++        assert data.total is not None
++        self.console.print(f'[progress.description]{data.description}')
+         self.progress_bar = Progress(
+             '[',
+             BarColumn(),
+@@ -123,7 +132,7 @@
+         )
+         self.progress_bar.start()
+         self.transfer_task = self.progress_bar.add_task(
+-            description, completed=at, total=total
++            data.description, completed=data.at, total=data.total
+         )
+ 
+     def update(self, steps: float) -> None:

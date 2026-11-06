@@ -1,0 +1,207 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/httpie_slm_t02",
+  "fixed_set": 987,
+  "files": [
+    {
+      "file": "httpie/cli/argparser.py",
+      "findings": 5,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/argtypes.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/definition.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/nested_json/interpret.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/nested_json/parse.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/options.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/requestitems.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/client.py",
+      "findings": 5,
+      "still_passing": 918,
+      "broken": 69,
+      "loads": true,
+      "examples": [
+        "tests.test_cookie_on_redirects::test_explicit_user_set_cookie_in_session[httpbin]",
+        "tests.test_cookie_on_redirects::test_explicit_user_set_cookie_in_session[remote_httpbin]",
+        "tests.test_cookie_on_redirects::test_explicit_user_set_headers[True-httpbin]",
+        "tests.test_cookie_on_redirects::test_explicit_user_set_headers[True-remote_httpbin]",
+        "tests.test_cookie_on_redirects::test_saved_session_cookie_pool"
+      ]
+    },
+    {
+      "file": "httpie/config.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/core.py",
+      "findings": 5,
+      "still_passing": 964,
+      "broken": 23,
+      "loads": true,
+      "examples": [
+        "tests.test_binary.TestBinaryRequestData::test_binary_file_form",
+        "tests.test_binary.TestBinaryRequestData::test_binary_file_path",
+        "tests.test_binary.TestBinaryRequestData::test_binary_stdin",
+        "tests.test_exit_status::test_3xx_check_status_exits_3_and_stderr_when_stdout_redirected",
+        "tests.test_output.TestQuietFlag::test_quiet_quiet_with_check_status_non_zero_pipe"
+      ]
+    },
+    {
+      "file": "httpie/downloads.py",
+      "findings": 4,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/internal/update_warnings.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/manager/tasks/plugins.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/models.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/formatters/colors.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/lexers/http.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/ui/rich_help.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/ui/rich_progress.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/writer.py",
+      "findings": 6,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/sessions.py",
+      "findings": 3,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/ssl_.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/status.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/uploads.py",
+      "findings": 5,
+      "still_passing": 985,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "tests.test_uploads::test_chunked_stdin",
+        "tests.test_uploads::test_chunked_stdin_multiple_chunks"
+      ]
+    }
+  ],
+  "files_safe": 20,
+  "files_breaking": 3
+}

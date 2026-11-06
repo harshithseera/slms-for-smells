@@ -1,0 +1,3033 @@
+id,smell,file,target,source,gate_reason,slm_confirmed,slm_severity,slm_evidence,slm_fix,code,human_label (smell/not/unsure),human_notes
+1,duplicated_logic,mkdocs/__main__.py,mkdocs/__main__.py::verbose_option@163|mkdocs/__main__.py::quiet_option@179,gate,AST similarity 0.981,False,low,Both functions set the logger level based on a flag.,Extract a helper function to set the logger level and call it in both.,"# mkdocs/__main__.py
+def verbose_option(f):
+    def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.DEBUG)
+
+    return click.option(
+        '-v',
+        '--verbose',
+        is_flag=True,
+        expose_value=False,
+        help='Enable verbose output',
+        callback=callback,
+    )(f)
+
+# mkdocs/__main__.py
+def quiet_option(f):
+    def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.ERROR)
+
+    return click.option(
+        '-q',
+        '--quiet',
+        is_flag=True,
+        expose_value=False,
+        help='Silence warnings',
+        callback=callback,
+    )(f)",,
+2,duplicated_logic,mkdocs/__main__.py,mkdocs/__main__.py::new_command@362|mkdocs/structure/pages.py::_set_title@222,gate,AST similarity 0.8,False,,,,"# mkdocs/__main__.py
+def new_command(project_directory):
+    """"""Create a new MkDocs project.""""""
+    from mkdocs.commands import new
+
+    new.new(project_directory)
+
+# mkdocs/structure/pages.py
+def _set_title(self) -> None:
+        warnings.warn(
+            ""_set_title is no longer used in MkDocs and will be removed soon."", DeprecationWarning
+        )",,
+3,duplicated_logic,mkdocs/__main__.py,mkdocs/__main__.py::callback@164|mkdocs/__main__.py::callback@180,gate,AST similarity 0.967,False,,,,"# mkdocs/__main__.py
+def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.DEBUG)
+
+# mkdocs/__main__.py
+def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.ERROR)",,
+4,message_chains,mkdocs/__main__.py,verbose_option,gate,navigates 2 objects deep,False,,,,"def verbose_option(f):
+    def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.DEBUG)
+
+    return click.option(
+        '-v',
+        '--verbose',
+        is_flag=True,
+        expose_value=False,
+        help='Enable verbose output',
+        callback=callback,
+    )(f)",,
+5,message_chains,mkdocs/__main__.py,quiet_option,gate,navigates 2 objects deep,False,,,,"def quiet_option(f):
+    def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value:
+            state.logger.setLevel(logging.ERROR)
+
+    return click.option(
+        '-q',
+        '--quiet',
+        is_flag=True,
+        expose_value=False,
+        help='Silence warnings',
+        callback=callback,
+    )(f)",,
+6,message_chains,mkdocs/__main__.py,color_option,gate,navigates 2 objects deep,False,,,,"def color_option(f):
+    def callback(ctx, param, value):
+        state = ctx.ensure_object(State)
+        if value is False or (
+            value is None
+            and (
+                not sys.stdout.isatty()
+                or os.environ.get('NO_COLOR')
+                or os.environ.get('TERM') == 'dumb'
+            )
+        ):
+            state.stream.setFormatter(logging.Formatter('%(levelname)-8s-  %(message)s'))
+
+    return click.option(
+        '--color/--no-color',
+        is_flag=True,
+        default=None,
+        expose_value=False,
+        help=""Force enable or disable color and wrapping for the output. Default is auto-detect."",
+        callback=callback,
+    )(f)",,
+7,magic_numbers,mkdocs/__main__.py,cli,gate,numeric literals [120] in the function body,False,,,,"def cli():
+    """"""MkDocs - Project documentation with Markdown.""""""",,
+8,message_chains,mkdocs/__main__.py,build_command,gate,navigates 2 objects deep,False,,,,"def build_command(clean, **kwargs):
+    """"""Build the MkDocs documentation.""""""
+    from mkdocs.commands import build
+
+    _enable_warnings()
+    cfg = config.load_config(**kwargs)
+    cfg.plugins.on_startup(command='build', dirty=not clean)
+    try:
+        build.build(cfg, dirty=not clean)
+    finally:
+        cfg.plugins.on_shutdown()",,
+9,message_chains,mkdocs/__main__.py,gh_deploy_command,gate,navigates 2 objects deep,True,medium,cfg.plugins.on_startup() and cfg.plugins.on_shutdown() navigate through cfg's internal structure.,Add methods on cfg to handle on_startup and on_shutdown directly.,"def gh_deploy_command(
+    clean, message, remote_branch, remote_name, force, no_history, ignore_version, shell, **kwargs
+):
+    """"""Deploy your documentation to GitHub Pages.""""""
+    from mkdocs.commands import build, gh_deploy
+
+    _enable_warnings()
+    cfg = config.load_config(remote_branch=remote_branch, remote_name=remote_name, **kwargs)
+    cfg.plugins.on_startup(command='gh-deploy', dirty=not clean)
+    try:
+        build.build(cfg, dirty=not clean)
+    finally:
+        cfg.plugins.on_shutdown()
+    gh_deploy.gh_deploy(
+        cfg,
+        message=message,
+        force=force,
+        no_history=no_history,
+        ignore_version=ignore_version,
+        shell=shell,
+    )",,
+10,data_clumps,mkdocs/__main__.py,mkdocs/__main__.py::gh_deploy_command@305|mkdocs/commands/gh_deploy.py::gh_deploy@100,gate,"parameters ['force', 'ignore_version', 'message', 'no_history', 'shell'] recur in 2 signatures",True,medium,"The parameters 'force', 'ignore_version', 'message', 'no_history', 'shell' are shared between the two functions and describe a related concept.",Introduce a dataclass named 'DeploymentOptions' and pass it to both functions.,"# mkdocs/__main__.py
+def gh_deploy_command(
+    clean, message, remote_branch, remote_name, force, no_history, ignore_version, shell, **kwargs
+):
+    """"""Deploy your documentation to GitHub Pages.""""""
+    from mkdocs.commands import build, gh_deploy
+
+    _enable_warnings()
+    cfg = config.load_config(remote_branch=remote_branch, remote_name=remote_name, **kwargs)
+    cfg.plugins.on_startup(command='gh-deploy', dirty=not clean)
+    try:
+        build.build(cfg, dirty=not clean)
+    finally:
+        cfg.plugins.on_shutdown()
+    gh_deploy.gh_deploy(
+        cfg,
+        message=message,
+        force=force,
+        no_history=no_history,
+        ignore_version=ignore_version,
+        shell=shell,
+    )
+
+# mkdocs/commands/gh_deploy.py
+def gh_deploy(
+    config: MkDocsConfig,
+    message: str | None = None,
+    force=False,
+    no_history=False,
+    ignore_version=False,
+    shell=False,
+) -> None:
+    if not _is_cwd_git_repo():
+        log.error('Cannot deploy - this directory does not appear to be a git repository')
+
+    remote_branch = config.remote_branch
+    remote_name = config.remote_name
+
+    if not ignore_version:
+        _check_version(remote_branch)
+# ...",,
+11,long_parameter_list,mkdocs/__main__.py,_showwarning,rule,6 parameters,True,,,,"def _showwarning(message, category, filename, lineno, file=None, line=None):
+    try:
+        # Last stack frames:
+        # * ...
+        # * Location of call to deprecated function   <-- include this
+        # * Location of call to warn()                <-- include this
+        # * (stdlib) Location of call to showwarning function
+        # * (this function) Location of call to extract_stack()
+        stack = [frame for frame in traceback.extract_stack() if frame.line][-4:-2]
+        # Make sure the actual affected file's name is still present (the case of syntax warning):
+        if not any(frame.filename == filename for frame in stack):
+            stack = stack[-1:] + [traceback.FrameSummary(filename, lineno, '')]
+
+        tb = ''.join(traceback.format_list(stack))
+    except Exception:
+        tb = f'  File ""{filename}"", line {lineno}'
+
+    log.info(f'{category.__name__}: {message}\n{tb}')",,
+12,long_parameter_list,mkdocs/__main__.py,gh_deploy_command,rule,9 parameters,True,,,,"def gh_deploy_command(
+    clean, message, remote_branch, remote_name, force, no_history, ignore_version, shell, **kwargs
+):
+    """"""Deploy your documentation to GitHub Pages.""""""
+    from mkdocs.commands import build, gh_deploy
+
+    _enable_warnings()
+    cfg = config.load_config(remote_branch=remote_branch, remote_name=remote_name, **kwargs)
+    cfg.plugins.on_startup(command='gh-deploy', dirty=not clean)
+    try:
+        build.build(cfg, dirty=not clean)
+    finally:
+        cfg.plugins.on_shutdown()
+    gh_deploy.gh_deploy(
+        cfg,
+        message=message,
+        force=force,
+        no_history=no_history,
+        ignore_version=ignore_version,
+        shell=shell,
+    )",,
+13,primitive_obsession,mkdocs/commands/build.py,get_context,gate,domain values passed as raw primitives and checked or transformed: ['base_url'],False,,,,"def get_context(
+    nav: Navigation,
+    files: Sequence[File] | Files,
+    config: MkDocsConfig,
+    page: Page | None = None,
+    base_url: str = '',
+) -> templates.TemplateContext:
+    """"""Return the template context for a given page or template.""""""
+    if page is not None:
+        base_url = utils.get_relative_url('.', page.url)
+
+    extra_javascript = [
+        utils.normalize_url(str(script), page, base_url) for script in config.extra_javascript
+    ]
+    extra_css = [utils.normalize_url(path, page, base_url) for path in config.extra_css]
+
+    if isinstance(files, Files):
+        files = files.documentation_pages()
+
+    return templates.TemplateContext(
+        nav=nav,
+        pages=files,
+        base_url=base_url,
+        extra_css=extra_css,
+        extra_javascript=extra_javascript,
+        mkdocs_version=mkdocs.__version__,
+        build_date_utc=utils.get_build_datetime(),
+        config=config,
+        page=page,
+    )",,
+14,message_chains,mkdocs/commands/build.py,_build_template,gate,navigates 2 objects deep,True,medium,"config.plugins.on_pre_template(template, template_name=name, config=config)",Add a method on config.plugins that returns the pre-processed template.,"def _build_template(
+    name: str, template: jinja2.Template, files: Files, config: MkDocsConfig, nav: Navigation
+) -> str:
+    """"""Return rendered output for given template as a string.""""""
+    # Run `pre_template` plugin events.
+    template = config.plugins.on_pre_template(template, template_name=name, config=config)
+
+    if utils.is_error_template(name):
+        # Force absolute URLs in the nav of error pages and account for the
+        # possibility that the docs root might be different than the server root.
+        # See https://github.com/mkdocs/mkdocs/issues/77.
+        # However, if site_url is not set, assume the docs root and server root
+        # are the same. See https://github.com/mkdocs/mkdocs/issues/1598.
+        base_url = urlsplit(config.site_url or '/').path
+    else:
+        base_url = utils.get_relative_url('.', name)
+
+    context = get_context(nav, files, config, base_url=base_url)
+
+    # Run `template_context` plugin events.
+    context = config.plugins.on_template_context(context, template_name=name, config=config)
+
+    output = template.render(context)
+
+    # Run `post_template` plugin events.
+    output = config.plugins.on_post_template(output, template_name=name, config=config)
+
+    return output",,
+15,message_chains,mkdocs/commands/build.py,_populate_page,gate,navigates 2 objects deep,True,medium,config.plugins.on_page_content/page.markdown/page_content,Add helper methods on config to return needed data.,"def _populate_page(page: Page, config: MkDocsConfig, files: Files, dirty: bool = False) -> None:
+    """"""Read page content from docs_dir and render Markdown.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only read the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        # Run the `pre_page` plugin event
+        page = config.plugins.on_pre_page(page, config=config, files=files)
+
+        page.read_source(config)
+        assert page.markdown is not None
+
+        # Run `page_markdown` plugin events.
+        page.markdown = config.plugins.on_page_markdown(
+            page.markdown, page=page, config=config, files=files
+        )
+
+        page.render(config, files)
+        assert page.content is not None
+
+        # Run `page_content` plugin events.
+        page.content = config.plugins.on_page_content(
+            page.content, page=page, config=config, files=files
+        )
+    except Exception as e:
+        message = f""Error reading page '{page.file.src_uri}':""
+        # Prevent duplicated the error message because it will be printed immediately afterwards.
+        if not isinstance(e, BuildError):
+            message += f"" {e}""
+        log.error(message)
+        raise
+    finally:
+        config._current_page = None",,
+16,flag_argument,mkdocs/commands/build.py,_populate_page,gate,boolean parameter(s) ['dirty'] select a branch,True,medium,"The function reads the page only if 'dirty' is True, otherwise it skips reading.",Split into two functions: _populate_page_if_dirty and _populate_page_if_not_dirty.,"def _populate_page(page: Page, config: MkDocsConfig, files: Files, dirty: bool = False) -> None:
+    """"""Read page content from docs_dir and render Markdown.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only read the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        # Run the `pre_page` plugin event
+        page = config.plugins.on_pre_page(page, config=config, files=files)
+
+        page.read_source(config)
+        assert page.markdown is not None
+
+        # Run `page_markdown` plugin events.
+        page.markdown = config.plugins.on_page_markdown(
+            page.markdown, page=page, config=config, files=files
+        )
+
+        page.render(config, files)
+        assert page.content is not None
+
+        # Run `page_content` plugin events.
+        page.content = config.plugins.on_page_content(
+            page.content, page=page, config=config, files=files
+        )
+    except Exception as e:
+        message = f""Error reading page '{page.file.src_uri}':""
+        # Prevent duplicated the error message because it will be printed immediately afterwards.
+        if not isinstance(e, BuildError):
+            message += f"" {e}""
+        log.error(message)
+        raise
+    finally:
+        config._current_page = None",,
+17,message_chains,mkdocs/commands/build.py,_build_page,gate,navigates 2 objects deep,False,,,,"def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+
+# ...",,
+18,flag_argument,mkdocs/commands/build.py,_build_page,gate,"boolean parameter(s) ['dirty', 'excluded'] select a branch",True,medium,"The function has two branches based on the 'dirty' and 'excluded' flags, each performing different tasks.","Split the function into two separate functions, one for handling 'dirty' pages and another for handling 'excluded' pages.","def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+
+# ...",,
+19,message_chains,mkdocs/commands/build.py,build,gate,navigates 3 objects deep,True,medium,config.validation.links.anchors,Add a method on config to return the log level.,"def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+    """"""Perform a full site build.""""""
+    logger = logging.getLogger('mkdocs')
+
+    # Add CountHandler for strict mode
+    warning_counter = utils.CountHandler()
+    warning_counter.setLevel(logging.WARNING)
+    if config.strict:
+        logging.getLogger('mkdocs').addHandler(warning_counter)
+
+    inclusion = InclusionLevel.is_in_serve if serve_url else InclusionLevel.is_included
+
+    try:
+        start = time.monotonic()
+
+        # Run `config` plugin events.
+        config = config.plugins.on_config(config)
+
+        # Run `pre_build` plugin events.
+        config.plugins.on_pre_build(config=config)
+
+        if not dirty:
+            log.info(""Cleaning site directory"")
+            utils.clean_directory(config.site_dir)
+        else:  # pragma: no cover
+            # Warn user about problems that may occur with --dirty option
+            log.warning(
+                ""A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other""
+                "" links within your site. This option is designed for site development purposes only.""
+            )
+
+        if not serve_url:  # pragma: no cover
+            log.info(f""Building documentation to directory: {config.site_dir}"")
+            if dirty and site_directory_contains_stale_files(config.site_dir):
+                log.info(""The directory contains stale files. Use --clean to remove them."")
+
+        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+
+        files = get_files(config)
+        env = config.theme.get_env()
+# ...",,
+20,flag_argument,mkdocs/commands/build.py,build,gate,boolean parameter(s) ['dirty'] select a branch,True,medium,"The function 'build' has a 'dirty' flag that switches between cleaning the site directory and not cleaning it, which are two different behaviors.",Split the function into two separate functions: 'build_clean' and 'build_dirty'.,"def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+    """"""Perform a full site build.""""""
+    logger = logging.getLogger('mkdocs')
+
+    # Add CountHandler for strict mode
+    warning_counter = utils.CountHandler()
+    warning_counter.setLevel(logging.WARNING)
+    if config.strict:
+        logging.getLogger('mkdocs').addHandler(warning_counter)
+
+    inclusion = InclusionLevel.is_in_serve if serve_url else InclusionLevel.is_included
+
+    try:
+        start = time.monotonic()
+
+        # Run `config` plugin events.
+        config = config.plugins.on_config(config)
+
+        # Run `pre_build` plugin events.
+        config.plugins.on_pre_build(config=config)
+
+        if not dirty:
+            log.info(""Cleaning site directory"")
+            utils.clean_directory(config.site_dir)
+        else:  # pragma: no cover
+            # Warn user about problems that may occur with --dirty option
+            log.warning(
+                ""A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other""
+                "" links within your site. This option is designed for site development purposes only.""
+            )
+
+        if not serve_url:  # pragma: no cover
+            log.info(f""Building documentation to directory: {config.site_dir}"")
+            if dirty and site_directory_contains_stale_files(config.site_dir):
+                log.info(""The directory contains stale files. Use --clean to remove them."")
+
+        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+
+        files = get_files(config)
+        env = config.theme.get_env()
+# ...",,
+21,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_template@61|mkdocs/commands/build.py::_build_theme_template@91,gate,"parameters ['config', 'files', 'nav'] recur in 6 signatures",True,medium,"The functions share the same parameters (config, files, nav) which describe one concept (a build context).",Introduce a dataclass named BuildContext and pass it to each function.,"# mkdocs/commands/build.py
+def _build_extra_template(template_name: str, files: Files, config: MkDocsConfig, nav: Navigation):
+    """"""Build user templates which are not part of the theme.""""""
+    log.debug(f""Building extra template: {template_name}"")
+
+    file = files.get_file_from_path(template_name)
+    if file is None:
+        log.warning(f""Template skipped: '{template_name}' not found in docs_dir."")
+        return
+
+    try:
+        template = jinja2.Template(file.content_string)
+    except Exception as e:
+        log.warning(f""Error reading template '{template_name}': {e}"")
+        return
+
+    output = _build_template(template_name, template, files, config, nav)
+
+    if output.strip():
+        utils.write_file(output.encode('utf-8'), file.abs_dest_path)
+    else:
+        log.info(f""Template skipped: '{template_name}' generated empty output."")
+
+# mkdocs/commands/build.py
+def _build_template(
+    name: str, template: jinja2.Template, files: Files, config: MkDocsConfig, nav: Navigation
+) -> str:
+    """"""Return rendered output for given template as a string.""""""
+    # Run `pre_template` plugin events.
+    template = config.plugins.on_pre_template(template, template_name=name, config=config)
+
+    if utils.is_error_template(name):
+        # Force absolute URLs in the nav of error pages and account for the
+        # possibility that the docs root might be different than the server root.
+        # See https://github.com/mkdocs/mkdocs/issues/77.
+        # However, if site_url is not set, assume the docs root and server root
+        # are the same. See https://github.com/mkdocs/mkdocs/issues/1598.
+        base_url = urlsplit(config.site_url or '/').path
+    else:
+        base_url = utils.get_relative_url('.', name)
+# ...",,
+22,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_populate_page@147|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_content@364,gate,"parameters ['config', 'files', 'page'] recur in 8 signatures",True,medium,"config, files, page appear in multiple functions with related logic.","Introduce a dataclass named 'PageContext' with fields 'config', 'files', 'page' and pass it to each function.","# mkdocs/commands/build.py
+def _populate_page(page: Page, config: MkDocsConfig, files: Files, dirty: bool = False) -> None:
+    """"""Read page content from docs_dir and render Markdown.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only read the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        # Run the `pre_page` plugin event
+        page = config.plugins.on_pre_page(page, config=config, files=files)
+
+        page.read_source(config)
+        assert page.markdown is not None
+
+        # Run `page_markdown` plugin events.
+        page.markdown = config.plugins.on_page_markdown(
+            page.markdown, page=page, config=config, files=files
+        )
+
+        page.render(config, files)
+        assert page.content is not None
+
+        # Run `page_content` plugin events.
+        page.content = config.plugins.on_page_content(
+            page.content, page=page, config=config, files=files
+        )
+    except Exception as e:
+        message = f""Error reading page '{page.file.src_uri}':""
+        # Prevent duplicated the error message because it will be printed immediately afterwards.
+        if not isinstance(e, BuildError):
+            message += f"" {e}""
+        log.error(message)
+        raise
+    finally:
+        config._current_page = None
+
+# mkdocs/commands/build.py
+def get_context(
+# ...",,
+23,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_context@383,gate,"parameters ['config', 'nav', 'page'] recur in 4 signatures",True,medium,"config, nav, page are shared across functions and form a cohesive concept.","Introduce a dataclass named 'PageContext' with fields config, nav, page and pass it to each function.","# mkdocs/commands/build.py
+def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+# ...",,
+24,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_theme_template@91,gate,"parameters ['config', 'files', 'nav', 'template_name'] recur in 2 signatures",True,medium,"Both functions share the same parameters: template_name, files, config, nav.","Introduce a dataclass named `TemplateContext` with fields `template_name`, `files`, `config`, `nav` and pass it to both functions.","# mkdocs/commands/build.py
+def _build_extra_template(template_name: str, files: Files, config: MkDocsConfig, nav: Navigation):
+    """"""Build user templates which are not part of the theme.""""""
+    log.debug(f""Building extra template: {template_name}"")
+
+    file = files.get_file_from_path(template_name)
+    if file is None:
+        log.warning(f""Template skipped: '{template_name}' not found in docs_dir."")
+        return
+
+    try:
+        template = jinja2.Template(file.content_string)
+    except Exception as e:
+        log.warning(f""Error reading template '{template_name}': {e}"")
+        return
+
+    output = _build_template(template_name, template, files, config, nav)
+
+    if output.strip():
+        utils.write_file(output.encode('utf-8'), file.abs_dest_path)
+    else:
+        log.info(f""Template skipped: '{template_name}' generated empty output."")
+
+# mkdocs/commands/build.py
+def _build_theme_template(
+    template_name: str, env: jinja2.Environment, files: Files, config: MkDocsConfig, nav: Navigation
+) -> None:
+    """"""Build a template using the theme environment.""""""
+    log.debug(f""Building theme template: {template_name}"")
+
+    try:
+        template = env.get_template(template_name)
+    except TemplateNotFound:
+        log.warning(f""Template skipped: '{template_name}' not found in theme directories."")
+        return
+
+    output = _build_template(template_name, template, files, config, nav)
+
+    if output.strip():
+        output_path = os.path.join(config.site_dir, template_name)
+# ...",,
+25,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_build_theme_template@91,gate,"parameters ['config', 'env', 'nav'] recur in 2 signatures",True,medium,"Both functions share the same parameters: config, env, and nav.","Introduce a dataclass named 'BuildContext' with fields 'config', 'env', and 'nav', and pass it to both functions.","# mkdocs/commands/build.py
+def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+# ...",,
+26,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_theme_template@91|mkdocs/plugins.py::on_env@213|mkdocs/plugins.py::on_env@598,gate,"parameters ['config', 'env', 'files'] recur in 3 signatures",True,medium,"config, env, files shared across functions","Introduce a dataclass for config, env, files","# mkdocs/commands/build.py
+def _build_theme_template(
+    template_name: str, env: jinja2.Environment, files: Files, config: MkDocsConfig, nav: Navigation
+) -> None:
+    """"""Build a template using the theme environment.""""""
+    log.debug(f""Building theme template: {template_name}"")
+
+    try:
+        template = env.get_template(template_name)
+    except TemplateNotFound:
+        log.warning(f""Template skipped: '{template_name}' not found in theme directories."")
+        return
+
+    output = _build_template(template_name, template, files, config, nav)
+
+    if output.strip():
+        output_path = os.path.join(config.site_dir, template_name)
+        utils.write_file(output.encode('utf-8'), output_path)
+
+        if template_name == 'sitemap.xml':
+            log.debug(f""Gzipping template: {template_name}"")
+            gz_filename = f'{output_path}.gz'
+            with open(gz_filename, 'wb') as f:
+                timestamp = utils.get_build_timestamp(
+                    pages=[f.page for f in files.documentation_pages() if f.page is not None]
+                )
+                with gzip.GzipFile(
+                    fileobj=f, filename=gz_filename, mode='wb', mtime=timestamp
+                ) as gz_buf:
+                    gz_buf.write(output.encode('utf-8'))
+    else:
+        log.info(f""Template skipped: '{template_name}' generated empty output."")
+
+# mkdocs/plugins.py
+def on_env(
+        self, env: jinja2.Environment, /, *, config: MkDocsConfig, files: Files
+    ) -> jinja2.Environment | None:
+        """"""
+        The `env` event is called after the Jinja template environment is created
+        and can be used to alter the
+# ...",,
+27,data_clumps,mkdocs/commands/build.py,mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_populate_page@147,gate,"parameters ['config', 'dirty', 'page'] recur in 2 signatures",True,medium,"Both functions share the parameters 'page', 'config', and 'dirty'.","Introduce a dataclass named 'BuildContext' with fields 'page', 'config', and 'dirty', and pass it to both functions.","# mkdocs/commands/build.py
+def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+# ...",,
+28,long_method,mkdocs/commands/build.py,_build_page,rule,"62 lines, cyclomatic complexity 8, nesting 2",True,,,,"def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+
+# ...",,
+29,long_parameter_list,mkdocs/commands/build.py,_build_page,rule,7 parameters,True,,,,"def _build_page(
+    page: Page,
+    config: MkDocsConfig,
+    doc_files: Sequence[File],
+    nav: Navigation,
+    env: jinja2.Environment,
+    dirty: bool = False,
+    excluded: bool = False,
+) -> None:
+    """"""Pass a Page to theme template and write output to site_dir.""""""
+    config._current_page = page
+    try:
+        # When --dirty is used, only build the page if the file has been modified since the
+        # previous build of the output.
+        if dirty and not page.file.is_modified():
+            return
+
+        log.debug(f""Building page {page.file.src_uri}"")
+
+        # Activate page. Signals to theme that this is the current page.
+        page.active = True
+
+        context = get_context(nav, doc_files, config, page)
+
+        # Allow 'template:' override in md source files.
+        template = env.get_template(page.meta.get('template', 'main.html'))
+
+        # Run `page_context` plugin events.
+        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+
+        if excluded:
+            page.content = (
+                '<div class=""mkdocs-draft-marker"" title=""This page will not be included into the built site."">'
+                'DRAFT'
+                '</div>' + (page.content or '')
+            )
+
+        # Render the template.
+        output = template.render(context)
+
+# ...",,
+30,long_method,mkdocs/commands/build.py,build,rule,"116 lines, cyclomatic complexity 24, nesting 4",True,,,,"def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+    """"""Perform a full site build.""""""
+    logger = logging.getLogger('mkdocs')
+
+    # Add CountHandler for strict mode
+    warning_counter = utils.CountHandler()
+    warning_counter.setLevel(logging.WARNING)
+    if config.strict:
+        logging.getLogger('mkdocs').addHandler(warning_counter)
+
+    inclusion = InclusionLevel.is_in_serve if serve_url else InclusionLevel.is_included
+
+    try:
+        start = time.monotonic()
+
+        # Run `config` plugin events.
+        config = config.plugins.on_config(config)
+
+        # Run `pre_build` plugin events.
+        config.plugins.on_pre_build(config=config)
+
+        if not dirty:
+            log.info(""Cleaning site directory"")
+            utils.clean_directory(config.site_dir)
+        else:  # pragma: no cover
+            # Warn user about problems that may occur with --dirty option
+            log.warning(
+                ""A 'dirty' build is being performed, this will likely lead to inaccurate navigation and other""
+                "" links within your site. This option is designed for site development purposes only.""
+            )
+
+        if not serve_url:  # pragma: no cover
+            log.info(f""Building documentation to directory: {config.site_dir}"")
+            if dirty and site_directory_contains_stale_files(config.site_dir):
+                log.info(""The directory contains stale files. Use --clean to remove them."")
+
+        # First gather all data from all files/pages to ensure all data is consistent across all pages.
+
+        files = get_files(config)
+        env = config.theme.get_env()
+# ...",,
+31,flag_argument,mkdocs/commands/gh_deploy.py,gh_deploy,gate,boolean parameter(s) ['ignore_version'] select a branch,True,medium,The function gh_deploy has a boolean parameter 'ignore_version' that switches between two different behaviors.,"Split the function into two well-named functions, one for each behavior.","def gh_deploy(
+    config: MkDocsConfig,
+    message: str | None = None,
+    force=False,
+    no_history=False,
+    ignore_version=False,
+    shell=False,
+) -> None:
+    if not _is_cwd_git_repo():
+        log.error('Cannot deploy - this directory does not appear to be a git repository')
+
+    remote_branch = config.remote_branch
+    remote_name = config.remote_name
+
+    if not ignore_version:
+        _check_version(remote_branch)
+
+    if message is None:
+        message = default_message
+    sha = _get_current_sha(os.path.dirname(config.config_file_path))
+    message = message.format(version=mkdocs.__version__, sha=sha)
+
+    log.info(
+        ""Copying '%s' to '%s' branch and pushing to GitHub."",
+        config.site_dir,
+        config.remote_branch,
+    )
+
+    try:
+        ghp_import.ghp_import(
+            config.site_dir,
+            mesg=message,
+            remote=remote_name,
+            branch=remote_branch,
+            push=True,
+            force=force,
+            use_shell=shell,
+            no_history=no_history,
+            nojekyll=True,
+        )
+# ...",,
+32,long_method,mkdocs/commands/gh_deploy.py,gh_deploy,rule,"70 lines, cyclomatic complexity 9, nesting 2",True,,,,"def gh_deploy(
+    config: MkDocsConfig,
+    message: str | None = None,
+    force=False,
+    no_history=False,
+    ignore_version=False,
+    shell=False,
+) -> None:
+    if not _is_cwd_git_repo():
+        log.error('Cannot deploy - this directory does not appear to be a git repository')
+
+    remote_branch = config.remote_branch
+    remote_name = config.remote_name
+
+    if not ignore_version:
+        _check_version(remote_branch)
+
+    if message is None:
+        message = default_message
+    sha = _get_current_sha(os.path.dirname(config.config_file_path))
+    message = message.format(version=mkdocs.__version__, sha=sha)
+
+    log.info(
+        ""Copying '%s' to '%s' branch and pushing to GitHub."",
+        config.site_dir,
+        config.remote_branch,
+    )
+
+    try:
+        ghp_import.ghp_import(
+            config.site_dir,
+            mesg=message,
+            remote=remote_name,
+            branch=remote_branch,
+            push=True,
+            force=force,
+            use_shell=shell,
+            no_history=no_history,
+            nojekyll=True,
+        )
+# ...",,
+33,long_parameter_list,mkdocs/commands/gh_deploy.py,gh_deploy,rule,6 parameters,True,,,,"def gh_deploy(
+    config: MkDocsConfig,
+    message: str | None = None,
+    force=False,
+    no_history=False,
+    ignore_version=False,
+    shell=False,
+) -> None:
+    if not _is_cwd_git_repo():
+        log.error('Cannot deploy - this directory does not appear to be a git repository')
+
+    remote_branch = config.remote_branch
+    remote_name = config.remote_name
+
+    if not ignore_version:
+        _check_version(remote_branch)
+
+    if message is None:
+        message = default_message
+    sha = _get_current_sha(os.path.dirname(config.config_file_path))
+    message = message.format(version=mkdocs.__version__, sha=sha)
+
+    log.info(
+        ""Copying '%s' to '%s' branch and pushing to GitHub."",
+        config.site_dir,
+        config.remote_branch,
+    )
+
+    try:
+        ghp_import.ghp_import(
+            config.site_dir,
+            mesg=message,
+            remote=remote_name,
+            branch=remote_branch,
+            push=True,
+            force=force,
+            use_shell=shell,
+            no_history=no_history,
+            nojekyll=True,
+        )
+# ...",,
+34,magic_numbers,mkdocs/commands/serve.py,serve,gate,"numeric literals [404, 500] in the function body",True,medium,HTTP status codes 404 and 500 are used without explanation.,Define constants for HTTP status codes.,"def serve(
+    config_file: str | None = None,
+    livereload: bool = True,
+    build_type: str | None = None,
+    watch_theme: bool = False,
+    watch: list[str] = [],
+    *,
+    open_in_browser: bool = False,
+    **kwargs,
+) -> None:
+    """"""
+    Start the MkDocs development server.
+
+    By default it will serve the documentation on http://localhost:8000/ and
+    it will rebuild the documentation and refresh the page automatically
+    whenever a file is edited.
+    """"""
+    # Create a temporary build directory, and set some options to serve it
+    site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+
+    def get_config():
+        config = load_config(
+            config_file=config_file,
+            site_dir=site_dir,
+            **kwargs,
+        )
+        config.watch.extend(watch)
+        return config
+
+    is_clean = build_type == 'clean'
+    is_dirty = build_type == 'dirty'
+
+    config = get_config()
+    config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+
+    host, port = config.dev_addr
+    mount_path = urlsplit(config.site_url or '/').path
+    config.site_url = serve_url = _serve_url(host, port, mount_path)
+
+    def builder(config: MkDocsConfig | None = None):
+# ...",,
+35,message_chains,mkdocs/commands/serve.py,serve,gate,navigates 2 objects deep,True,medium,config.plugins.on_startup() and config.plugins.on_serve() navigate through config object's internal attributes.,Add methods on config to return needed data and call those instead.,"def serve(
+    config_file: str | None = None,
+    livereload: bool = True,
+    build_type: str | None = None,
+    watch_theme: bool = False,
+    watch: list[str] = [],
+    *,
+    open_in_browser: bool = False,
+    **kwargs,
+) -> None:
+    """"""
+    Start the MkDocs development server.
+
+    By default it will serve the documentation on http://localhost:8000/ and
+    it will rebuild the documentation and refresh the page automatically
+    whenever a file is edited.
+    """"""
+    # Create a temporary build directory, and set some options to serve it
+    site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+
+    def get_config():
+        config = load_config(
+            config_file=config_file,
+            site_dir=site_dir,
+            **kwargs,
+        )
+        config.watch.extend(watch)
+        return config
+
+    is_clean = build_type == 'clean'
+    is_dirty = build_type == 'dirty'
+
+    config = get_config()
+    config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+
+    host, port = config.dev_addr
+    mount_path = urlsplit(config.site_url or '/').path
+    config.site_url = serve_url = _serve_url(host, port, mount_path)
+
+    def builder(config: MkDocsConfig | None = None):
+# ...",,
+36,flag_argument,mkdocs/commands/serve.py,serve,gate,"boolean parameter(s) ['livereload', 'watch_theme'] select a branch",True,medium,The function serves two different behaviors based on the 'livereload' and 'watch_theme' flags.,"Split the function into two separate functions, one for serving with livereload and one for serving without.","def serve(
+    config_file: str | None = None,
+    livereload: bool = True,
+    build_type: str | None = None,
+    watch_theme: bool = False,
+    watch: list[str] = [],
+    *,
+    open_in_browser: bool = False,
+    **kwargs,
+) -> None:
+    """"""
+    Start the MkDocs development server.
+
+    By default it will serve the documentation on http://localhost:8000/ and
+    it will rebuild the documentation and refresh the page automatically
+    whenever a file is edited.
+    """"""
+    # Create a temporary build directory, and set some options to serve it
+    site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+
+    def get_config():
+        config = load_config(
+            config_file=config_file,
+            site_dir=site_dir,
+            **kwargs,
+        )
+        config.watch.extend(watch)
+        return config
+
+    is_clean = build_type == 'clean'
+    is_dirty = build_type == 'dirty'
+
+    config = get_config()
+    config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+
+    host, port = config.dev_addr
+    mount_path = urlsplit(config.site_url or '/').path
+    config.site_url = serve_url = _serve_url(host, port, mount_path)
+
+    def builder(config: MkDocsConfig | None = None):
+# ...",,
+37,long_method,mkdocs/commands/serve.py,serve,rule,"91 lines, cyclomatic complexity 10, nesting 4",True,,,,"def serve(
+    config_file: str | None = None,
+    livereload: bool = True,
+    build_type: str | None = None,
+    watch_theme: bool = False,
+    watch: list[str] = [],
+    *,
+    open_in_browser: bool = False,
+    **kwargs,
+) -> None:
+    """"""
+    Start the MkDocs development server.
+
+    By default it will serve the documentation on http://localhost:8000/ and
+    it will rebuild the documentation and refresh the page automatically
+    whenever a file is edited.
+    """"""
+    # Create a temporary build directory, and set some options to serve it
+    site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+
+    def get_config():
+        config = load_config(
+            config_file=config_file,
+            site_dir=site_dir,
+            **kwargs,
+        )
+        config.watch.extend(watch)
+        return config
+
+    is_clean = build_type == 'clean'
+    is_dirty = build_type == 'dirty'
+
+    config = get_config()
+    config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+
+    host, port = config.dev_addr
+    mount_path = urlsplit(config.site_url or '/').path
+    config.site_url = serve_url = _serve_url(host, port, mount_path)
+
+    def builder(config: MkDocsConfig | None = None):
+# ...",,
+38,long_parameter_list,mkdocs/commands/serve.py,serve,rule,7 parameters,True,,,,"def serve(
+    config_file: str | None = None,
+    livereload: bool = True,
+    build_type: str | None = None,
+    watch_theme: bool = False,
+    watch: list[str] = [],
+    *,
+    open_in_browser: bool = False,
+    **kwargs,
+) -> None:
+    """"""
+    Start the MkDocs development server.
+
+    By default it will serve the documentation on http://localhost:8000/ and
+    it will rebuild the documentation and refresh the page automatically
+    whenever a file is edited.
+    """"""
+    # Create a temporary build directory, and set some options to serve it
+    site_dir = tempfile.mkdtemp(prefix='mkdocs_')
+
+    def get_config():
+        config = load_config(
+            config_file=config_file,
+            site_dir=site_dir,
+            **kwargs,
+        )
+        config.watch.extend(watch)
+        return config
+
+    is_clean = build_type == 'clean'
+    is_dirty = build_type == 'dirty'
+
+    config = get_config()
+    config.plugins.on_startup(command=('build' if is_clean else 'serve'), dirty=is_dirty)
+
+    host, port = config.dev_addr
+    mount_path = urlsplit(config.site_url or '/').path
+    config.site_url = serve_url = _serve_url(host, port, mount_path)
+
+    def builder(config: MkDocsConfig | None = None):
+# ...",,
+39,duplicated_logic,mkdocs/config/base.py,mkdocs/config/base.py::pre_validation@60|mkdocs/config/base.py::post_validation@75,gate,AST similarity 1.0; cluster of 8 similar functions,False,low,"Both functions have the same signature and docstring, indicating duplicated logic.",Extract a helper method and delegate to it from both functions.,"# mkdocs/config/base.py
+def pre_validation(self, config: Config, key_name: str) -> None:
+        """"""
+        Before all options are validated, perform a pre-validation process.
+
+        The pre-validation process method should be implemented by subclasses.
+        """"""
+
+# mkdocs/config/base.py
+def post_validation(self, config: Config, key_name: str) -> None:
+        """"""
+        After all options have passed validation, perform a post-validation
+        process to do any additional changes dependent on other config values.
+
+        The post-validation process method should be implemented by subclasses.
+        """"""",,
+40,duplicated_logic,mkdocs/config/base.py,mkdocs/config/base.py::run_validation@67|mkdocs/plugins.py::on_config@156,gate,AST similarity 1.0; cluster of 5 similar functions,False,,,,"# mkdocs/config/base.py
+def run_validation(self, value: object, /):
+        """"""
+        Perform validation for a value.
+
+        The run_validation method should be implemented by subclasses.
+        """"""
+        return value
+
+# mkdocs/plugins.py
+def on_config(self, config: MkDocsConfig) -> MkDocsConfig | None:
+        """"""
+        The `config` event is the first event called on build and is run immediately
+        after the user configuration is loaded and validated. Any alterations to the
+        config should be made here.
+
+        Args:
+            config: global configuration object
+
+        Returns:
+            global configuration object
+        """"""
+        return config",,
+41,duplicated_logic,mkdocs/config/base.py,mkdocs/config/base.py::_pre_validate@200|mkdocs/config/base.py::_post_validate@214,gate,AST similarity 0.989,False,low,Both functions perform the same computation with different method calls.,Extract a helper function and make both calls it.,"# mkdocs/config/base.py
+def _pre_validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+        failed: ConfigErrors = []
+        warnings: ConfigWarnings = []
+
+        for key, config_option in self._schema:
+            try:
+                config_option.pre_validation(self, key_name=key)
+                warnings.extend((key, w) for w in config_option.warnings)
+                config_option.reset_warnings()
+            except ValidationError as e:
+                failed.append((key, e))
+
+        return failed, warnings
+
+# mkdocs/config/base.py
+def _post_validate(self) -> tuple[ConfigErrors, ConfigWarnings]:
+        failed: ConfigErrors = []
+        warnings: ConfigWarnings = []
+
+        for key, config_option in self._schema:
+            try:
+                config_option.post_validation(self, key_name=key)
+                warnings.extend((key, w) for w in config_option.warnings)
+                config_option.reset_warnings()
+            except ValidationError as e:
+                failed.append((key, e))
+
+        return failed, warnings",,
+42,duplicated_logic,mkdocs/config/base.py,mkdocs/config/base.py::user_configs@266|mkdocs/theme.py::_vars@86,gate,AST similarity 0.941; cluster of 3 similar functions,False,,,,"# mkdocs/config/base.py
+def user_configs(self) -> Sequence[Mapping[str, Any]]:
+        warnings.warn(
+            ""user_configs is never used in MkDocs and will be removed soon."", DeprecationWarning
+        )
+        return self.__user_configs
+
+# mkdocs/theme.py
+def _vars(self) -> dict[str, Any]:
+        warnings.warn(
+            ""Do not access Theme._vars, instead access the keys of Theme directly."",
+            DeprecationWarning,
+        )
+        return self.__vars",,
+43,long_method,mkdocs/config/base.py,load_config,rule,"53 lines, cyclomatic complexity 12, nesting 3",True,,,,"def load_config(
+    config_file: str | IO | None = None, *, config_file_path: str | None = None, **kwargs
+) -> MkDocsConfig:
+    """"""
+    Load the configuration for a given file object or name.
+
+    The config_file can either be a file object, string or None. If it is None
+    the default `mkdocs.yml` filename will loaded.
+
+    Extra kwargs are passed to the configuration to replace any default values
+    unless they themselves are None.
+    """"""
+    options = kwargs.copy()
+
+    # Filter None values from the options. This usually happens with optional
+    # parameters from Click.
+    for key, value in options.copy().items():
+        if value is None:
+            options.pop(key)
+
+    with _open_config_file(config_file) as fd:
+        # Initialize the config with the default schema.
+        from mkdocs.config.defaults import MkDocsConfig
+
+        if config_file_path is None:
+            if sys.stdin and fd is not sys.stdin.buffer:
+                config_file_path = getattr(fd, 'name', None)
+        cfg = MkDocsConfig(config_file_path=config_file_path)
+        # load the config file
+        cfg.load_file(fd)
+
+    # Then load the options to overwrite anything in the config.
+    cfg.load_dict(options)
+
+    errors, warnings = cfg.validate()
+
+    for config_name, warning in warnings:
+        log.warning(f""Config value '{config_name}': {warning}"")
+
+    for config_name, error in errors:
+# ...",,
+44,duplicated_logic,mkdocs/config/config_options.py,mkdocs/config/config_options.py::__init__@70|mkdocs/config/config_options.py::__init__@76,gate,AST similarity 1.0; cluster of 6 similar functions,False,,,,"# mkdocs/config/config_options.py
+def __init__(
+        self: SubConfig[SomeConfig], config_class: type[SomeConfig], /, *, validate: bool = True
+    ):
+        """"""Create a sub-config in a type-safe way, using fields defined in a Config subclass.""""""
+
+# mkdocs/config/config_options.py
+def __init__(
+        self: SubConfig[LegacyConfig],
+        *config_options: PlainConfigSchemaItem,
+        validate: bool = False,
+    ):
+        """"""Create an untyped sub-config, using directly passed fields.""""""",,
+45,duplicated_logic,mkdocs/config/config_options.py,mkdocs/config/config_options.py::__class_getitem__@98|mkdocs/plugins.py::__class_getitem__@72,gate,AST similarity 1.0,False,low,Both functions perform the same computation with the same parameters and logic.,Extract a helper function and delegate the logic to it.,"# mkdocs/config/config_options.py
+def __class_getitem__(cls, config_class: type[Config]):
+        """"""Eliminates the need to write `config_class = FooConfig` when subclassing SubConfig[FooConfig].""""""
+        name = f'{cls.__name__}[{config_class.__name__}]'
+        return type(name, (cls,), dict(config_class=config_class))
+
+# mkdocs/plugins.py
+def __class_getitem__(cls, config_class: type[Config]):
+        """"""Eliminates the need to write `config_class = FooConfig` when subclassing BasePlugin[FooConfig].""""""
+        name = f'{cls.__name__}[{config_class.__name__}]'
+        return type(name, (cls,), dict(config_class=config_class))",,
+46,duplicated_logic,mkdocs/config/config_options.py,mkdocs/config/config_options.py::run_validation@554|mkdocs/utils/__init__.py::__get__@395,gate,AST similarity 0.8,False,,,,"# mkdocs/config/config_options.py
+def run_validation(self, value: object) -> T | None:
+        if value is None:
+            return None
+        return self.option.validate(value)
+
+# mkdocs/utils/__init__.py
+def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return self.func(instance)",,
+47,duplicated_logic,mkdocs/config/config_options.py,mkdocs/config/config_options.py::__init__@1171|mkdocs/plugins.py::__init__@652,gate,AST similarity 0.809,False,,,,"# mkdocs/config/config_options.py
+def __init__(self, plugins_key: str) -> None:
+        super().__init__()
+        self.default = []
+        self.plugins_key = plugins_key
+
+# mkdocs/plugins.py
+def __init__(self, prefix: str, logger: logging.Logger) -> None:
+        """"""
+        Initialize the logger adapter.
+
+        Arguments:
+            prefix: The string to insert in front of every message.
+            logger: The logger instance.
+        """"""
+        super().__init__(logger, {})
+        self.prefix = prefix",,
+48,message_chains,mkdocs/config/config_options.py,PropagatingSubConfig.run_validation,gate,navigates 2 objects deep,True,medium,The code navigates through self.config_class._schema to reach data.,Add a method on PropagatingSubConfig to return the needed data.,"def run_validation(self, value: object):
+        if isinstance(value, dict):
+            to_discard = set()
+            for k1, v1 in self.config_class._schema:
+                if isinstance(v1, SubConfig):
+                    for k2, _ in v1.config_class._schema:
+                        if k2 in value:
+                            subdict = value.setdefault(k1, {})
+                            if isinstance(subdict, dict):
+                                to_discard.add(k2)
+                                subdict.setdefault(k2, value[k2])
+            for k in to_discard:
+                del value[k]
+        return super().run_validation(value)",,
+49,flag_argument,mkdocs/config/config_options.py,Deprecated.__init__,gate,boolean parameter(s) ['removed'] select a branch,True,medium,The function uses 'removed' to switch between two different message generation behaviors.,Split into two functions: one for deprecated and one for removed.,"def __init__(
+        self,
+        moved_to: str | None = None,
+        message: str | None = None,
+        removed: bool = False,
+        option_type: BaseConfigOption | None = None,
+    ) -> None:
+        super().__init__()
+        self.default = None
+        self.moved_to = moved_to
+        if not message:
+            if removed:
+                message = ""The configuration option '{}' was removed from MkDocs.""
+            else:
+                message = (
+                    ""The configuration option '{}' has been deprecated and ""
+                    ""will be removed in a future release.""
+                )
+            if moved_to:
+                message += f"" Use '{moved_to}' instead.""
+
+        self.message = message
+        self.removed = removed
+        self.option = option_type or BaseConfigOption()
+
+        self.warnings = self.option.warnings",,
+50,flag_argument,mkdocs/config/config_options.py,Nav.run_validation,gate,boolean parameter(s) ['top'] select a branch,True,medium,"The function switches behavior based on the 'top' flag, which controls whether it sets 'value' to None if it's an empty list.",Split into two functions: one for validating a list and another for validating a dictionary.,"def run_validation(self, value: object, *, top=True):
+        if isinstance(value, list):
+            for subitem in value:
+                self._validate_nav_item(subitem)
+            if top and not value:
+                value = None
+        elif isinstance(value, dict) and value and not top:
+            # TODO: this should be an error.
+            self.warnings.append(f""Expected nav to be a list, got {self._repr_item(value)}"")
+            for subitem in value.values():
+                self.run_validation(subitem, top=False)
+        elif isinstance(value, str) and not top:
+            pass
+        else:
+            raise ValidationError(f""Expected nav to be a list, got {self._repr_item(value)}"")
+        return value",,
+51,message_chains,mkdocs/config/config_options.py,MarkdownExtensions.pre_validation,gate,navigates 2 objects deep,False,,,,"def pre_validation(self, config, key_name):
+        # To appease validation in case it involves the `!relative` tag.
+        config._current_page = current_page = SimpleNamespace()  # type: ignore[attr-defined]
+        current_page.file = SimpleNamespace()
+        current_page.file.src_path = ''",,
+52,message_chains,mkdocs/config/config_options.py,Hooks._load_hook,gate,navigates 2 objects deep,False,,,,"def _load_hook(self, name, path):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(name, path)
+        if spec is None:
+            raise ValidationError(f""Cannot import path '{path}' as a Python module"")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        if spec.loader is None:
+            raise ValidationError(f""Cannot import path '{path}' as a Python module"")
+
+        old_sys_path = sys.path.copy()
+        sys.path.insert(0, os.path.dirname(path))
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.path[:] = old_sys_path
+
+        return module",,
+53,message_chains,mkdocs/config/config_options.py,PathSpec.run_validation,gate,navigates 2 objects deep,False,,,,"def run_validation(self, value: object) -> pathspec.gitignore.GitIgnoreSpec:
+        if not isinstance(value, str):
+            raise ValidationError(f'Expected a multiline string, but a {type(value)} was given.')
+        try:
+            return pathspec.gitignore.GitIgnoreSpec.from_lines(lines=value.splitlines())
+        except ValueError as e:
+            raise ValidationError(str(e))",,
+54,data_clumps,mkdocs/config/config_options.py,mkdocs/config/config_options.py::__init__@504|mkdocs/config/config_options.py::__init__@507,gate,"parameters ['default', 'is_dir', 'required'] recur in 2 signatures",True,medium,"The parameters 'default', 'required', and 'is_dir' are shared and describe one concept.","Introduce a dataclass named 'ConfigOption' with fields 'default', 'required', and 'is_dir', and pass it to each function.","# mkdocs/config/config_options.py
+def __init__(self, default=None, *, required: bool, is_dir: bool = False):
+        ...
+
+# mkdocs/config/config_options.py
+def __init__(self, default=None, required=None, is_dir: bool = False) -> None:
+        self.is_dir = is_dir
+        super().__init__(default, required=required)",,
+55,long_method,mkdocs/config/config_options.py,ListOfItems.run_validation,rule,"31 lines, cyclomatic complexity 12, nesting 2",True,,,,"def run_validation(self, value: object) -> list[T]:
+        if value is None:
+            if self.required or self.default is None:
+                raise ValidationError(""Required configuration not provided."")
+            value = self.default
+        if not isinstance(value, list):
+            raise ValidationError(f'Expected a list of items, but a {type(value)} was given.')
+        if not value:  # Optimization for empty list
+            return value
+
+        fake_config = LegacyConfig(())
+        try:
+            fake_config.config_file_path = self._config.config_file_path
+        except AttributeError:
+            pass
+
+        # Emulate a config-like environment for pre_validation and post_validation.
+        parent_key_name = getattr(self, '_key_name', '')
+        fake_keys = [f'{parent_key_name}[{i}]' for i in range(len(value))]
+        fake_config.data = dict(zip(fake_keys, value))
+
+        self.option_type.warnings = self.warnings
+        for key_name in fake_config:
+            self.option_type.pre_validation(fake_config, key_name)
+        for key_name in fake_config:
+            # Specifically not running `validate` to avoid the OptionallyRequired effect.
+            fake_config[key_name] = self.option_type.run_validation(fake_config[key_name])
+        for key_name in fake_config:
+            self.option_type.post_validation(fake_config, key_name)
+
+        return [fake_config[k] for k in fake_keys]",,
+56,long_method,mkdocs/config/config_options.py,DictOfItems.run_validation,rule,"33 lines, cyclomatic complexity 12, nesting 2",True,,,,"def run_validation(self, value: object) -> dict[str, T]:
+        if value is None:
+            if self.required or self.default is None:
+                raise ValidationError(""Required configuration not provided."")
+            value = self.default
+        if not isinstance(value, dict):
+            raise ValidationError(f""Expected a dict of items, but a {type(value)} was given."")
+        if not value:  # Optimization for empty list
+            return value
+
+        fake_config = LegacyConfig(())
+        try:
+            fake_config.config_file_path = self._config.config_file_path
+        except AttributeError:
+            pass
+
+        # Emulate a config-like environment for pre_validation and post_validation.
+        fake_config.data = value
+
+        for key in fake_config:
+            self.option_type.pre_validation(fake_config, key)
+        for key in fake_config:
+            if not isinstance(key, str):
+                raise ValidationError(
+                    f""Expected type: {str} for keys, but received: {type(key)} (key={key})""
+                )
+        for key in fake_config:
+            # Specifically not running `validate` to avoid the OptionallyRequired effect.
+            fake_config[key] = self.option_type.run_validation(fake_config[key])
+        for key in fake_config:
+            self.option_type.post_validation(fake_config, key)
+
+        return value",,
+57,long_method,mkdocs/config/config_options.py,RepoURL.post_validation,rule,"29 lines, cyclomatic complexity 13, nesting 4",True,,,,"def post_validation(self, config: Config, key_name: str):
+        repo_host = urlsplit(config['repo_url']).netloc.lower()
+        edit_uri = config.get('edit_uri')
+
+        # derive repo_name from repo_url if unset
+        if config['repo_url'] is not None and config.get('repo_name') is None:
+            if repo_host == 'github.com':
+                config['repo_name'] = 'GitHub'
+            elif repo_host == 'bitbucket.org':
+                config['repo_name'] = 'Bitbucket'
+            elif repo_host == 'gitlab.com':
+                config['repo_name'] = 'GitLab'
+            else:
+                config['repo_name'] = repo_host.split('.')[0].title()
+
+        # derive edit_uri from repo_name if unset
+        if config['repo_url'] is not None and edit_uri is None:
+            if repo_host == 'github.com' or repo_host == 'gitlab.com':
+                edit_uri = 'edit/master/docs/'
+            elif repo_host == 'bitbucket.org':
+                edit_uri = 'src/default/docs/'
+            else:
+                edit_uri = ''
+
+        # ensure a well-formed edit_uri
+        if edit_uri and not edit_uri.endswith('/'):
+            edit_uri += '/'
+
+        config['edit_uri'] = edit_uri",,
+58,long_method,mkdocs/config/config_options.py,Theme.run_validation,rule,"40 lines, cyclomatic complexity 16, nesting 4",True,,,,"def run_validation(self, value: object) -> theme.Theme:
+        if value is None and self.default is not None:
+            theme_config = {'name': self.default}
+        elif isinstance(value, str):
+            theme_config = {'name': value}
+        elif isinstance(value, dict):
+            if 'name' not in value:
+                raise ValidationError(""No theme name set."")
+            theme_config = value
+        else:
+            raise ValidationError(
+                f'Invalid type {type(value)}. Expected a string or key/value pairs.'
+            )
+
+        themes = utils.get_theme_names()
+        if theme_config['name'] is not None and theme_config['name'] not in themes:
+            raise ValidationError(
+                f""Unrecognised theme name: '{theme_config['name']}'. ""
+                f""The available installed themes are: {', '.join(themes)}""
+            )
+
+        if not theme_config['name'] and 'custom_dir' not in theme_config:
+            raise ValidationError(""At least one of 'name' or 'custom_dir' must be defined."")
+
+        # Ensure custom_dir is an absolute path
+        if 'custom_dir' in theme_config and not os.path.isabs(theme_config['custom_dir']):
+            config_dir = os.path.dirname(self.config_file_path)
+            theme_config['custom_dir'] = os.path.join(config_dir, theme_config['custom_dir'])
+
+        if 'custom_dir' in theme_config and not os.path.isdir(theme_config['custom_dir']):
+            raise ValidationError(
+                ""The path set in custom_dir ('{path}') does not exist."".format(
+                    path=theme_config['custom_dir']
+                )
+            )
+
+        if 'locale' in theme_config and not isinstance(theme_config['locale'], str):
+            raise ValidationError(""'locale' must be a string."")
+
+        return theme.Theme(**theme_config)",,
+59,long_method,mkdocs/config/config_options.py,Nav.run_validation,rule,"16 lines, cyclomatic complexity 11, nesting 3",True,,,,"def run_validation(self, value: object, *, top=True):
+        if isinstance(value, list):
+            for subitem in value:
+                self._validate_nav_item(subitem)
+            if top and not value:
+                value = None
+        elif isinstance(value, dict) and value and not top:
+            # TODO: this should be an error.
+            self.warnings.append(f""Expected nav to be a list, got {self._repr_item(value)}"")
+            for subitem in value.values():
+                self.run_validation(subitem, top=False)
+        elif isinstance(value, str) and not top:
+            pass
+        else:
+            raise ValidationError(f""Expected nav to be a list, got {self._repr_item(value)}"")
+        return value",,
+60,long_method,mkdocs/config/config_options.py,MarkdownExtensions.run_validation,rule,"42 lines, cyclomatic complexity 12, nesting 4",True,,,,"def run_validation(self, value: object) -> list[str]:
+        self.configdata: dict[str, dict] = {}
+        if not isinstance(value, (list, tuple, dict)):
+            raise ValidationError('Invalid Markdown Extensions configuration')
+        extensions = []
+        if isinstance(value, dict):
+            for ext, cfg in value.items():
+                self.validate_ext_cfg(ext, cfg)
+                extensions.append(ext)
+        else:
+            for item in value:
+                if isinstance(item, dict):
+                    if len(item) > 1:
+                        raise ValidationError('Invalid Markdown Extensions configuration')
+                    ext, cfg = item.popitem()
+                    self.validate_ext_cfg(ext, cfg)
+                    extensions.append(ext)
+                elif isinstance(item, str):
+                    extensions.append(item)
+                else:
+                    raise ValidationError('Invalid Markdown Extensions configuration')
+
+        extensions = utils.reduce_list(self.builtins + extensions)
+
+        # Confirm that Markdown considers extensions to be valid
+        md = markdown.Markdown()
+        for ext in extensions:
+            try:
+                md.registerExtensions((ext,), self.configdata)
+            except Exception as e:
+                stack: list = []
+                for frame in reversed(traceback.extract_tb(sys.exc_info()[2])):
+                    if not frame.line:  # Ignore frames before <frozen importlib._bootstrap>
+                        break
+                    stack.insert(0, frame)
+                tb = ''.join(traceback.format_list(stack))
+
+                raise ValidationError(
+                    f""Failed to load extension '{ext}'.\n{tb}{type(e).__name__}: {e}""
+                )
+# ...",,
+61,long_method,mkdocs/config/config_options.py,Plugins.load_plugin,rule,"61 lines, cyclomatic complexity 21, nesting 2",True,,,,"def load_plugin(self, name: str, config) -> plugins.BasePlugin:
+        if name not in self.installed_plugins:
+            raise ValidationError(f'The ""{name}"" plugin is not installed')
+
+        config = config or {}  # Users may define a null (None) config
+        if not isinstance(config, dict):
+            raise ValidationError(f""Invalid config options for the '{name}' plugin."")
+
+        self._instance_counter[name] += 1
+        inst_number = self._instance_counter[name]
+        inst_name = name
+        if inst_number > 1:
+            inst_name += f' #{inst_number}'
+
+        plugin = self.plugin_cache.get(inst_name)
+        if plugin is None:
+            plugin_cls = self.installed_plugins[name].load()
+
+            if not issubclass(plugin_cls, plugins.BasePlugin):
+                raise ValidationError(
+                    f'{plugin_cls.__module__}.{plugin_cls.__name__} must be a subclass of'
+                    f' {plugins.BasePlugin.__module__}.{plugins.BasePlugin.__name__}'
+                )
+
+            plugin = plugin_cls()
+
+            if hasattr(plugin, 'on_startup') or hasattr(plugin, 'on_shutdown'):
+                self.plugin_cache[inst_name] = plugin
+
+        if inst_number > 1 and not getattr(plugin, 'supports_multiple_instances', False):
+            self.warnings.append(
+                f""Plugin '{name}' was specified multiple times - this is likely a mistake, ""
+                ""because the plugin doesn't declare `supports_multiple_instances`.""
+            )
+
+        # Only if the plugin doesn't have its own ""enabled"" config, apply a generic one.
+        if 'enabled' in config and not any(pair[0] == 'enabled' for pair in plugin.config_scheme):
+            enabled = config.pop('enabled')
+            if not isinstance(enabled, bool):
+                raise ValidationError(
+# ...",,
+62,message_chains,mkdocs/contrib/search/__init__.py,SearchPlugin.on_config,gate,navigates 3 objects deep,False,low,config.theme.locale.language,Add a method on config to return the language.,"def on_config(self, config: MkDocsConfig, **kwargs) -> MkDocsConfig:
+        """"""Add plugin templates and scripts to config.""""""
+        if config.theme.get('include_search_page'):
+            config.theme.static_templates.add('search.html')
+        if not config.theme.get('search_index_only'):
+            path = os.path.join(base_path, 'templates')
+            config.theme.dirs.append(path)
+            if 'search/main.js' not in config.extra_javascript:
+                config.extra_javascript.append('search/main.js')  # type: ignore
+        if self.config.lang is None:
+            # lang setting undefined. Set default based on theme locale
+            validate = _PluginConfig.lang.run_validation
+            self.config.lang = validate(config.theme.locale.language)
+        # The `python` method of `prebuild_index` is pending deprecation as of version 1.2.
+        # TODO: Raise a deprecation warning in a future release (1.3?).
+        if self.config.prebuild_index == 'python':
+            log.info(
+                ""The 'python' method of the search plugin's 'prebuild_index' config option ""
+                ""is pending deprecation and will not be supported in a future release.""
+            )
+        return config",,
+63,long_method,mkdocs/contrib/search/__init__.py,SearchPlugin.on_post_build,rule,"26 lines, cyclomatic complexity 11, nesting 3",True,,,,"def on_post_build(self, config: MkDocsConfig, **kwargs) -> None:
+        """"""Build search index.""""""
+        output_base_path = os.path.join(config.site_dir, 'search')
+        search_index = self.search_index.generate_search_index()
+        json_output_path = os.path.join(output_base_path, 'search_index.json')
+        utils.write_file(search_index.encode('utf-8'), json_output_path)
+
+        assert self.config.lang is not None
+        if not config.theme.get('search_index_only'):
+            # Include language support files in output. Copy them directly
+            # so that only the needed files are included.
+            files = []
+            if len(self.config.lang) > 1 or 'en' not in self.config.lang:
+                files.append('lunr.stemmer.support.js')
+            if len(self.config.lang) > 1:
+                files.append('lunr.multi.js')
+            if 'ja' in self.config.lang or 'jp' in self.config.lang:
+                files.append('tinyseg.js')
+            for lang in self.config.lang:
+                if lang != 'en':
+                    files.append(f'lunr.{lang}.js')
+
+            for filename in files:
+                from_path = os.path.join(base_path, 'lunr-language', filename)
+                to_path = os.path.join(output_base_path, filename)
+                utils.copy_file(from_path, to_path)",,
+64,magic_numbers,mkdocs/livereload/__init__.py,LiveReloadServer.__init__,gate,numeric literals [0.1] in the function body,False,low,0.1 is used as a polling interval and build delay.,Define constants for polling_interval and build_delay.,"def __init__(
+        self,
+        builder: Callable[[], None],
+        host: str,
+        port: int,
+        root: str,
+        mount_path: str = ""/"",
+        polling_interval: float = 0.5,
+        shutdown_delay: float = 0.25,
+    ) -> None:
+        self.builder = builder
+        try:
+            if isinstance(ipaddress.ip_address(host), ipaddress.IPv6Address):
+                self.address_family = socket.AF_INET6
+        except Exception:
+            pass
+        self.root = os.path.abspath(root)
+        self.mount_path = _normalize_mount_path(mount_path)
+        self.url = _serve_url(host, port, mount_path)
+        self.build_delay = 0.1
+        self.shutdown_delay = shutdown_delay
+        # To allow custom error pages.
+        self.error_handler: Callable[[int], bytes | None] = lambda code: None
+
+        super().__init__((host, port), _Handler, bind_and_activate=False)
+        self.set_app(self.serve_request)
+
+        self._wanted_epoch = _timestamp()  # The version of the site that started building.
+        self._visible_epoch = self._wanted_epoch  # Latest fully built version of the site.
+        self._epoch_cond = threading.Condition()  # Must be held when accessing _visible_epoch.
+
+        self._want_rebuild: bool = False
+        self._rebuild_cond = threading.Condition()  # Must be held when accessing _want_rebuild.
+
+        self._shutdown = False
+        self.serve_thread = threading.Thread(target=lambda: self.serve_forever(shutdown_delay))
+        self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval)
+
+        self._watched_paths: dict[str, int] = {}
+        self._watch_refs: dict[str, Any] = {}",,
+65,message_chains,mkdocs/livereload/__init__.py,LiveReloadServer.__init__,gate,navigates 2 objects deep,True,medium,self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval),Add a method on watchdog.observers.polling.PollingObserver to return the observer instance.,"def __init__(
+        self,
+        builder: Callable[[], None],
+        host: str,
+        port: int,
+        root: str,
+        mount_path: str = ""/"",
+        polling_interval: float = 0.5,
+        shutdown_delay: float = 0.25,
+    ) -> None:
+        self.builder = builder
+        try:
+            if isinstance(ipaddress.ip_address(host), ipaddress.IPv6Address):
+                self.address_family = socket.AF_INET6
+        except Exception:
+            pass
+        self.root = os.path.abspath(root)
+        self.mount_path = _normalize_mount_path(mount_path)
+        self.url = _serve_url(host, port, mount_path)
+        self.build_delay = 0.1
+        self.shutdown_delay = shutdown_delay
+        # To allow custom error pages.
+        self.error_handler: Callable[[int], bytes | None] = lambda code: None
+
+        super().__init__((host, port), _Handler, bind_and_activate=False)
+        self.set_app(self.serve_request)
+
+        self._wanted_epoch = _timestamp()  # The version of the site that started building.
+        self._visible_epoch = self._wanted_epoch  # Latest fully built version of the site.
+        self._epoch_cond = threading.Condition()  # Must be held when accessing _visible_epoch.
+
+        self._want_rebuild: bool = False
+        self._rebuild_cond = threading.Condition()  # Must be held when accessing _want_rebuild.
+
+        self._shutdown = False
+        self.serve_thread = threading.Thread(target=lambda: self.serve_forever(shutdown_delay))
+        self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval)
+
+        self._watched_paths: dict[str, int] = {}
+        self._watch_refs: dict[str, Any] = {}",,
+66,flag_argument,mkdocs/livereload/__init__.py,LiveReloadServer.serve,gate,boolean parameter(s) ['open_in_browser'] select a branch,True,medium,The function serves the same purpose but with an optional browser opening.,Split into two functions: serve_without_browser and serve_with_browser.,"def serve(self, *, open_in_browser=False):
+        self.server_bind()
+        self.server_activate()
+
+        if self._watched_paths:
+            self.observer.start()
+
+            paths_str = "", "".join(f""'{_try_relativize_path(path)}'"" for path in self._watched_paths)
+            log.info(f""Watching paths for changes: {paths_str}"")
+
+        if open_in_browser:
+            log.info(f""Serving on {self.url} and opening it in a browser"")
+        else:
+            log.info(f""Serving on {self.url}"")
+        self.serve_thread.start()
+        if open_in_browser:
+            webbrowser.open(self.url)
+
+        self._build_loop()",,
+67,flag_argument,mkdocs/livereload/__init__.py,LiveReloadServer.shutdown,gate,boolean parameter(s) ['wait'] select a branch,True,medium,The function performs two different actions based on the 'wait' flag.,Split into two functions: 'shutdown' and 'shutdown_and_wait'.,"def shutdown(self, wait=False) -> None:
+        self.observer.stop()
+        with self._rebuild_cond:
+            self._shutdown = True
+            self._rebuild_cond.notify_all()
+
+        if self.serve_thread.is_alive():
+            super().shutdown()
+        self.server_close()
+        if wait:
+            self.serve_thread.join()
+            self.observer.join()",,
+68,magic_numbers,mkdocs/livereload/__init__.py,LiveReloadServer.serve_request,gate,"numeric literals [500, 404] in the function body",False,,,,"def serve_request(self, environ, start_response) -> Iterable[bytes]:
+        try:
+            result = self._serve_request(environ, start_response)
+        except Exception:
+            code = 500
+            msg = ""500 Internal Server Error""
+            log.exception(msg)
+        else:
+            if result is not None:
+                return result
+            code = 404
+            msg = ""404 Not Found""
+
+        error_content = None
+        try:
+            error_content = self.error_handler(code)
+        except Exception:
+            log.exception(""Failed to render an error message!"")
+        if error_content is None:
+            error_content = msg.encode()
+
+        start_response(msg, [(""Content-Type"", ""text/html"")])
+        return [error_content]",,
+69,magic_numbers,mkdocs/livereload/__init__.py,_timestamp,gate,numeric literals [1000] in the function body,False,low,The literal 1000 is used to convert seconds to milliseconds.,Name the conversion factor as a module constant.,"def _timestamp() -> int:
+    return round(time.monotonic() * 1000)",,
+70,long_parameter_list,mkdocs/livereload/__init__.py,LiveReloadServer.__init__,rule,7 parameters,True,,,,"def __init__(
+        self,
+        builder: Callable[[], None],
+        host: str,
+        port: int,
+        root: str,
+        mount_path: str = ""/"",
+        polling_interval: float = 0.5,
+        shutdown_delay: float = 0.25,
+    ) -> None:
+        self.builder = builder
+        try:
+            if isinstance(ipaddress.ip_address(host), ipaddress.IPv6Address):
+                self.address_family = socket.AF_INET6
+        except Exception:
+            pass
+        self.root = os.path.abspath(root)
+        self.mount_path = _normalize_mount_path(mount_path)
+        self.url = _serve_url(host, port, mount_path)
+        self.build_delay = 0.1
+        self.shutdown_delay = shutdown_delay
+        # To allow custom error pages.
+        self.error_handler: Callable[[int], bytes | None] = lambda code: None
+
+        super().__init__((host, port), _Handler, bind_and_activate=False)
+        self.set_app(self.serve_request)
+
+        self._wanted_epoch = _timestamp()  # The version of the site that started building.
+        self._visible_epoch = self._wanted_epoch  # Latest fully built version of the site.
+        self._epoch_cond = threading.Condition()  # Must be held when accessing _visible_epoch.
+
+        self._want_rebuild: bool = False
+        self._rebuild_cond = threading.Condition()  # Must be held when accessing _want_rebuild.
+
+        self._shutdown = False
+        self.serve_thread = threading.Thread(target=lambda: self.serve_forever(shutdown_delay))
+        self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval)
+
+        self._watched_paths: dict[str, int] = {}
+        self._watch_refs: dict[str, Any] = {}",,
+71,long_method,mkdocs/livereload/__init__.py,LiveReloadServer._serve_request,rule,"62 lines, cyclomatic complexity 12, nesting 4",True,,,,"def _serve_request(self, environ, start_response) -> Iterable[bytes] | None:
+        # https://bugs.python.org/issue16679
+        # https://github.com/bottlepy/bottle/blob/f9b1849db4/bottle.py#L984
+        path = environ[""PATH_INFO""].encode(""latin-1"").decode(""utf-8"", ""ignore"")
+
+        if path.startswith(""/livereload/""):
+            if m := re.fullmatch(r""/livereload/([0-9]+)/[0-9]+"", path):
+                epoch = int(m[1])
+                start_response(""200 OK"", [(""Content-Type"", ""text/plain"")])
+
+                def condition():
+                    return self._visible_epoch > epoch
+
+                with self._epoch_cond:
+                    if not condition():
+                        # Stall the browser, respond as soon as there's something new.
+                        # If there's not, respond anyway after a minute.
+                        self._log_poll_request(environ.get(""HTTP_REFERER""), request_id=path)
+                        self._epoch_cond.wait_for(condition, timeout=self.poll_response_timeout)
+                    return [b""%d"" % self._visible_epoch]
+
+        if (path + ""/"").startswith(self.mount_path):
+            rel_file_path = path[len(self.mount_path) :]
+
+            if path.endswith(""/""):
+                rel_file_path += ""index.html""
+            # Prevent directory traversal - normalize the path.
+            rel_file_path = posixpath.normpath(""/"" + rel_file_path).lstrip(""/"")
+            file_path = os.path.join(self.root, rel_file_path)
+        elif path == ""/"":
+            start_response(""302 Found"", [(""Location"", urllib.parse.quote(self.mount_path))])
+            return []
+        else:
+            return None  # Not found
+
+        # Wait until the ongoing rebuild (if any) finishes, so we're not serving a half-built site.
+        with self._epoch_cond:
+            self._epoch_cond.wait_for(lambda: self._visible_epoch == self._wanted_epoch)
+            epoch = self._visible_epoch
+
+# ...",,
+72,duplicated_logic,mkdocs/plugins.py,mkdocs/config/base.py::pre_validation@60|mkdocs/plugins.py::on_startup@100,gate,AST similarity 1.0; cluster of 28 similar functions,False,low,Both functions have the same structure but serve different purposes.,Extract a helper function and delegate the logic to it.,"# mkdocs/config/base.py
+def pre_validation(self, config: Config, key_name: str) -> None:
+        """"""
+        Before all options are validated, perform a pre-validation process.
+
+        The pre-validation process method should be implemented by subclasses.
+        """"""
+
+# mkdocs/plugins.py
+def on_startup(self, *, command: Literal['build', 'gh-deploy', 'serve'], dirty: bool) -> None:
+        """"""
+        The `startup` event runs once at the very beginning of an `mkdocs` invocation.
+
+        New in MkDocs 1.4.
+
+        The presence of an `on_startup` method (even if empty) migrates the plugin to the new
+        system where the plugin object is kept across builds within one `mkdocs serve`.
+
+        Note that for initializing variables, the `__init__` method is still preferred.
+        For initializing per-build variables (and whenever in doubt), use the `on_config` event.
+
+        Args:
+            command: the command that MkDocs was invoked with, e.g. ""serve"" for `mkdocs serve`.
+            dirty: whether `--dirty` flag was passed.
+        """"""",,
+73,duplicated_logic,mkdocs/plugins.py,mkdocs/plugins.py::on_serve@581|mkdocs/plugins.py::on_pre_template@607,gate,AST similarity 1.0; cluster of 6 similar functions,False,,,,"# mkdocs/plugins.py
+def on_serve(
+        self, server: LiveReloadServer, *, config: MkDocsConfig, builder: Callable
+    ) -> LiveReloadServer:
+        return self.run_event('serve', server, config=config, builder=builder)
+
+# mkdocs/plugins.py
+def on_pre_template(
+        self, template: jinja2.Template, *, template_name: str, config: MkDocsConfig
+    ) -> jinja2.Template:
+        return self.run_event('pre_template', template, template_name=template_name, config=config)",,
+74,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_serve@134|mkdocs/plugins.py::on_serve@581,gate,"parameters ['builder', 'config', 'server'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_serve(
+        self, server: LiveReloadServer, /, *, config: MkDocsConfig, builder: Callable
+    ) -> LiveReloadServer | None:
+        """"""
+        The `serve` event is only called when the `serve` command is used during
+        development. It runs only once, after the first build finishes.
+        It is passed the `Server` instance which can be modified before
+        it is activated. For example, additional files or directories could be added
+        to the list of ""watched"" files for auto-reloading.
+
+        Args:
+            server: `livereload.Server` instance
+            config: global configuration object
+            builder: a callable which gets passed to each call to `server.watch`
+
+        Returns:
+            `livereload.Server` instance
+        """"""
+        return server
+
+# mkdocs/plugins.py
+def on_serve(
+        self, server: LiveReloadServer, *, config: MkDocsConfig, builder: Callable
+    ) -> LiveReloadServer:
+        return self.run_event('serve', server, config=config, builder=builder)",,
+75,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_pre_template@254|mkdocs/plugins.py::on_pre_template@607,gate,"parameters ['config', 'template', 'template_name'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_pre_template(
+        self, template: jinja2.Template, /, *, template_name: str, config: MkDocsConfig
+    ) -> jinja2.Template | None:
+        """"""
+        The `pre_template` event is called immediately after the subject template is
+        loaded and can be used to alter the template.
+
+        Args:
+            template: a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
+            template_name: string filename of template
+            config: global configuration object
+
+        Returns:
+            a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
+        """"""
+        return template
+
+# mkdocs/plugins.py
+def on_pre_template(
+        self, template: jinja2.Template, *, template_name: str, config: MkDocsConfig
+    ) -> jinja2.Template:
+        return self.run_event('pre_template', template, template_name=template_name, config=config)",,
+76,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_template_context@271|mkdocs/plugins.py::on_template_context@612,gate,"parameters ['config', 'context', 'template_name'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_template_context(
+        self, context: TemplateContext, /, *, template_name: str, config: MkDocsConfig
+    ) -> TemplateContext | None:
+        """"""
+        The `template_context` event is called immediately after the context is created
+        for the subject template and can be used to alter the context for that specific
+        template only.
+
+        Args:
+            context: dict of template context variables
+            template_name: string filename of template
+            config: global configuration object
+
+        Returns:
+            dict of template context variables
+        """"""
+        return context
+
+# mkdocs/plugins.py
+def on_template_context(
+        self, context: TemplateContext, *, template_name: str, config: MkDocsConfig
+    ) -> TemplateContext:
+        return self.run_event(
+            'template_context', context, template_name=template_name, config=config
+        )",,
+77,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_post_template@289|mkdocs/plugins.py::on_post_template@619,gate,"parameters ['config', 'output_content', 'template_name'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_post_template(
+        self, output_content: str, /, *, template_name: str, config: MkDocsConfig
+    ) -> str | None:
+        """"""
+        The `post_template` event is called after the template is rendered, but before
+        it is written to disc and can be used to alter the output of the template.
+        If an empty string is returned, the template is skipped and nothing is is
+        written to disc.
+
+        Args:
+            output_content: output of rendered template as string
+            template_name: string filename of template
+            config: global configuration object
+
+        Returns:
+            output of rendered template as string
+        """"""
+        return output_content
+
+# mkdocs/plugins.py
+def on_post_template(
+        self, output_content: str, *, template_name: str, config: MkDocsConfig
+    ) -> str:
+        return self.run_event(
+            'post_template', output_content, template_name=template_name, config=config
+        )",,
+78,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_page_markdown@345|mkdocs/plugins.py::on_page_markdown@632,gate,"parameters ['config', 'files', 'markdown', 'page'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_page_markdown(
+        self, markdown: str, /, *, page: Page, config: MkDocsConfig, files: Files
+    ) -> str | None:
+        """"""
+        The `page_markdown` event is called after the page's markdown is loaded
+        from file and can be used to alter the Markdown source text. The meta-
+        data has been stripped off and is available as `page.meta` at this point.
+
+        Args:
+            markdown: Markdown source text of page as string
+            page: `mkdocs.structure.pages.Page` instance
+            config: global configuration object
+            files: global files collection
+
+        Returns:
+            Markdown source text of page as string
+        """"""
+        return markdown
+
+# mkdocs/plugins.py
+def on_page_markdown(
+        self, markdown: str, *, page: Page, config: MkDocsConfig, files: Files
+    ) -> str:
+        return self.run_event('page_markdown', markdown, page=page, config=config, files=files)",,
+79,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_page_content@364|mkdocs/plugins.py::on_page_content@637,gate,"parameters ['config', 'files', 'html', 'page'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_page_content(
+        self, html: str, /, *, page: Page, config: MkDocsConfig, files: Files
+    ) -> str | None:
+        """"""
+        The `page_content` event is called after the Markdown text is rendered to
+        HTML (but before being passed to a template) and can be used to alter the
+        HTML body of the page.
+
+        Args:
+            html: HTML rendered from Markdown source as string
+            page: `mkdocs.structure.pages.Page` instance
+            config: global configuration object
+            files: global files collection
+
+        Returns:
+            HTML rendered from Markdown source as string
+        """"""
+        return html
+
+# mkdocs/plugins.py
+def on_page_content(self, html: str, *, page: Page, config: MkDocsConfig, files: Files) -> str:
+        return self.run_event('page_content', html, page=page, config=config, files=files)",,
+80,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_page_context@383|mkdocs/plugins.py::on_page_context@640,gate,"parameters ['config', 'context', 'nav', 'page'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_page_context(
+        self, context: TemplateContext, /, *, page: Page, config: MkDocsConfig, nav: Navigation
+    ) -> TemplateContext | None:
+        """"""
+        The `page_context` event is called after the context for a page is created
+        and can be used to alter the context for that specific page only.
+
+        Args:
+            context: dict of template context variables
+            page: `mkdocs.structure.pages.Page` instance
+            config: global configuration object
+            nav: global navigation object
+
+        Returns:
+            dict of template context variables
+        """"""
+        return context
+
+# mkdocs/plugins.py
+def on_page_context(
+        self, context: TemplateContext, *, page: Page, config: MkDocsConfig, nav: Navigation
+    ) -> TemplateContext:
+        return self.run_event('page_context', context, page=page, config=config, nav=nav)",,
+81,data_clumps,mkdocs/plugins.py,mkdocs/plugins.py::on_post_page@401|mkdocs/plugins.py::on_post_page@645,gate,"parameters ['config', 'output', 'page'] recur in 2 signatures",False,,,,"# mkdocs/plugins.py
+def on_post_page(self, output: str, /, *, page: Page, config: MkDocsConfig) -> str | None:
+        """"""
+        The `post_page` event is called after the template is rendered, but
+        before it is written to disc and can be used to alter the output of the
+        page. If an empty string is returned, the page is skipped and nothing is
+        written to disc.
+
+        Args:
+            output: output of rendered template as string
+            page: `mkdocs.structure.pages.Page` instance
+            config: global configuration object
+
+        Returns:
+            output of rendered template as string
+        """"""
+        return output
+
+# mkdocs/plugins.py
+def on_post_page(self, output: str, *, page: Page, config: MkDocsConfig) -> str:
+        return self.run_event('post_page', output, page=page, config=config)",,
+82,duplicated_logic,mkdocs/structure/files.py,mkdocs/structure/files.py::src_uris@86|mkdocs/structure/nav.py::active@66,gate,AST similarity 0.875; cluster of 4 similar functions,False,,,,"# mkdocs/structure/files.py
+def src_uris(self) -> Mapping[str, File]:
+        """"""
+        A mapping containing every file, with the keys being their
+        [`src_uri`][mkdocs.structure.files.File.src_uri].
+        """"""
+        return self._src_uris
+
+# mkdocs/structure/nav.py
+def active(self) -> bool:
+        """"""
+        When `True`, indicates that a child page of this section is the current page and
+        can be used to highlight the section as the currently viewed section. Defaults
+        to `False`.
+        """"""
+        return self.__active",,
+83,duplicated_logic,mkdocs/structure/files.py,mkdocs/structure/files.py::generated@271|mkdocs/structure/files.py::generated@287,gate,AST similarity 1.0; cluster of 5 similar functions,False,low,Both functions have the same structure and perform the same computation.,Extract a helper function to handle the common logic.,"# mkdocs/structure/files.py
+def generated(
+        cls,
+        config: MkDocsConfig,
+        src_uri: str,
+        *,
+        content: str | bytes,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> File:
+        """"""
+        Create a virtual file backed by in-memory content.
+
+        It will pretend to be a file in the docs dir at `src_uri`.
+        """"""
+
+# mkdocs/structure/files.py
+def generated(
+        cls,
+        config: MkDocsConfig,
+        src_uri: str,
+        *,
+        abs_src_path: str,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> File:
+        """"""
+        Create a virtual file backed by a physical temporary file at `abs_src_path`.
+
+        It will pretend to be a file in the docs dir at `src_uri`.
+        """"""",,
+84,duplicated_logic,mkdocs/structure/files.py,mkdocs/structure/files.py::content_bytes@426|mkdocs/structure/files.py::content_string@450,gate,AST similarity 0.924,True,medium,Both functions perform the same computation with minor differences in encoding and error handling.,Extract a helper function to handle the common logic and call it from both `content_bytes` and `content_string`.,"# mkdocs/structure/files.py
+def content_bytes(self) -> bytes:
+        """"""
+        Get the content of this file as a bytestring.
+
+        May raise if backed by a real file (`abs_src_path`) if it cannot be read.
+
+        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
+        """"""
+        content = self._content
+        if content is None:
+            assert self.abs_src_path is not None
+            with open(self.abs_src_path, 'rb') as f:
+                return f.read()
+        if not isinstance(content, bytes):
+            content = content.encode()
+        return content
+
+# mkdocs/structure/files.py
+def content_string(self) -> str:
+        """"""
+        Get the content of this file as a string. Assumes UTF-8 encoding, may raise.
+
+        May also raise if backed by a real file (`abs_src_path`) if it cannot be read.
+
+        If used as a setter, it defines the content of the file, and `abs_src_path` becomes unset.
+        """"""
+        content = self._content
+        if content is None:
+            assert self.abs_src_path is not None
+            with open(self.abs_src_path, encoding='utf-8-sig', errors='strict') as f:
+                return f.read()
+        if not isinstance(content, str):
+            content = content.decode('utf-8-sig', errors='strict')
+        return content",,
+85,message_chains,mkdocs/structure/files.py,Files.add_files_from_theme,gate,navigates 2 objects deep,True,medium,config.theme.dirs and config.theme.static_templates accessed through config object.,Add methods on config to return theme dirs and static templates.,"def add_files_from_theme(self, env: jinja2.Environment, config: MkDocsConfig) -> None:
+        """"""Retrieve static files from Jinja environment and add to collection.""""""
+
+        def filter(name):
+            # '.*' filters dot files/dirs at root level whereas '*/.*' filters nested levels
+            patterns = ['.*', '*/.*', '*.py', '*.pyc', '*.html', '*readme*', 'mkdocs_theme.yml']
+            # Exclude translation files
+            patterns.append(""locales/*"")
+            patterns.extend(f'*{x}' for x in utils.markdown_extensions)
+            patterns.extend(config.theme.static_templates)
+            for pattern in patterns:
+                if fnmatch.fnmatch(name.lower(), pattern):
+                    return False
+            return True
+
+        for path in env.list_templates(filter_func=filter):
+            # Theme files do not override docs_dir files
+            if self.get_file_from_path(path) is None:
+                for dir in config.theme.dirs:
+                    # Find the first theme dir which contains path
+                    if os.path.isfile(os.path.join(dir, path)):
+                        self.append(File(path, dir, config.site_dir, config.use_directory_urls))
+                        break",,
+86,message_chains,mkdocs/structure/files.py,File.generated,gate,navigates 2 objects deep,False,,,,"def generated(
+        cls,
+        config: MkDocsConfig,
+        src_uri: str,
+        *,
+        content: str | bytes,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> File:
+        """"""
+        Create a virtual file backed by in-memory content.
+
+        It will pretend to be a file in the docs dir at `src_uri`.
+        """"""",,
+87,flag_argument,mkdocs/structure/files.py,File.copy_file,gate,boolean parameter(s) ['dirty'] select a branch,True,medium,Function copies file differently based on 'dirty' flag.,Split into two functions: 'copy_file' and 'copy_file_if_modified'.,"def copy_file(self, dirty: bool = False) -> None:
+        """"""Copy source file to destination, ensuring parent directories exist.""""""
+        if dirty and not self.is_modified():
+            log.debug(f""Skip copying unmodified file: '{self.src_uri}'"")
+            return
+        log.debug(f""Copying media file: '{self.src_uri}'"")
+        output_path = self.abs_dest_path
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        content = self._content
+        if content is None:
+            assert self.abs_src_path is not None
+            try:
+                utils.copy_file(self.abs_src_path, output_path)
+            except shutil.SameFileError:
+                pass  # Let plugins write directly into site_dir.
+        elif isinstance(content, str):
+            with open(output_path, 'w', encoding='utf-8') as output_file:
+                output_file.write(content)
+        else:
+            with open(output_path, 'wb') as output_file:
+                output_file.write(content)",,
+88,message_chains,mkdocs/structure/files.py,get_files,gate,navigates 2 objects deep,True,medium,The method navigates through 'a.inclusion.is_included()' and 'b.inclusion.is_included()' to reach data that could be provided directly by the first object.,Add a method on 'a' or 'b' that returns the needed data and call that instead of navigating.,"def get_files(config: MkDocsConfig) -> Files:
+    """"""Walk the `docs_dir` and return a Files collection.""""""
+    files: list[File] = []
+    conflicting_files: list[tuple[File, File]] = []
+    for source_dir, dirnames, filenames in os.walk(config['docs_dir'], followlinks=True):
+        relative_dir = os.path.relpath(source_dir, config['docs_dir'])
+        dirnames.sort()
+        filenames.sort(key=_file_sort_key)
+
+        files_by_dest: dict[str, File] = {}
+        for filename in filenames:
+            file = File(
+                os.path.join(relative_dir, filename),
+                config['docs_dir'],
+                config['site_dir'],
+                config['use_directory_urls'],
+            )
+            # Skip README.md if an index file also exists in dir (part 1)
+            prev_file = files_by_dest.setdefault(file.dest_uri, file)
+            if prev_file is not file:
+                conflicting_files.append((prev_file, file))
+            files.append(file)
+            prev_file = file
+
+    set_exclusions(files, config)
+    # Skip README.md if an index file also exists in dir (part 2)
+    for a, b in conflicting_files:
+        if b.inclusion.is_included():
+            if a.inclusion.is_included():
+                log.warning(
+                    f""Excluding '{a.src_uri}' from the site because it conflicts with '{b.src_uri}'.""
+                )
+            try:
+                files.remove(a)
+            except ValueError:
+                pass  # Catching this to avoid errors if attempting to remove the same file twice.
+        else:
+            try:
+                files.remove(b)
+            except ValueError:
+# ...",,
+89,flag_argument,mkdocs/structure/files.py,_filter_paths,gate,boolean parameter(s) ['is_dir'] select a branch,True,medium,The function uses 'is_dir' to switch between two different behaviors.,Split into two functions: one for directories and one for files.,"def _filter_paths(basename: str, path: str, is_dir: bool, exclude: Iterable[str]) -> bool:
+    warnings.warn(
+        ""_filter_paths is not used since MkDocs 1.5 and will be removed soon."", DeprecationWarning
+    )
+    for item in exclude:
+        # Items ending in '/' apply only to directories.
+        if item.endswith('/') and not is_dir:
+            continue
+        # Items starting with '/' apply to the whole path.
+        # In any other cases just the basename is used.
+        match = path if item.startswith('/') else basename
+        if fnmatch.fnmatch(match, item.strip('/')):
+            return True
+    return False",,
+90,data_clumps,mkdocs/structure/files.py,mkdocs/structure/files.py::generated@271|mkdocs/structure/files.py::generated@287,gate,"parameters ['config', 'inclusion', 'src_uri'] recur in 2 signatures",False,low,"config, inclusion, src_uri appear in both functions.","Introduce a dataclass for config, inclusion, src_uri.","# mkdocs/structure/files.py
+def generated(
+        cls,
+        config: MkDocsConfig,
+        src_uri: str,
+        *,
+        content: str | bytes,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> File:
+        """"""
+        Create a virtual file backed by in-memory content.
+
+        It will pretend to be a file in the docs dir at `src_uri`.
+        """"""
+
+# mkdocs/structure/files.py
+def generated(
+        cls,
+        config: MkDocsConfig,
+        src_uri: str,
+        *,
+        abs_src_path: str,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> File:
+        """"""
+        Create a virtual file backed by a physical temporary file at `abs_src_path`.
+
+        It will pretend to be a file in the docs dir at `src_uri`.
+        """"""",,
+91,long_parameter_list,mkdocs/structure/files.py,File.__init__,rule,6 parameters,True,,,,"def __init__(
+        self,
+        path: str,
+        src_dir: str | None,
+        dest_dir: str,
+        use_directory_urls: bool,
+        *,
+        dest_uri: str | None = None,
+        inclusion: InclusionLevel = InclusionLevel.UNDEFINED,
+    ) -> None:
+        self.src_path = path
+        self.src_dir = src_dir
+        self.dest_dir = dest_dir
+        self.use_directory_urls = use_directory_urls
+        if dest_uri is not None:
+            self.dest_uri = dest_uri
+        self.inclusion = inclusion",,
+92,duplicated_logic,mkdocs/structure/nav.py,mkdocs/structure/nav.py::active@75|mkdocs/structure/pages.py::active@119,gate,AST similarity 1.0,False,low,Both functions set active status and propagate it to parent.,Extract a helper method to set active status and propagate it.,"# mkdocs/structure/nav.py
+def active(self, value: bool):
+        """"""Set active status of section and ancestors.""""""
+        self.__active = bool(value)
+        if self.parent is not None:
+            self.parent.active = bool(value)
+
+# mkdocs/structure/pages.py
+def active(self, value: bool):
+        """"""Set active status of page and ancestors.""""""
+        self.__active = bool(value)
+        if self.parent is not None:
+            self.parent.active = bool(value)",,
+93,message_chains,mkdocs/structure/nav.py,get_navigation,gate,navigates 3 objects deep,True,medium,The method navigates through multiple objects to reach data that could be provided directly.,Add a method on the first object that returns what the caller needs.,"def get_navigation(files: Files, config: MkDocsConfig) -> Navigation:
+    """"""Build site navigation from config and files.""""""
+    documentation_pages = files.documentation_pages()
+    nav_config = config['nav']
+    if nav_config is None:
+        documentation_pages = sorted(documentation_pages, key=file_sort_key)
+        nav_config = nest_paths(f.src_uri for f in documentation_pages if f.inclusion.is_in_nav())
+    items = _data_to_navigation(nav_config, files, config)
+    if not isinstance(items, list):
+        items = [items]
+
+    # Get only the pages from the navigation, ignoring any sections and links.
+    pages = _get_by_type(items, Page)
+
+    # Include next, previous and parent links.
+    _add_previous_and_next_links(pages)
+    _add_parent_links(items)
+
+    missing_from_config = []
+    for file in documentation_pages:
+        if file.page is None:
+            # Any documentation files not found in the nav should still have an associated page, so we
+            # create them here. The Page object will automatically be assigned to `file.page` during
+            # its creation (and this is the only way in which these page objects are accessible).
+            Page(None, file, config)
+            if file.inclusion.is_in_nav():
+                missing_from_config.append(file.src_path)
+    if missing_from_config:
+        log.log(
+            config.validation.nav.omitted_files,
+            'The following pages exist in the docs directory, but are not '
+            'included in the ""nav"" configuration:\n  - ' + '\n  - '.join(missing_from_config),
+        )
+
+    links = _get_by_type(items, Link)
+    for link in links:
+        scheme, netloc, path, query, fragment = urlsplit(link.url)
+        if scheme or netloc:
+            log.debug(f""An external link to '{link.url}' is included in the 'nav' configuration."")
+        elif (
+# ...",,
+94,message_chains,mkdocs/structure/nav.py,_data_to_navigation,gate,navigates 3 objects deep,True,medium,The function navigates through `config.validation.nav.absolute_links` and `config.validation.nav.not_found`.,Add methods on `config.validation.nav` to return the needed data directly.,"def _data_to_navigation(data, files: Files, config: MkDocsConfig):
+    if isinstance(data, dict):
+        return [
+            _data_to_navigation((key, value), files, config)
+            if isinstance(value, str)
+            else Section(title=key, children=_data_to_navigation(value, files, config))
+            for key, value in data.items()
+        ]
+    elif isinstance(data, list):
+        return [
+            _data_to_navigation(item, files, config)[0]
+            if isinstance(item, dict) and len(item) == 1
+            else _data_to_navigation(item, files, config)
+            for item in data
+        ]
+    title, path = data if isinstance(data, tuple) else (None, data)
+    lookup_path = path
+    if (
+        lookup_path.startswith('/')
+        and config.validation.nav.absolute_links is _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS
+    ):
+        lookup_path = lookup_path.lstrip('/')
+    if file := files.get_file_from_path(lookup_path):
+        if file.inclusion.is_excluded():
+            log.log(
+                min(logging.INFO, config.validation.nav.not_found),
+                f""A reference to '{file.src_path}' is included in the 'nav' ""
+                ""configuration, but this file is excluded from the built site."",
+            )
+        page = file.page
+        if page is not None:
+            if not isinstance(page, Page):
+                raise BuildError(""A plugin has set File.page to a type other than Page."")
+            return page
+        return Page(title, file, config)
+    return Link(title, path)",,
+95,long_method,mkdocs/structure/nav.py,get_navigation,rule,"56 lines, cyclomatic complexity 14, nesting 3",True,,,,"def get_navigation(files: Files, config: MkDocsConfig) -> Navigation:
+    """"""Build site navigation from config and files.""""""
+    documentation_pages = files.documentation_pages()
+    nav_config = config['nav']
+    if nav_config is None:
+        documentation_pages = sorted(documentation_pages, key=file_sort_key)
+        nav_config = nest_paths(f.src_uri for f in documentation_pages if f.inclusion.is_in_nav())
+    items = _data_to_navigation(nav_config, files, config)
+    if not isinstance(items, list):
+        items = [items]
+
+    # Get only the pages from the navigation, ignoring any sections and links.
+    pages = _get_by_type(items, Page)
+
+    # Include next, previous and parent links.
+    _add_previous_and_next_links(pages)
+    _add_parent_links(items)
+
+    missing_from_config = []
+    for file in documentation_pages:
+        if file.page is None:
+            # Any documentation files not found in the nav should still have an associated page, so we
+            # create them here. The Page object will automatically be assigned to `file.page` during
+            # its creation (and this is the only way in which these page objects are accessible).
+            Page(None, file, config)
+            if file.inclusion.is_in_nav():
+                missing_from_config.append(file.src_path)
+    if missing_from_config:
+        log.log(
+            config.validation.nav.omitted_files,
+            'The following pages exist in the docs directory, but are not '
+            'included in the ""nav"" configuration:\n  - ' + '\n  - '.join(missing_from_config),
+        )
+
+    links = _get_by_type(items, Link)
+    for link in links:
+        scheme, netloc, path, query, fragment = urlsplit(link.url)
+        if scheme or netloc:
+            log.debug(f""An external link to '{link.url}' is included in the 'nav' configuration."")
+        elif (
+# ...",,
+96,long_method,mkdocs/structure/nav.py,_data_to_navigation,rule,"36 lines, cyclomatic complexity 15, nesting 3",True,,,,"def _data_to_navigation(data, files: Files, config: MkDocsConfig):
+    if isinstance(data, dict):
+        return [
+            _data_to_navigation((key, value), files, config)
+            if isinstance(value, str)
+            else Section(title=key, children=_data_to_navigation(value, files, config))
+            for key, value in data.items()
+        ]
+    elif isinstance(data, list):
+        return [
+            _data_to_navigation(item, files, config)[0]
+            if isinstance(item, dict) and len(item) == 1
+            else _data_to_navigation(item, files, config)
+            for item in data
+        ]
+    title, path = data if isinstance(data, tuple) else (None, data)
+    lookup_path = path
+    if (
+        lookup_path.startswith('/')
+        and config.validation.nav.absolute_links is _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS
+    ):
+        lookup_path = lookup_path.lstrip('/')
+    if file := files.get_file_from_path(lookup_path):
+        if file.inclusion.is_excluded():
+            log.log(
+                min(logging.INFO, config.validation.nav.not_found),
+                f""A reference to '{file.src_path}' is included in the 'nav' ""
+                ""configuration, but this file is excluded from the built site."",
+            )
+        page = file.page
+        if page is not None:
+            if not isinstance(page, Page):
+                raise BuildError(""A plugin has set File.page to a type other than Page."")
+            return page
+        return Page(title, file, config)
+    return Link(title, path)",,
+97,message_chains,mkdocs/structure/pages.py,Page.read_source,gate,navigates 2 objects deep,False,,,,"def read_source(self, config: MkDocsConfig) -> None:
+        source = config.plugins.on_page_read_source(page=self, config=config)
+        if source is None:
+            try:
+                source = self.file.content_string
+            except OSError:
+                log.error(f'File not found: {self.file.src_path}')
+                raise
+            except ValueError:
+                log.error(f'Encoding error reading file: {self.file.src_path}')
+                raise
+
+        self.markdown, self.meta = meta.get_data(source)",,
+98,magic_numbers,mkdocs/structure/pages.py,_ExtractAnchorsTreeprocessor._register,gate,numeric literals [5] in the function body,False,low,The priority value 5 is a magic number.,Define a constant for the priority value.,"def _register(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(self, ""mkdocs_extract_anchors"", priority=5)",,
+99,message_chains,mkdocs/structure/pages.py,_ExtractAnchorsTreeprocessor._register,gate,navigates 2 objects deep,False,,,,"def _register(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(self, ""mkdocs_extract_anchors"", priority=5)",,
+100,flag_argument,mkdocs/structure/pages.py,_RelativePathTreeprocessor._possible_target_uris,gate,boolean parameter(s) ['use_directory_urls'] select a branch,True,medium,The function uses 'use_directory_urls' to switch between two different behaviors.,"Split the function into two separate functions, one for each behavior.","def _possible_target_uris(
+        cls, file: File, path: str, use_directory_urls: bool, suggest_absolute: bool = False
+    ) -> Iterator[str]:
+        """"""First yields the resolved file uri for the link, then proceeds to yield guesses for possible mistakes.""""""
+        target_uri = cls._target_uri(file.src_uri, path)
+        yield target_uri
+
+        if posixpath.normpath(path) == '.':
+            # Explicitly link to current file.
+            yield file.src_uri
+            return
+        tried = {target_uri}
+
+        prefixes = [target_uri, cls._target_uri(file.url, path)]
+        if prefixes[0] == prefixes[1]:
+            prefixes.pop()
+
+        suffixes: list[Callable[[str], str]] = []
+        if use_directory_urls:
+            suffixes.append(lambda p: p)
+        if not posixpath.splitext(target_uri)[-1]:
+            suffixes.append(lambda p: posixpath.join(p, 'index.md'))
+            suffixes.append(lambda p: posixpath.join(p, 'README.md'))
+        if (
+            not target_uri.endswith('.')
+            and not path.endswith('.md')
+            and (use_directory_urls or not path.endswith('/'))
+        ):
+            suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
+
+        for pref in prefixes:
+            for suf in suffixes:
+                guess = posixpath.normpath(suf(pref))
+                if guess not in tried and not guess.startswith('../'):
+                    yield guess
+                    tried.add(guess)",,
+101,primitive_obsession,mkdocs/structure/pages.py,_RelativePathTreeprocessor.path_to_url,gate,domain values passed as raw primitives and checked or transformed: ['url'],True,medium,"The function validates, normalises, and formats the raw URL value itself.",Introduce a URL dataclass that validates once on creation and formats itself.,"def path_to_url(self, url: str) -> str:
+        scheme, netloc, path, query, anchor = urlsplit(url)
+
+        absolute_link = None
+        warning_level, warning = 0, ''
+
+        # Ignore URLs unless they are a relative link to a source file.
+        if scheme or netloc:  # External link.
+            return url
+        elif url.startswith(('/', '\\')):  # Absolute link.
+            absolute_link = self.config.validation.links.absolute_links
+            if absolute_link is not _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS:
+                warning_level = absolute_link
+                warning = f""Doc file '{self.file.src_uri}' contains an absolute link '{url}', it was left as is.""
+        elif AMP_SUBSTITUTE in url:  # AMP_SUBSTITUTE is used internally by Markdown only for email.
+            return url
+        elif not path:  # Self-link containing only query or anchor.
+            if anchor:
+                # Register that the page links to itself with an anchor.
+                self.links_to_anchors.setdefault(self.file, {}).setdefault(anchor, url)
+            return url
+
+        path = urlunquote(path)
+        # Determine the filepath of the target.
+        possible_target_uris = self._possible_target_uris(
+            self.file, path, self.config.use_directory_urls
+        )
+
+        if warning:
+            # For absolute path (already has a warning), the primary lookup path should be preserved as a tip option.
+            target_uri = url
+            target_file = None
+        else:
+            # Validate that the target exists in files collection.
+            target_uri = next(possible_target_uris)
+            target_file = self.files.get_file_from_path(target_uri)
+
+        if target_file is None and not warning:
+            # Primary lookup path had no match, definitely produce a warning, just choose which one.
+            if not posixpath.splitext(path)[-1] and absolute_link is None:
+# ...",,
+102,message_chains,mkdocs/structure/pages.py,_RelativePathTreeprocessor.path_to_url,gate,navigates 3 objects deep,True,medium,The method navigates through multiple project objects' internal attributes to reach data.,Add a method on the first object that returns the required data.,"def path_to_url(self, url: str) -> str:
+        scheme, netloc, path, query, anchor = urlsplit(url)
+
+        absolute_link = None
+        warning_level, warning = 0, ''
+
+        # Ignore URLs unless they are a relative link to a source file.
+        if scheme or netloc:  # External link.
+            return url
+        elif url.startswith(('/', '\\')):  # Absolute link.
+            absolute_link = self.config.validation.links.absolute_links
+            if absolute_link is not _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS:
+                warning_level = absolute_link
+                warning = f""Doc file '{self.file.src_uri}' contains an absolute link '{url}', it was left as is.""
+        elif AMP_SUBSTITUTE in url:  # AMP_SUBSTITUTE is used internally by Markdown only for email.
+            return url
+        elif not path:  # Self-link containing only query or anchor.
+            if anchor:
+                # Register that the page links to itself with an anchor.
+                self.links_to_anchors.setdefault(self.file, {}).setdefault(anchor, url)
+            return url
+
+        path = urlunquote(path)
+        # Determine the filepath of the target.
+        possible_target_uris = self._possible_target_uris(
+            self.file, path, self.config.use_directory_urls
+        )
+
+        if warning:
+            # For absolute path (already has a warning), the primary lookup path should be preserved as a tip option.
+            target_uri = url
+            target_file = None
+        else:
+            # Validate that the target exists in files collection.
+            target_uri = next(possible_target_uris)
+            target_file = self.files.get_file_from_path(target_uri)
+
+        if target_file is None and not warning:
+            # Primary lookup path had no match, definitely produce a warning, just choose which one.
+            if not posixpath.splitext(path)[-1] and absolute_link is None:
+# ...",,
+103,message_chains,mkdocs/structure/pages.py,_RelativePathTreeprocessor._register,gate,navigates 2 objects deep,False,,,,"def _register(self, md: markdown.Markdown) -> None:
+        md.treeprocessors.register(self, ""relpath"", 0)",,
+104,magic_numbers,mkdocs/structure/pages.py,_RawHTMLPreprocessor._register,gate,numeric literals [21] in the function body,False,low,Priority 21 is a magic number.,Define a constant for the priority.,"def _register(self, md: markdown.Markdown) -> None:
+        md.preprocessors.register(
+            self, ""mkdocs_raw_html"", priority=21  # Right before 'html_block'.
+        )",,
+105,message_chains,mkdocs/structure/pages.py,_RawHTMLPreprocessor._register,gate,navigates 2 objects deep,False,,,,"def _register(self, md: markdown.Markdown) -> None:
+        md.preprocessors.register(
+            self, ""mkdocs_raw_html"", priority=21  # Right before 'html_block'.
+        )",,
+106,message_chains,mkdocs/structure/pages.py,_ExtractTitleTreeprocessor._register,gate,navigates 2 objects deep,False,,,,"def _register(self, md: markdown.Markdown) -> None:
+        self.md = md
+        md.treeprocessors.register(self, ""mkdocs_extract_title"", priority=1)",,
+107,data_clumps,mkdocs/structure/pages.py,mkdocs/structure/pages.py::__init__@330|mkdocs/structure/pages.py::__init__@347,gate,"parameters ['config', 'file', 'files'] recur in 2 signatures",False,low,"The same group of values ('config', 'file', 'files') is passed to multiple functions.",Introduce a dataclass named 'PageInitializationData' and pass it to each function.,"# mkdocs/structure/pages.py
+def __init__(self, file: File, files: Files, config: MkDocsConfig) -> None:
+        self.present_anchor_ids: set[str] = set()
+
+# mkdocs/structure/pages.py
+def __init__(self, file: File, files: Files, config: MkDocsConfig) -> None:
+        self.file = file
+        self.files = files
+        self.config = config
+        self.links_to_anchors: dict[File, dict[str, str]] = {}",,
+108,long_method,mkdocs/structure/pages.py,Page._set_edit_url,rule,"36 lines, cyclomatic complexity 13, nesting 3",True,,,,"def _set_edit_url(
+        self,
+        repo_url: str | None,
+        edit_uri: str | None = None,
+        edit_uri_template: str | None = None,
+    ) -> None:
+        if not edit_uri_template and not edit_uri:
+            self.edit_url = None
+            return
+        src_uri = self.file.edit_uri
+        if src_uri is None:
+            self.edit_url = None
+            return
+
+        if edit_uri_template:
+            noext = posixpath.splitext(src_uri)[0]
+            file_edit_uri = edit_uri_template.format(path=src_uri, path_noext=noext)
+        else:
+            assert edit_uri is not None and edit_uri.endswith('/')
+            file_edit_uri = edit_uri + src_uri
+
+        if repo_url:
+            # Ensure urljoin behavior is correct
+            if not file_edit_uri.startswith(('?', '#')) and not repo_url.endswith('/'):
+                repo_url += '/'
+        else:
+            try:
+                parsed_url = urlsplit(file_edit_uri)
+                if not parsed_url.scheme or not parsed_url.netloc:
+                    log.warning(
+                        f""edit_uri: {file_edit_uri!r} is not a valid URL, it should include the http:// (scheme)""
+                    )
+            except ValueError as e:
+                log.warning(f""edit_uri: {file_edit_uri!r} is not a valid URL: {e}"")
+
+        self.edit_url = urljoin(repo_url or '', file_edit_uri)",,
+109,long_method,mkdocs/structure/pages.py,_RelativePathTreeprocessor._possible_target_uris,rule,"36 lines, cyclomatic complexity 13, nesting 3",True,,,,"def _possible_target_uris(
+        cls, file: File, path: str, use_directory_urls: bool, suggest_absolute: bool = False
+    ) -> Iterator[str]:
+        """"""First yields the resolved file uri for the link, then proceeds to yield guesses for possible mistakes.""""""
+        target_uri = cls._target_uri(file.src_uri, path)
+        yield target_uri
+
+        if posixpath.normpath(path) == '.':
+            # Explicitly link to current file.
+            yield file.src_uri
+            return
+        tried = {target_uri}
+
+        prefixes = [target_uri, cls._target_uri(file.url, path)]
+        if prefixes[0] == prefixes[1]:
+            prefixes.pop()
+
+        suffixes: list[Callable[[str], str]] = []
+        if use_directory_urls:
+            suffixes.append(lambda p: p)
+        if not posixpath.splitext(target_uri)[-1]:
+            suffixes.append(lambda p: posixpath.join(p, 'index.md'))
+            suffixes.append(lambda p: posixpath.join(p, 'README.md'))
+        if (
+            not target_uri.endswith('.')
+            and not path.endswith('.md')
+            and (use_directory_urls or not path.endswith('/'))
+        ):
+            suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
+
+        for pref in prefixes:
+            for suf in suffixes:
+                guess = posixpath.normpath(suf(pref))
+                if guess not in tried and not guess.startswith('../'):
+                    yield guess
+                    tried.add(guess)",,
+110,long_method,mkdocs/structure/pages.py,_RelativePathTreeprocessor.path_to_url,rule,"98 lines, cyclomatic complexity 32, nesting 6",True,,,,"def path_to_url(self, url: str) -> str:
+        scheme, netloc, path, query, anchor = urlsplit(url)
+
+        absolute_link = None
+        warning_level, warning = 0, ''
+
+        # Ignore URLs unless they are a relative link to a source file.
+        if scheme or netloc:  # External link.
+            return url
+        elif url.startswith(('/', '\\')):  # Absolute link.
+            absolute_link = self.config.validation.links.absolute_links
+            if absolute_link is not _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS:
+                warning_level = absolute_link
+                warning = f""Doc file '{self.file.src_uri}' contains an absolute link '{url}', it was left as is.""
+        elif AMP_SUBSTITUTE in url:  # AMP_SUBSTITUTE is used internally by Markdown only for email.
+            return url
+        elif not path:  # Self-link containing only query or anchor.
+            if anchor:
+                # Register that the page links to itself with an anchor.
+                self.links_to_anchors.setdefault(self.file, {}).setdefault(anchor, url)
+            return url
+
+        path = urlunquote(path)
+        # Determine the filepath of the target.
+        possible_target_uris = self._possible_target_uris(
+            self.file, path, self.config.use_directory_urls
+        )
+
+        if warning:
+            # For absolute path (already has a warning), the primary lookup path should be preserved as a tip option.
+            target_uri = url
+            target_file = None
+        else:
+            # Validate that the target exists in files collection.
+            target_uri = next(possible_target_uris)
+            target_file = self.files.get_file_from_path(target_uri)
+
+        if target_file is None and not warning:
+            # Primary lookup path had no match, definitely produce a warning, just choose which one.
+            if not posixpath.splitext(path)[-1] and absolute_link is None:
+# ...",,
+111,duplicated_logic,mkdocs/utils/__init__.py,mkdocs/config/base.py::user_configs@266|mkdocs/utils/__init__.py::path_to_url@249,gate,AST similarity 0.811; cluster of 3 similar functions,False,,,,"# mkdocs/config/base.py
+def user_configs(self) -> Sequence[Mapping[str, Any]]:
+        warnings.warn(
+            ""user_configs is never used in MkDocs and will be removed soon."", DeprecationWarning
+        )
+        return self.__user_configs
+
+# mkdocs/utils/__init__.py
+def path_to_url(path):
+    warnings.warn(
+        ""path_to_url is never used in MkDocs and will be removed soon."", DeprecationWarning
+    )
+    return path.replace('\\', '/')",,
+112,primitive_obsession,mkdocs/utils/__init__.py,get_relative_url,gate,domain values passed as raw primitives and checked or transformed: ['url'],True,medium,The function validates and normalises the raw string values.,Introduce a URL dataclass to handle validation and formatting.,"def get_relative_url(url: str, other: str) -> str:
+    """"""
+    Return given url relative to other.
+
+    Both are operated as slash-separated paths, similarly to the 'path' part of a URL.
+    The last component of `other` is skipped if it contains a dot (considered a file).
+    Actual URLs (with schemas etc.) aren't supported. The leading slash is ignored.
+    Paths are normalized ('..' works as parent directory), but going higher than the
+    root has no effect ('foo/../../bar' ends up just as 'bar').
+    """"""
+    # Remove filename from other url if it has one.
+    dirname, _, basename = other.rpartition('/')
+    if '.' in basename:
+        other = dirname
+
+    other_parts = _norm_parts(other)
+    dest_parts = _norm_parts(url)
+    common = 0
+    for a, b in zip(other_parts, dest_parts):
+        if a != b:
+            break
+        common += 1
+
+    rel_parts = ['..'] * (len(other_parts) - common) + dest_parts[common:]
+    relurl = '/'.join(rel_parts) or '.'
+    return relurl + '/' if url.endswith('/') else relurl",,
+113,magic_numbers,mkdocs/utils/__init__.py,_get_norm_url,gate,numeric literals [3] in the function body,False,,,,"def _get_norm_url(path: str) -> tuple[str, int]:
+    if not path:
+        path = '.'
+    elif '\\' in path:
+        log.warning(
+            f""Path '{path}' uses OS-specific separator '\\'. ""
+            f""That will be unsupported in a future release. Please change it to '/'.""
+        )
+        path = path.replace('\\', '/')
+    # Allow links to be fully qualified URLs
+    parsed = urlsplit(path)
+    if parsed.scheme or parsed.netloc or path.startswith(('/', '#')):
+        return path, -1
+
+    # Relative path - preserve information about it
+    norm = posixpath.normpath(path) + '/'
+    relative_level = 0
+    while norm.startswith('../', relative_level * 3):
+        relative_level += 1
+    return path, relative_level",,
+114,message_chains,mkdocs/utils/__init__.py,get_theme_dir,gate,navigates 2 objects deep,True,medium,theme.load().__file__ navigates through theme object's internal structure.,Add a method on theme to return the file path.,"def get_theme_dir(name: str) -> str:
+    """"""Return the directory of an installed theme by name.""""""
+    theme = get_themes()[name]
+    return os.path.dirname(os.path.abspath(theme.load().__file__))",,
+115,message_chains,mkdocs/utils/__init__.py,get_themes,gate,navigates 2 objects deep,True,medium,The function navigates through `theme.dist.name` to reach data that could be provided directly by `theme.name`.,Add a method on `EntryPoint` that returns `theme.name` and call that instead.,"def get_themes() -> dict[str, EntryPoint]:
+    """"""Return a dict of all installed themes as {name: EntryPoint}.""""""
+    themes: dict[str, EntryPoint] = {}
+    eps: dict[EntryPoint, None] = dict.fromkeys(entry_points(group='mkdocs.themes'))
+    builtins = {ep.name for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
+
+    for theme in eps:
+        assert theme.dist is not None
+
+        if theme.name in builtins and theme.dist.name != 'mkdocs':
+            raise exceptions.ConfigurationError(
+                f""The theme '{theme.name}' is a builtin theme but the package '{theme.dist.name}' ""
+                ""attempts to provide a theme with the same name.""
+            )
+        elif theme.name in themes:
+            other_dist = themes[theme.name].dist
+            assert other_dist is not None
+            log.warning(
+                f""A theme named '{theme.name}' is provided by the Python packages '{theme.dist.name}' ""
+                f""and '{other_dist.name}'. The one in '{theme.dist.name}' will be used.""
+            )
+
+        themes[theme.name] = theme
+
+    return themes",,
+116,primitive_obsession,mkdocs/utils/cache.py,download_url,gate,domain values passed as raw primitives and checked or transformed: ['url'],False,,,,"def download_url(url: str) -> bytes:
+    req = urllib.request.Request(url, headers={""User-Agent"": f""mkdocs/{mkdocs.__version__}""})
+    with urllib.request.urlopen(req) as resp:
+        return resp.read()",,
+117,duplicated_logic,mkdocs/utils/rendering.py,mkdocs/utils/rendering.py::_remove_fnrefs@65|mkdocs/utils/rendering.py::_extract_alt_texts@77,gate,AST similarity 1.0,False,low,Both functions perform the same computation with different element types.,Extract a helper function to replace elements with text based on a predicate.,"# mkdocs/utils/rendering.py
+def _remove_fnrefs(root: etree.Element) -> None:
+    """"""Remove footnote references from the element, if any are present.""""""
+    for parent in root.findall('.//sup[@id]/..'):
+        _replace_elements_with_text(parent, _predicate_for_fnrefs)
+
+# mkdocs/utils/rendering.py
+def _extract_alt_texts(root: etree.Element) -> None:
+    """"""For images that have an `alt` attribute, replace them with this content.""""""
+    for parent in root.findall('.//img[@alt]/..'):
+        _replace_elements_with_text(parent, _predicate_for_alt_texts)",,
+118,message_chains,mkdocs/utils/yaml.py,RelativeDirPlaceholder.value,gate,navigates 2 objects deep,False,,,,"def value(self) -> str:
+        current_page = self.config._current_page
+        if current_page is None:
+            raise exceptions.ConfigurationError(
+                ""The current file is not set for the '!relative' tag. ""
+                ""It cannot be used in this context; the intended usage is within `markdown_extensions`.""
+            )
+        return os.path.dirname(os.path.join(self.config.docs_dir, current_page.file.src_path))",,

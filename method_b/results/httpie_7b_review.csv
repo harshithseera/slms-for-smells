@@ -1,0 +1,2699 @@
+id,smell,file,target,source,gate_reason,slm_confirmed,slm_severity,slm_evidence,slm_fix,code,human_label (smell/not/unsure),human_notes
+1,duplicated_logic,httpie/cli/argparser.py,httpie/cli/argparser.py::_body_from_file@382|httpie/cli/argparser.py::_body_from_input@391,gate,AST similarity 0.88,False,low,Both functions perform similar logic to ensure one data source and set data attribute.,Extract a helper function to handle the common logic and call it from both methods.,"# httpie/cli/argparser.py
+def _body_from_file(self, fd):
+        """"""Read the data from a file-like object.
+
+        Bytes are always read.
+
+        """"""
+        self._ensure_one_data_source(self.args.data, self.args.files)
+        self.args.data = getattr(fd, 'buffer', fd)
+
+# httpie/cli/argparser.py
+def _body_from_input(self, data):
+        """"""Read the data from the CLI.
+
+        """"""
+        self._ensure_one_data_source(self.has_stdin_data, self.args.data,
+                                     self.args.files)
+        self.args.data = data.encode()",,
+2,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser._process_url,gate,attribute chain of 3 hops,False,low,self.args.url.startswith('://'),Add a method on self.args to check if the URL starts with '://' and call that instead.,"def _process_url(self):
+        if self.args.url.startswith('://'):
+            # Paste URL & add space shortcut: `http ://pie.dev` → `http://pie.dev`
+            self.args.url = self.args.url[3:]
+        if not URL_SCHEME_RE.match(self.args.url):
+            if os.path.basename(self.env.program_name) == 'https':
+                scheme = 'https://'
+            else:
+                scheme = self.args.default_scheme + '://'
+
+            # See if we're using curl style shorthand for localhost (:3000/foo)
+            shorthand = re.match(r'^:(?!:)(\d*)(/?.*)$', self.args.url)
+            if shorthand:
+                port = shorthand.group(1)
+                rest = shorthand.group(2)
+                self.args.url = scheme + 'localhost'
+                if port:
+                    self.args.url += ':' + port
+                self.args.url += rest
+            else:
+                self.args.url = scheme + self.args.url",,
+3,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser._setup_standard_streams,gate,attribute chain of 3 hops,True,medium,self.args.output_file.seek and self.args.output_file.truncate,Add a method on self.args.output_file to reset and truncate the file.,"def _setup_standard_streams(self):
+        """"""
+        Modify `env.stdout` and `env.stdout_isatty` based on args, if needed.
+
+        """"""
+
+        self.args.output_file_specified = bool(self.args.output_file)
+        if self.args.download:
+            # FIXME: Come up with a cleaner solution.
+            if not self.args.output_file and not self.env.stdout_isatty:
+                # Use stdout as the download output file.
+                self.args.output_file = self.env.stdout
+            # With `--download`, we write everything that would normally go to
+            # `stdout` to `stderr` instead. Let's replace the stream so that
+            # we don't have to use many `if`s throughout the codebase.
+            # The response body will be treated separately.
+            self.env.stdout = self.env.stderr
+            self.env.stdout_isatty = self.env.stderr_isatty
+
+        elif self.args.output_file:
+            # When not `--download`ing, then `--output` simply replaces
+            # `stdout`. The file is opened for appending, which isn't what
+            # we want in this case.
+            self.args.output_file.seek(0)
+            try:
+                self.args.output_file.truncate()
+            except OSError as e:
+                if e.errno == errno.EINVAL:
+                    # E.g. /dev/null on Linux.
+                    pass
+                else:
+                    raise
+            self.env.stdout = self.args.output_file
+            self.env.stdout_isatty = False
+
+        if self.args.quiet:
+            self.env.quiet = self.args.quiet
+            self.env.stderr = self.env.devnull
+            if not (self.args.output_file_specified and not self.args.download):
+                self.env.stdout = self.env.devnull
+# ...",,
+4,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser._process_ssl_cert,gate,attribute chain of 3 hops,False,low,self.args.cert_key_pass.value,Add a method on self.args.cert_key_pass to return value.,"def _process_ssl_cert(self):
+        from httpie.ssl_ import _is_key_file_encrypted
+
+        if self.args.cert_key_pass is None:
+            self.args.cert_key_pass = SSLCredentials(None)
+
+        if (
+            self.args.cert_key is not None
+            and self.args.cert_key_pass.value is None
+            and _is_key_file_encrypted(self.args.cert_key)
+        ):
+            self.args.cert_key_pass.prompt_password(self.args.cert_key)",,
+5,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser._guess_method,gate,attribute chain of 3 hops,True,medium,self.args.request_items.insert,Add a method on self to handle the insertion logic.,"def _guess_method(self):
+        """"""Set `args.method` if not specified to either POST or GET
+        based on whether the request has data or not.
+
+        """"""
+        if self.args.method is None:
+            # Invoked as `http URL'.
+            assert not self.args.request_items
+            if self.has_input_data:
+                self.args.method = HTTP_POST
+            else:
+                self.args.method = HTTP_GET
+
+        # FIXME: False positive, e.g., ""localhost"" matches but is a valid URL.
+        elif not re.match('^[a-zA-Z]+$', self.args.method):
+            # Invoked as `http URL item+'. The URL is now in `args.method`
+            # and the first ITEM is now incorrectly in `args.url`.
+            try:
+                # Parse the URL as an ITEM and store it as the first ITEM arg.
+                self.args.request_items.insert(0, KeyValueArgType(
+                    *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
+
+            except argparse.ArgumentTypeError as e:
+                if self.args.traceback:
+                    raise
+                self.error(e.args[0])
+
+            else:
+                # Set the URL correctly
+                self.args.url = self.args.method
+                # Infer the method
+                has_data = (
+                    self.has_input_data
+                    or any(
+                        item.sep in SEPARATOR_GROUP_DATA_ITEMS
+                        for item in self.args.request_items)
+                )
+                self.args.method = HTTP_POST if has_data else HTTP_GET",,
+6,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser._parse_items,gate,attribute chain of 3 hops,False,low,"self.args.files.items, self.args.files.keys",Add a method on self.args.files to return the keys directly.,"def _parse_items(self):
+        """"""
+        Parse `args.request_items` into `args.headers`, `args.data`,
+        `args.params`, and `args.files`.
+
+        """"""
+        try:
+            request_items = RequestItems.from_args(
+                request_item_args=self.args.request_items,
+                request_type=self.args.request_type,
+            )
+        except ParseError as e:
+            if self.args.traceback:
+                raise
+            self.error(e.args[0])
+        else:
+            self.args.headers = request_items.headers
+            self.args.data = request_items.data
+            self.args.files = request_items.files
+            self.args.params = request_items.params
+            self.args.multipart_data = request_items.multipart_data
+
+        if self.args.files and not self.args.form:
+            # `http url @/path/to/file`
+            request_file = None
+            for key, file in self.args.files.items():
+                if key != '':
+                    self.error(
+                        'Invalid file fields (perhaps you meant --form?):'
+                        f' {"","".join(self.args.files.keys())}')
+                if request_file is not None:
+                    self.error(""Can't read request from multiple files"")
+                request_file = file
+
+            fn, fd, ct = request_file
+            self.args.files = {}
+
+            self._body_from_file(fd)
+
+            if 'Content-Type' not in self.args.headers:
+# ...",,
+7,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser.print_manual,gate,attribute chain of 3 hops,True,medium,self.env.rich_console.pager() and self.env.rich_console.print,Add methods on self.env.rich_console to handle paging and printing.,"def print_manual(self):
+        from httpie.output.ui import man_pages
+
+        if man_pages.is_available(self.env.program_name):
+            man_pages.display_for(self.env, self.env.program_name)
+            return None
+
+        text = self.format_help()
+        with self.env.rich_console.pager():
+            self.env.rich_console.print(
+                text,
+                highlight=False
+            )",,
+8,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser.print_usage,gate,attribute chain of 3 hops,False,low,self.env.rich_error_console.print,Add a method on self.env to handle printing usage.,"def print_usage(self, file):
+        from rich.text import Text
+        from httpie.output.ui import rich_help
+
+        whitelist = set()
+        _, exception, _ = sys.exc_info()
+        if (
+            isinstance(exception, argparse.ArgumentError)
+            and len(exception.args) >= 1
+            and isinstance(exception.args[0], argparse.Action)
+            and exception.args[0].option_strings
+        ):
+            # add_usage path is also taken when you pass an invalid option,
+            # e.g --style=invalid. If something like that happens, we want
+            # to include to action that caused to the invalid usage into
+            # the list of actions we are displaying.
+            whitelist.add(exception.args[0].option_strings[0])
+
+        usage_text = Text('usage', style='bold')
+        usage_text.append(':\n    ')
+        usage_text.append(rich_help.to_usage(self.spec, whitelist=whitelist))
+        self.env.rich_error_console.print(usage_text)",,
+9,message_chains,httpie/cli/argparser.py,HTTPieArgumentParser.error,gate,attribute chain of 3 hops,True,medium,self.env.rich_error_console.print,Add a method on HTTPieArgumentParser to handle error printing.,"def error(self, message):
+        """"""Prints a usage message incorporating the message to stderr and
+        exits.""""""
+        self.print_usage(sys.stderr)
+        self.env.rich_error_console.print(
+            dedent(
+                f'''
+                [bold]error[/bold]:
+                    {message}
+
+                [bold]for more information[/bold]:
+                    run '{self.prog} --help' or visit https://httpie.io/docs/cli
+                '''.rstrip()
+            )
+        )
+        self.exit(2)",,
+10,data_clumps,httpie/cli/argparser.py,httpie/cli/argparser.py::parse_args@90|httpie/cli/argparser.py::parse_args@151,gate,"parameters ['args', 'env', 'namespace'] recur in 2 signatures",True,medium,"Parameters ['args', 'env', 'namespace'] recur in 2 signatures.","Introduce a dataclass named 'ParseArgsParams' with fields 'args', 'env', 'namespace' and pass it to each function.","# httpie/cli/argparser.py
+def parse_args(
+        self,
+        env: Environment,
+        args=None,
+        namespace=None
+    ) -> argparse.Namespace:
+        self.env = env
+        self.args, no_options = self.parse_known_args(args, namespace)
+        if self.args.debug:
+            self.args.traceback = True
+        self.has_stdin_data = (
+            self.env.stdin
+            and not getattr(self.args, 'ignore_stdin', False)
+            and not self.env.stdin_isatty
+        )
+        self.has_input_data = self.has_stdin_data or getattr(self.args, 'raw', None) is not None
+        return self.args
+
+# httpie/cli/argparser.py
+def parse_args(
+        self,
+        env: Environment,
+        args=None,
+        namespace=None
+    ) -> argparse.Namespace:
+        self.env = env
+        self.env.args = namespace = namespace or argparse.Namespace()
+        self.args, no_options = super().parse_known_args(args, namespace)
+        if self.args.debug:
+            self.args.traceback = True
+        self.has_stdin_data = (
+            self.env.stdin
+            and not self.args.ignore_stdin
+            and not self.env.stdin_isatty
+        )
+        self.has_input_data = self.has_stdin_data or self.args.raw is not None
+        # Arguments processing and environment setup.
+        self._apply_no_options(no_options)
+        self._process_request_type()
+# ...",,
+11,long_method,httpie/cli/argparser.py,HTTPieArgumentParser.parse_args,rule,"44 lines, cyclomatic complexity 11, nesting 2",True,,,,"def parse_args(
+        self,
+        env: Environment,
+        args=None,
+        namespace=None
+    ) -> argparse.Namespace:
+        self.env = env
+        self.env.args = namespace = namespace or argparse.Namespace()
+        self.args, no_options = super().parse_known_args(args, namespace)
+        if self.args.debug:
+            self.args.traceback = True
+        self.has_stdin_data = (
+            self.env.stdin
+            and not self.args.ignore_stdin
+            and not self.env.stdin_isatty
+        )
+        self.has_input_data = self.has_stdin_data or self.args.raw is not None
+        # Arguments processing and environment setup.
+        self._apply_no_options(no_options)
+        self._process_request_type()
+        self._process_download_options()
+        self._setup_standard_streams()
+        self._process_output_options()
+        self._process_pretty_options()
+        self._process_format_options()
+        self._guess_method()
+        self._parse_items()
+        self._process_url()
+        self._process_auth()
+        self._process_ssl_cert()
+
+        if self.args.raw is not None:
+            self._body_from_input(self.args.raw)
+        elif self.has_stdin_data:
+            self._body_from_file(self.env.stdin)
+
+        if self.args.compress:
+            # TODO: allow --compress with --chunked / --multipart
+            if self.args.chunked:
+                self.error('cannot combine --compress and --chunked')
+# ...",,
+12,long_method,httpie/cli/argparser.py,HTTPieArgumentParser._process_auth,rule,"74 lines, cyclomatic complexity 24, nesting 4",True,,,,"def _process_auth(self):
+        # TODO: refactor & simplify this method.
+        self.args.auth_plugin = None
+        default_auth_plugin = plugin_manager.get_auth_plugins()[0]
+        auth_type_set = self.args.auth_type is not None
+        url = urlsplit(self.args.url)
+
+        if self.args.auth is None and not auth_type_set:
+            if url.username is not None:
+                # Handle http://username:password@hostname/
+                username = url.username
+                password = url.password or ''
+                self.args.auth = AuthCredentials(
+                    key=username,
+                    value=password,
+                    sep=SEPARATOR_CREDENTIALS,
+                    orig=SEPARATOR_CREDENTIALS.join([username, password])
+                )
+
+        if self.args.auth is not None or auth_type_set:
+            if not self.args.auth_type:
+                self.args.auth_type = default_auth_plugin.auth_type
+            plugin = plugin_manager.get_auth_plugin(self.args.auth_type)()
+
+            if (not self.args.ignore_netrc
+                    and self.args.auth is None
+                    and plugin.netrc_parse):
+                # Only host needed, so it’s OK URL not finalized.
+                netrc_credentials = get_netrc_auth(self.args.url)
+                if netrc_credentials:
+                    self.args.auth = AuthCredentials(
+                        key=netrc_credentials[0],
+                        value=netrc_credentials[1],
+                        sep=SEPARATOR_CREDENTIALS,
+                        orig=SEPARATOR_CREDENTIALS.join(netrc_credentials)
+                    )
+
+            if plugin.auth_require and self.args.auth is None:
+                self.error('--auth required')
+
+# ...",,
+13,long_method,httpie/cli/argparser.py,HTTPieArgumentParser._guess_method,rule,"38 lines, cyclomatic complexity 11, nesting 4",True,,,,"def _guess_method(self):
+        """"""Set `args.method` if not specified to either POST or GET
+        based on whether the request has data or not.
+
+        """"""
+        if self.args.method is None:
+            # Invoked as `http URL'.
+            assert not self.args.request_items
+            if self.has_input_data:
+                self.args.method = HTTP_POST
+            else:
+                self.args.method = HTTP_GET
+
+        # FIXME: False positive, e.g., ""localhost"" matches but is a valid URL.
+        elif not re.match('^[a-zA-Z]+$', self.args.method):
+            # Invoked as `http URL item+'. The URL is now in `args.method`
+            # and the first ITEM is now incorrectly in `args.url`.
+            try:
+                # Parse the URL as an ITEM and store it as the first ITEM arg.
+                self.args.request_items.insert(0, KeyValueArgType(
+                    *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
+
+            except argparse.ArgumentTypeError as e:
+                if self.args.traceback:
+                    raise
+                self.error(e.args[0])
+
+            else:
+                # Set the URL correctly
+                self.args.url = self.args.method
+                # Infer the method
+                has_data = (
+                    self.has_input_data
+                    or any(
+                        item.sep in SEPARATOR_GROUP_DATA_ITEMS
+                        for item in self.args.request_items)
+                )
+                self.args.method = HTTP_POST if has_data else HTTP_GET",,
+14,long_method,httpie/cli/argparser.py,HTTPieArgumentParser._parse_items,rule,"43 lines, cyclomatic complexity 11, nesting 3",True,,,,"def _parse_items(self):
+        """"""
+        Parse `args.request_items` into `args.headers`, `args.data`,
+        `args.params`, and `args.files`.
+
+        """"""
+        try:
+            request_items = RequestItems.from_args(
+                request_item_args=self.args.request_items,
+                request_type=self.args.request_type,
+            )
+        except ParseError as e:
+            if self.args.traceback:
+                raise
+            self.error(e.args[0])
+        else:
+            self.args.headers = request_items.headers
+            self.args.data = request_items.data
+            self.args.files = request_items.files
+            self.args.params = request_items.params
+            self.args.multipart_data = request_items.multipart_data
+
+        if self.args.files and not self.args.form:
+            # `http url @/path/to/file`
+            request_file = None
+            for key, file in self.args.files.items():
+                if key != '':
+                    self.error(
+                        'Invalid file fields (perhaps you meant --form?):'
+                        f' {"","".join(self.args.files.keys())}')
+                if request_file is not None:
+                    self.error(""Can't read request from multiple files"")
+                request_file = file
+
+            fn, fd, ct = request_file
+            self.args.files = {}
+
+            self._body_from_file(fd)
+
+            if 'Content-Type' not in self.args.headers:
+# ...",,
+15,duplicated_logic,httpie/cli/argtypes.py,httpie/cli/argtypes.py::__init__@15|httpie/cli/nested_json/errors.py::__init__@7,gate,AST similarity 0.873; cluster of 3 similar functions,False,,,,"# httpie/cli/argtypes.py
+def __init__(self, key: str, value: Optional[str], sep: str, orig: str):
+        self.key = key
+        self.value = value
+        self.sep = sep
+        self.orig = orig
+
+# httpie/cli/nested_json/errors.py
+def __init__(
+        self,
+        source: str,
+        token: Optional[Token],
+        message: str,
+        message_kind: str = 'Syntax',
+    ) -> None:
+        self.source = source
+        self.token = token
+        self.message = message
+        self.message_kind = message_kind",,
+16,long_method,httpie/cli/argtypes.py,parse_format_options,rule,"52 lines, cyclomatic complexity 9, nesting 3",True,,,,"def parse_format_options(s: str, defaults: Optional[dict]) -> dict:
+    """"""
+    Parse `s` and update `defaults` with the parsed values.
+
+    >>> parse_format_options(
+    ... defaults={'json': {'indent': 4, 'sort_keys': True}},
+    ... s='json.indent:2,json.sort_keys:False',
+    ... )
+    {'json': {'indent': 2, 'sort_keys': False}}
+
+    """"""
+    value_map = {
+        'true': True,
+        'false': False,
+    }
+    options = deepcopy(defaults or {})
+    for option in s.split(','):
+        try:
+            path, value = option.lower().split(':')
+            section, key = path.split('.')
+        except ValueError:
+            raise argparse.ArgumentTypeError(f'invalid option {option!r}')
+
+        if value in value_map:
+            parsed_value = value_map[value]
+        else:
+            if value.isnumeric():
+                parsed_value = int(value)
+            else:
+                parsed_value = value
+
+        if defaults is None:
+            options.setdefault(section, {})
+        else:
+            try:
+                default_value = defaults[section][key]
+            except KeyError:
+                raise argparse.ArgumentTypeError(
+                    f'invalid key {path!r}')
+
+# ...",,
+17,magic_numbers,httpie/cli/definition.py,format_style_help,gate,numeric literals [60] in the function body,True,medium,Numeric literal 60 used for text wrapping width,Name the text wrapping width as a module constant and use it,"def format_style_help(available_styles, *, isolation_mode: bool = False):
+    text = """"""
+    Output coloring style (default is ""{default}""). It can be one of:
+
+        {available_styles}
+    """"""
+    if isolation_mode:
+        text += '\n\n'
+        text += 'For finding out all available styles in your system, try:\n\n'
+        text += '    $ http --style\n'
+    text += textwrap.dedent(""""""
+        The ""{auto_style}"" style follows your terminal's ANSI color styles.
+        For non-{auto_style} styles to work properly, please make sure that the
+        $TERM environment variable is set to ""xterm-256color"" or similar
+        (e.g., via `export TERM=xterm-256color' in your ~/.bashrc).
+    """""")
+
+    if isolation_mode:
+        available_styles = sorted(BUNDLED_STYLES)
+
+    available_styles_text = '\n'.join(
+        f'    {line.strip()}'
+        for line in textwrap.wrap(', '.join(available_styles), 60)
+    ).strip()
+    return text.format(
+        default=DEFAULT_STYLE,
+        available_styles=available_styles_text,
+        auto_style=AUTO_STYLE,
+    )",,
+18,flag_argument,httpie/cli/definition.py,format_style_help,gate,boolean parameter(s) ['isolation_mode'] select a branch,True,medium,The function uses 'isolation_mode' to switch between two different behaviors.,"Split the function into two separate functions, one for each behavior.","def format_style_help(available_styles, *, isolation_mode: bool = False):
+    text = """"""
+    Output coloring style (default is ""{default}""). It can be one of:
+
+        {available_styles}
+    """"""
+    if isolation_mode:
+        text += '\n\n'
+        text += 'For finding out all available styles in your system, try:\n\n'
+        text += '    $ http --style\n'
+    text += textwrap.dedent(""""""
+        The ""{auto_style}"" style follows your terminal's ANSI color styles.
+        For non-{auto_style} styles to work properly, please make sure that the
+        $TERM environment variable is set to ""xterm-256color"" or similar
+        (e.g., via `export TERM=xterm-256color' in your ~/.bashrc).
+    """""")
+
+    if isolation_mode:
+        available_styles = sorted(BUNDLED_STYLES)
+
+    available_styles_text = '\n'.join(
+        f'    {line.strip()}'
+        for line in textwrap.wrap(', '.join(available_styles), 60)
+    ).strip()
+    return text.format(
+        default=DEFAULT_STYLE,
+        available_styles=available_styles_text,
+        auto_style=AUTO_STYLE,
+    )",,
+19,flag_argument,httpie/cli/definition.py,format_auth_help,gate,boolean parameter(s) ['isolation_mode'] select a branch,True,medium,The function uses 'isolation_mode' to switch between two different behaviors.,"Split the function into two separate functions, one for each behavior.","def format_auth_help(auth_plugins_mapping, *, isolation_mode: bool = False):
+    text = """"""
+    The authentication mechanism to be used. Defaults to ""{default}"".
+
+    {auth_types}
+    """"""
+
+    auth_plugins = list(auth_plugins_mapping.values())
+    if isolation_mode:
+        auth_plugins = [
+            auth_plugin
+            for auth_plugin in auth_plugins
+            if issubclass(auth_plugin, BuiltinAuthPlugin)
+        ]
+        text += '\n'
+        text += 'To see all available auth types on your system, including ones installed via plugins, run:\n\n'
+        text += '    $ http --auth-type'
+
+    auth_types = '\n\n    '.join(
+        '""{type}"": {name}{package}{description}'.format(
+            type=plugin.auth_type,
+            name=plugin.name,
+            package=(
+                ''
+                if issubclass(plugin, BuiltinAuthPlugin)
+                else f' (provided by {plugin.package_name})'
+            ),
+            description=(
+                ''
+                if not plugin.description
+                else '\n      '
+                     + ('\n      '.join(textwrap.wrap(plugin.description)))
+            ),
+        )
+        for plugin in auth_plugins
+    )
+
+    return text.format(
+        default=auth_plugins[0].auth_type,
+        auth_types=auth_types,
+# ...",,
+20,long_method,httpie/cli/nested_json/interpret.py,interpret,rule,"75 lines, cyclomatic complexity 11, nesting 5",True,,,,"def interpret(context: Any, key: str, value: Any) -> Any:
+    cursor = context
+    paths = list(parse(key))
+    paths.append(Path(PathAction.SET, value))
+
+    # noinspection PyShadowingNames
+    def type_check(index: int, path: Path, expected_type: JSONType):
+        if not isinstance(cursor, expected_type):
+            if path.tokens:
+                pseudo_token = Token(
+                    kind=TokenKind.PSEUDO,
+                    value='',
+                    start=path.tokens[0].start,
+                    end=path.tokens[-1].end,
+                )
+            else:
+                pseudo_token = None
+            cursor_type = JSON_TYPE_MAPPING.get(type(cursor), type(cursor).__name__)
+            required_type = JSON_TYPE_MAPPING[expected_type]
+            message = f'Cannot perform {path.kind.to_string()!r} based access on '
+            message += repr(''.join(path.reconstruct() for path in paths[:index]))
+            message += f' which has a type of {cursor_type!r} but this operation'
+            message += f' requires a type of {required_type!r}.'
+            raise NestedJSONSyntaxError(
+                source=key,
+                token=pseudo_token,
+                message=message,
+                message_kind='Type',
+            )
+
+    def object_for(kind: PathAction) -> Any:
+        if kind is PathAction.KEY:
+            return {}
+        elif kind in {PathAction.INDEX, PathAction.APPEND}:
+            return []
+        else:
+            assert_cant_happen()
+
+    for index, (path, next_path) in enumerate(zip(paths, paths[1:])):
+        # If there is no context yet, set it.
+# ...",,
+21,long_method,httpie/cli/nested_json/parse.py,parse,rule,"102 lines, cyclomatic complexity 5, nesting 4",True,,,,"def parse(source: str) -> Iterator[Path]:
+    """"""
+    start: root_path path*
+    root_path: (literal | index_path | append_path)
+    literal: TEXT | NUMBER
+
+    path:
+        key_path
+        | index_path
+        | append_path
+    key_path: LEFT_BRACKET TEXT RIGHT_BRACKET
+    index_path: LEFT_BRACKET NUMBER RIGHT_BRACKET
+    append_path: LEFT_BRACKET RIGHT_BRACKET
+
+    """"""
+
+    tokens = list(tokenize(source))
+    cursor = 0
+
+    def can_advance():
+        return cursor < len(tokens)
+
+    # noinspection PyShadowingNames
+    def expect(*kinds):
+        nonlocal cursor
+        assert kinds
+        if can_advance():
+            token = tokens[cursor]
+            cursor += 1
+            if token.kind in kinds:
+                return token
+        elif tokens:
+            token = tokens[-1]._replace(
+                start=tokens[-1].end + 0,
+                end=tokens[-1].end + 1,
+            )
+        else:
+            token = None
+        if len(kinds) == 1:
+            suffix = kinds[0].to_name()
+# ...",,
+22,long_method,httpie/cli/nested_json/parse.py,tokenize,rule,"52 lines, cyclomatic complexity 6, nesting 4",True,,,,"def tokenize(source: str) -> Iterator[Token]:
+    cursor = 0
+    backslashes = 0
+    buffer = []
+
+    def send_buffer() -> Iterator[Token]:
+        nonlocal backslashes
+        if not buffer:
+            return None
+
+        value = ''.join(buffer)
+        kind = TokenKind.TEXT
+        if not backslashes:
+            for variation, kind in [
+                (int, TokenKind.NUMBER),
+                (check_escaped_int, TokenKind.TEXT),
+            ]:
+                try:
+                    value = variation(value)
+                except ValueError:
+                    continue
+                else:
+                    break
+        yield Token(
+            kind=kind,
+            value=value,
+            start=cursor - (len(buffer) + backslashes),
+            end=cursor,
+        )
+        buffer.clear()
+        backslashes = 0
+
+    def can_advance() -> bool:
+        return cursor < len(source)
+
+    while can_advance():
+        index = source[cursor]
+        if index in OPERATORS:
+            yield from send_buffer()
+            yield Token(OPERATORS[index], index, cursor, cursor + 1)
+# ...",,
+23,duplicated_logic,httpie/cli/options.py,httpie/cli/options.py::add_group@59|httpie/output/streams.py::decode_chunk@145,gate,AST similarity 0.806,False,,,,"# httpie/cli/options.py
+def add_group(self, name: str, **kwargs) -> 'Group':
+        group = Group(name, **kwargs)
+        self.groups.append(group)
+        return group
+
+# httpie/output/streams.py
+def decode_chunk(self, raw_chunk: str) -> str:
+        chunk, guessed_encoding = smart_decode(raw_chunk, self.encoding)
+        self._encoding_guesses.append(guessed_encoding)
+        return chunk",,
+24,long_method,httpie/cli/options.py,Argument.serialize,rule,"53 lines, cyclomatic complexity 11, nesting 2",True,,,,"def serialize(self, *, isolation_mode: bool = False) -> Dict[str, Any]:
+        configuration = self.configuration.copy()
+
+        # Unpack the dynamically computed choices, since we
+        # will need to store the actual values somewhere.
+        action = configuration.pop('action', None)
+        short_help = configuration.pop('short_help', None)
+        nested_options = configuration.pop('nested_options', None)
+
+        if action == 'lazy_choices':
+            choices = LazyChoices(
+                self.aliases,
+                **{'dest': None, **configuration},
+                isolation_mode=isolation_mode
+            )
+            configuration['choices'] = list(choices.load())
+            configuration['help'] = choices.help
+
+        result = {}
+        if self.aliases:
+            result['options'] = self.aliases.copy()
+        else:
+            result['options'] = [configuration['metavar']]
+            result['is_positional'] = True
+
+        qualifiers = JSON_QUALIFIER_TO_OPTIONS[configuration.get('nargs', Qualifiers.SUPPRESS)]
+        result.update(qualifiers)
+
+        description = configuration.get('help')
+        if description and description is not Qualifiers.SUPPRESS:
+            result['short_description'] = short_help
+            result['description'] = description
+
+        if nested_options:
+            result['nested_options'] = nested_options
+
+        python_type = configuration.get('type')
+        if python_type is not None:
+            if hasattr(python_type, '__name__'):
+                type_name = python_type.__name__
+# ...",,
+25,flag_argument,httpie/cli/requestitems.py,convert_json_value_to_form_if_needed,gate,boolean parameter(s) ['in_json_mode'] select a branch,True,medium,"The function branches based on 'in_json_mode', performing different actions.",Split into two functions: one for JSON mode and one for form mode.,"def convert_json_value_to_form_if_needed(in_json_mode: bool, processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+    """"""
+    We allow primitive values to be passed to forms via JSON key/value syntax.
+
+    But complex values lead to an error because there’s no clear way to serialize them.
+
+    """"""
+    if in_json_mode:
+        return processor
+
+    @functools.wraps(processor)
+    def wrapper(*args, **kwargs) -> str:
+        try:
+            output = processor(*args, **kwargs)
+        except ParseError:
+            output = None
+        if isinstance(output, (str, int, float)):
+            return str(output)
+        else:
+            raise ParseError('Cannot use complex JSON value types with --form/--multipart.')
+
+    return wrapper",,
+26,long_method,httpie/cli/requestitems.py,RequestItems.from_args,rule,"84 lines, cyclomatic complexity 7, nesting 2",True,,,,"def from_args(
+        cls,
+        request_item_args: List[KeyValueArg],
+        request_type: Optional[RequestType] = None,
+    ) -> 'RequestItems':
+        instance = cls(request_type=request_type)
+        rules: Dict[str, Tuple[Callable, dict]] = {
+            SEPARATOR_HEADER: (
+                process_header_arg,
+                instance.headers,
+            ),
+            SEPARATOR_HEADER_EMPTY: (
+                process_empty_header_arg,
+                instance.headers,
+            ),
+            SEPARATOR_HEADER_EMBED: (
+                process_embed_header_arg,
+                instance.headers,
+            ),
+            SEPARATOR_QUERY_PARAM: (
+                process_query_param_arg,
+                instance.params,
+            ),
+            SEPARATOR_QUERY_EMBED_FILE: (
+                process_embed_query_param_arg,
+                instance.params,
+            ),
+            SEPARATOR_FILE_UPLOAD: (
+                process_file_upload_arg,
+                instance.files,
+            ),
+            SEPARATOR_DATA_STRING: (
+                process_data_item_arg,
+                instance.data,
+            ),
+            SEPARATOR_DATA_EMBED_FILE_CONTENTS: (
+                process_data_embed_file_contents_arg,
+                instance.data,
+            ),
+            SEPARATOR_GROUP_NESTED_JSON_ITEMS: (
+# ...",,
+27,data_clumps,httpie/cli/utils.py,httpie/cli/utils.py::__call__@23|httpie/cli/utils.py::__call__@78,gate,"parameters ['namespace', 'option_string', 'parser', 'values'] recur in 2 signatures",True,medium,"Parameters ['namespace', 'option_string', 'parser', 'values'] recur in 2 signatures.","Introduce a dataclass named 'OptionData' with fields 'namespace', 'option_string', 'parser', 'values' and pass it to each function.","# httpie/cli/utils.py
+def __call__(self, parser, namespace, values, option_string=None):
+        parser.print_manual()
+        parser.exit()
+
+# httpie/cli/utils.py
+def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)",,
+28,long_parameter_list,httpie/cli/utils.py,LazyChoices.__init__,rule,7 parameters,True,,,,"def __init__(
+        self,
+        *args,
+        getter: Callable[[], Iterable[T]],
+        help_formatter: Optional[Callable[[T, bool], str]] = None,
+        sort: bool = False,
+        cache: bool = True,
+        isolation_mode: bool = False,
+        **kwargs
+    ) -> None:
+        self.getter = getter
+        self.help_formatter = help_formatter
+        self.sort = sort
+        self.cache = cache
+        self.isolation_mode = isolation_mode
+        self._help: Optional[str] = None
+        self._obj: Optional[Iterable[T]] = None
+        super().__init__(*args, **kwargs)
+        self.choices = self",,
+29,primitive_obsession,httpie/client.py,ensure_path_as_is,gate,"domain values passed as raw primitives and checked or transformed: ['orig_url', 'prepped_url']",True,medium,"Function validates and normalises raw values ('orig_url', 'prepped_url').",Introduce a URL dataclass to encapsulate validation and formatting.,"def ensure_path_as_is(orig_url: str, prepped_url: str) -> str:
+    """"""
+    Handle `--path-as-is` by replacing the path component of the prepared
+    URL with the path component from the original URL. Other parts stay
+    untouched because other (welcome) processing on the URL might have
+    taken place.
+
+    <https://github.com/httpie/cli/issues/895>
+
+
+    <https://ec.haxx.se/http/http-basics#path-as-is>
+    <https://curl.haxx.se/libcurl/c/CURLOPT_PATH_AS_IS.html>
+
+    >>> ensure_path_as_is('http://foo/../', 'http://foo/?foo=bar')
+    'http://foo/../?foo=bar'
+
+    """"""
+    parsed_orig, parsed_prepped = urlparse(orig_url), urlparse(prepped_url)
+    final_dict = {
+        # noinspection PyProtectedMember
+        **parsed_prepped._asdict(),
+        'path': parsed_orig.path,
+    }
+    return urlunparse(tuple(final_dict.values()))",,
+30,data_clumps,httpie/client.py,httpie/client.py::collect_messages@43|httpie/client.py::make_request_kwargs@325,gate,"parameters ['args', 'env', 'request_body_read_callback'] recur in 2 signatures",True,medium,"Parameters ['args', 'env', 'request_body_read_callback'] recur in 2 signatures.","Introduce a dataclass named 'RequestContext' with fields 'args', 'env', 'request_body_read_callback' and pass it to both functions.","# httpie/client.py
+def collect_messages(
+    env: Environment,
+    args: argparse.Namespace,
+    request_body_read_callback: Callable[[bytes], None] = None,
+) -> Iterable[RequestsMessage]:
+    httpie_session = None
+    httpie_session_headers = None
+    if args.session or args.session_read_only:
+        httpie_session = get_httpie_session(
+            env=env,
+            config_dir=env.config.directory,
+            session_name=args.session or args.session_read_only,
+            host=args.headers.get('Host'),
+            url=args.url,
+        )
+        httpie_session_headers = httpie_session.headers
+
+    request_kwargs = make_request_kwargs(
+        env,
+        args=args,
+        base_headers=httpie_session_headers,
+        request_body_read_callback=request_body_read_callback
+    )
+    send_kwargs = make_send_kwargs(args)
+    send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+    requests_session = build_requests_session(
+        ssl_version=args.ssl_version,
+        ciphers=args.ciphers,
+        verify=bool(send_kwargs_mergeable_from_env['verify'])
+    )
+
+    if httpie_session:
+        httpie_session.update_headers(request_kwargs['headers'])
+        requests_session.cookies = httpie_session.cookies
+        if args.auth_plugin:
+            # Save auth from CLI to HTTPie session.
+            httpie_session.auth = {
+                'type': args.auth_plugin.auth_type,
+                'raw_auth': args.auth_plugin.raw_auth,
+# ...",,
+31,data_clumps,httpie/client.py,httpie/client.py::build_requests_session@156|httpie/ssl_.py::__init__@41|httpie/ssl_.py::_create_ssl_context@71,gate,"parameters ['ciphers', 'ssl_version', 'verify'] recur in 3 signatures",True,medium,"Parameters ['ciphers', 'ssl_version', 'verify'] recur in 3 signatures.",Introduce a dataclass named 'SSLConfig' and pass it in each function.,"# httpie/client.py
+def build_requests_session(
+    verify: bool,
+    ssl_version: str = None,
+    ciphers: str = None,
+) -> requests.Session:
+    requests_session = requests.Session()
+
+    # Install our adapter.
+    http_adapter = HTTPieHTTPAdapter()
+    https_adapter = HTTPieHTTPSAdapter(
+        ciphers=ciphers,
+        verify=verify,
+        ssl_version=(
+            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+            if ssl_version else None
+        ),
+    )
+    requests_session.mount('http://', http_adapter)
+    requests_session.mount('https://', https_adapter)
+
+    # Install adapters from plugins.
+    for plugin_cls in plugin_manager.get_transport_plugins():
+        transport_plugin = plugin_cls()
+        requests_session.mount(
+            prefix=transport_plugin.prefix,
+            adapter=transport_plugin.get_adapter(),
+        )
+
+    return requests_session
+
+# httpie/ssl_.py
+def __init__(
+        self,
+        verify: bool,
+        ssl_version: str = None,
+        ciphers: str = None,
+        **kwargs
+    ):
+        self._ssl_context = self._create_ssl_context(
+# ...",,
+32,long_method,httpie/client.py,collect_messages,rule,"98 lines, cyclomatic complexity 21, nesting 5",True,,,,"def collect_messages(
+    env: Environment,
+    args: argparse.Namespace,
+    request_body_read_callback: Callable[[bytes], None] = None,
+) -> Iterable[RequestsMessage]:
+    httpie_session = None
+    httpie_session_headers = None
+    if args.session or args.session_read_only:
+        httpie_session = get_httpie_session(
+            env=env,
+            config_dir=env.config.directory,
+            session_name=args.session or args.session_read_only,
+            host=args.headers.get('Host'),
+            url=args.url,
+        )
+        httpie_session_headers = httpie_session.headers
+
+    request_kwargs = make_request_kwargs(
+        env,
+        args=args,
+        base_headers=httpie_session_headers,
+        request_body_read_callback=request_body_read_callback
+    )
+    send_kwargs = make_send_kwargs(args)
+    send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+    requests_session = build_requests_session(
+        ssl_version=args.ssl_version,
+        ciphers=args.ciphers,
+        verify=bool(send_kwargs_mergeable_from_env['verify'])
+    )
+
+    if httpie_session:
+        httpie_session.update_headers(request_kwargs['headers'])
+        requests_session.cookies = httpie_session.cookies
+        if args.auth_plugin:
+            # Save auth from CLI to HTTPie session.
+            httpie_session.auth = {
+                'type': args.auth_plugin.auth_type,
+                'raw_auth': args.auth_plugin.raw_auth,
+            }
+# ...",,
+33,long_method,httpie/client.py,make_request_kwargs,rule,"50 lines, cyclomatic complexity 12, nesting 1",True,,,,"def make_request_kwargs(
+    env: Environment,
+    args: argparse.Namespace,
+    base_headers: HTTPHeadersDict = None,
+    request_body_read_callback=lambda chunk: chunk
+) -> dict:
+    """"""
+    Translate our `args` into `requests.Request` keyword arguments.
+
+    """"""
+    files = args.files
+    # Serialize JSON data, if needed.
+    data = args.data
+    auto_json = data and not args.form
+    if (args.json or auto_json) and isinstance(data, dict):
+        data = json_dict_to_request_body(data)
+
+    # Finalize headers.
+    headers = make_default_headers(args)
+    if base_headers:
+        headers.update(base_headers)
+    headers.update(args.headers)
+    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
+        # When online, we let requests set the header instead to be able more
+        # easily verify chunking is taking place.
+        headers['Transfer-Encoding'] = 'chunked'
+    headers = finalize_headers(headers)
+
+    if (args.form and files) or args.multipart:
+        data, headers['Content-Type'] = get_multipart_data_and_content_type(
+            data=args.multipart_data,
+            boundary=args.boundary,
+            content_type=args.headers.get('Content-Type'),
+        )
+
+    return {
+        'method': args.method.lower(),
+        'url': args.url,
+        'headers': headers,
+        'data': prepare_request_body(
+# ...",,
+34,duplicated_logic,httpie/compat.py,httpie/compat.py::func@38|httpie/plugins/base.py::get_adapter@87,gate,AST similarity 0.933; cluster of 3 similar functions,False,,,,"# httpie/compat.py
+def func(instance):
+            raise TypeError(
+                'Cannot use cached_property instance without calling '
+                '__set_name__() on it.'
+            )
+
+# httpie/plugins/base.py
+def get_adapter(self):
+        """"""
+        Return a ``requests.adapters.BaseAdapter`` subclass instance to be
+        mounted to ``self.prefix``.
+
+        """"""
+        raise NotImplementedError()",,
+35,magic_numbers,httpie/config.py,BaseConfigDict.ensure_directory,gate,numeric literals [448] in the function body,False,,,,"def ensure_directory(self):
+        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)",,
+36,message_chains,httpie/config.py,BaseConfigDict.ensure_directory,gate,attribute chain of 3 hops,False,low,self.path.parent.mkdir,Add a method on BaseConfigDict to return the parent directory and call it instead.,"def ensure_directory(self):
+        self.path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)",,
+37,magic_numbers,httpie/config.py,BaseConfigDict.save,gate,numeric literals [4] in the function body,False,,,,"def save(self, *, bump_version: bool = False):
+        self.setdefault('__meta__', {})
+        if bump_version or 'httpie' not in self['__meta__']:
+            self['__meta__']['httpie'] = __version__
+        if self.helpurl:
+            self['__meta__']['help'] = self.helpurl
+
+        if self.about:
+            self['__meta__']['about'] = self.about
+
+        self.ensure_directory()
+
+        json_string = json.dumps(
+            obj=self.post_process_data(self),
+            indent=4,
+            sort_keys=True,
+            ensure_ascii=True,
+        )
+        self.path.write_text(json_string + '\n', encoding=UTF8)",,
+38,flag_argument,httpie/config.py,BaseConfigDict.save,gate,boolean parameter(s) ['bump_version'] select a branch,True,medium,The function has a boolean parameter 'bump_version' that selects between two different branches.,"Split the function into two well-named functions, one for saving without bumping the version and another for saving with version bump.","def save(self, *, bump_version: bool = False):
+        self.setdefault('__meta__', {})
+        if bump_version or 'httpie' not in self['__meta__']:
+            self['__meta__']['httpie'] = __version__
+        if self.helpurl:
+            self['__meta__']['help'] = self.helpurl
+
+        if self.about:
+            self['__meta__']['about'] = self.about
+
+        self.ensure_directory()
+
+        json_string = json.dumps(
+            obj=self.post_process_data(self),
+            indent=4,
+            sort_keys=True,
+            ensure_ascii=True,
+        )
+        self.path.write_text(json_string + '\n', encoding=UTF8)",,
+39,flag_argument,httpie/core.py,raw_main,gate,boolean parameter(s) ['use_default_options'] select a branch,True,medium,The function uses 'use_default_options' to switch between two different behaviors.,"Split the function into two well-named functions, one for each behavior.","def raw_main(
+    parser: argparse.ArgumentParser,
+    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
+    args: List[Union[str, bytes]] = sys.argv,
+    env: Environment = Environment(),
+    use_default_options: bool = True,
+) -> ExitStatus:
+    program_name, *args = args
+    env.program_name = os.path.basename(program_name)
+    args = decode_raw_args(args, env.stdin_encoding)
+
+    if is_daemon_mode(args):
+        return run_daemon_task(env, args)
+
+    plugin_manager.load_installed_plugins(env.config.plugins_dir)
+
+    if use_default_options and env.config.default_options:
+        args = env.config.default_options + args
+
+    include_debug_info = '--debug' in args
+    include_traceback = include_debug_info or '--traceback' in args
+
+    def handle_generic_error(e, annotation=None):
+        msg = str(e)
+        if hasattr(e, 'request'):
+            request = e.request
+            if hasattr(request, 'url'):
+                msg = (
+                    f'{msg} while doing a {request.method}'
+                    f' request to URL: {request.url}'
+                )
+        if annotation:
+            msg += annotation
+        env.log_error(f'{type(e).__name__}: {msg}')
+        if include_traceback:
+            raise
+
+    if include_debug_info:
+        print_debug_info(env)
+        if args == ['--debug']:
+# ...",,
+40,long_method,httpie/core.py,raw_main,rule,"112 lines, cyclomatic complexity 27, nesting 5",True,,,,"def raw_main(
+    parser: argparse.ArgumentParser,
+    main_program: Callable[[argparse.Namespace, Environment], ExitStatus],
+    args: List[Union[str, bytes]] = sys.argv,
+    env: Environment = Environment(),
+    use_default_options: bool = True,
+) -> ExitStatus:
+    program_name, *args = args
+    env.program_name = os.path.basename(program_name)
+    args = decode_raw_args(args, env.stdin_encoding)
+
+    if is_daemon_mode(args):
+        return run_daemon_task(env, args)
+
+    plugin_manager.load_installed_plugins(env.config.plugins_dir)
+
+    if use_default_options and env.config.default_options:
+        args = env.config.default_options + args
+
+    include_debug_info = '--debug' in args
+    include_traceback = include_debug_info or '--traceback' in args
+
+    def handle_generic_error(e, annotation=None):
+        msg = str(e)
+        if hasattr(e, 'request'):
+            request = e.request
+            if hasattr(request, 'url'):
+                msg = (
+                    f'{msg} while doing a {request.method}'
+                    f' request to URL: {request.url}'
+                )
+        if annotation:
+            msg += annotation
+        env.log_error(f'{type(e).__name__}: {msg}')
+        if include_traceback:
+            raise
+
+    if include_debug_info:
+        print_debug_info(env)
+        if args == ['--debug']:
+# ...",,
+41,long_method,httpie/core.py,program,rule,"98 lines, cyclomatic complexity 24, nesting 5",True,,,,"def program(args: argparse.Namespace, env: Environment) -> ExitStatus:
+    """"""
+    The main program without error handling.
+
+    """"""
+    # TODO: Refactor and drastically simplify, especially so that the separator logic is elsewhere.
+    exit_status = ExitStatus.SUCCESS
+    downloader = None
+    initial_request: Optional[requests.PreparedRequest] = None
+    final_response: Optional[requests.Response] = None
+    processing_options = ProcessingOptions.from_raw_args(args)
+
+    def separate():
+        getattr(env.stdout, 'buffer', env.stdout).write(MESSAGE_SEPARATOR_BYTES)
+
+    def request_body_read_callback(chunk: bytes):
+        should_pipe_to_stdout = bool(
+            # Request body output desired
+            OUT_REQ_BODY in args.output_options
+            # & not `.read()` already pre-request (e.g., for  compression)
+            and initial_request
+            # & non-EOF chunk
+            and chunk
+        )
+        if should_pipe_to_stdout:
+            return write_raw_data(
+                env,
+                chunk,
+                processing_options=processing_options,
+                headers=initial_request.headers
+            )
+
+    try:
+        if args.download:
+            args.follow = True  # --download implies --follow.
+            downloader = Downloader(env, output_file=args.output_file, resume=args.download_resume)
+            downloader.pre_request(args.headers)
+        messages = collect_messages(env, args=args,
+                                    request_body_read_callback=request_body_read_callback)
+        force_separator = False
+# ...",,
+42,message_chains,httpie/downloads.py,filename_from_content_disposition,gate,attribute chain of 4 hops,False,low,os.path.basename(filename).lstrip('.').strip,Add a method on Message to return the sanitized filename.,"def filename_from_content_disposition(
+    content_disposition: str
+) -> Optional[str]:
+    """"""
+    Extract and validate filename from a Content-Disposition header.
+
+    :param content_disposition: Content-Disposition value
+    :return: the filename if present and valid, otherwise `None`
+
+    """"""
+    # attachment; filename=jakubroztocil-httpie-0.4.1-20-g40bd8f6.tar.gz
+
+    msg = Message(f'Content-Disposition: {content_disposition}')
+    filename = msg.get_filename()
+    if filename:
+        # Basic sanitation.
+        filename = os.path.basename(filename).lstrip('.').strip()
+        if filename:
+            return filename",,
+43,primitive_obsession,httpie/downloads.py,filename_from_url,gate,domain values passed as raw primitives and checked or transformed: ['url'],True,medium,url is passed as a raw str and checked or transformed.,Introduce a URL dataclass that validates once on creation and formats itself.,"def filename_from_url(url: str, content_type: Optional[str]) -> str:
+    fn = urlsplit(url).path.rstrip('/')
+    fn = os.path.basename(fn) if fn else 'index'
+    if '.' not in fn and content_type:
+        content_type = content_type.split(';')[0]
+        if content_type == 'text/plain':
+            # mimetypes returns '.ksh'
+            ext = '.txt'
+        else:
+            ext = mimetypes.guess_extension(content_type)
+
+        if ext == '.htm':
+            ext = '.html'
+
+        if ext:
+            fn += ext
+
+    return fn",,
+44,magic_numbers,httpie/downloads.py,get_filename_max_length,gate,numeric literals [255] in the function body,True,medium,Numeric literal 255 used for filename max length,Define MAX_FILENAME_LENGTH as a module constant and use it,"def get_filename_max_length(directory: str) -> int:
+    max_len = 255
+    if hasattr(os, 'pathconf') and 'PC_NAME_MAX' in os.pathconf_names:
+        max_len = os.pathconf(directory, 'PC_NAME_MAX')
+    return max_len",,
+45,long_method,httpie/downloads.py,parse_content_range,rule,"56 lines, cyclomatic complexity 10, nesting 1",True,,,,"def parse_content_range(content_range: str, resumed_from: int) -> int:
+    """"""
+    Parse and validate Content-Range header.
+
+    <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html>
+
+    :param content_range: the value of a Content-Range response header
+                          eg. ""bytes 21010-47021/47022""
+    :param resumed_from: first byte pos. from the Range request header
+    :return: total size of the response body when fully downloaded.
+
+    """"""
+    if content_range is None:
+        raise ContentRangeError('Missing Content-Range')
+
+    pattern = (
+        r'^bytes (?P<first_byte_pos>\d+)-(?P<last_byte_pos>\d+)'
+        r'/(\*|(?P<instance_length>\d+))$'
+    )
+    match = re.match(pattern, content_range)
+
+    if not match:
+        raise ContentRangeError(
+            f'Invalid Content-Range format {content_range!r}')
+
+    content_range_dict = match.groupdict()
+    first_byte_pos = int(content_range_dict['first_byte_pos'])
+    last_byte_pos = int(content_range_dict['last_byte_pos'])
+    instance_length = (
+        int(content_range_dict['instance_length'])
+        if content_range_dict['instance_length']
+        else None
+    )
+
+    # ""A byte-content-range-spec with a byte-range-resp-spec whose
+    # last- byte-pos value is less than its first-byte-pos value,
+    # or whose instance-length value is less than or equal to its
+    # last-byte-pos value, is invalid. The recipient of an invalid
+    # byte-content-range- spec MUST ignore it and any content
+    # transferred along with it.""
+# ...",,
+46,long_method,httpie/downloads.py,Downloader.start,rule,"59 lines, cyclomatic complexity 7, nesting 3",True,,,,"def start(
+        self,
+        initial_url: str,
+        final_response: requests.Response
+    ) -> Tuple[RawStream, IO]:
+        """"""
+        Initiate and return a stream for `response` body  with progress
+        callback attached. Can be called only once.
+
+        :param initial_url: The original requested URL
+        :param final_response: Initiated response object with headers already fetched
+
+        :return: RawStream, output_file
+
+        """"""
+        assert not self.status.time_started
+
+        # FIXME: some servers still might sent Content-Encoding: gzip
+        # <https://github.com/httpie/cli/issues/423>
+        try:
+            total_size = int(final_response.headers['Content-Length'])
+        except (KeyError, ValueError, TypeError):
+            total_size = None
+
+        if not self._output_file:
+            self._output_file = self._get_output_file_from_response(
+                initial_url=initial_url,
+                final_response=final_response,
+            )
+        else:
+            # `--output, -o` provided
+            if self._resume and final_response.status_code == PARTIAL_CONTENT:
+                total_size = parse_content_range(
+                    final_response.headers.get('Content-Range'),
+                    self._resumed_from
+                )
+
+            else:
+                self._resumed_from = 0
+                try:
+# ...",,
+47,duplicated_logic,httpie/internal/daemons.py,httpie/internal/daemons.py::_spawn@102|httpie/internal/update_warnings.py::fetch_updates@55,gate,AST similarity 0.81,False,low,Both functions call another function with a parameter for the difference.,Extract a helper function and make each call it with the appropriate parameter.,"# httpie/internal/daemons.py
+def _spawn(args: List[str], process_context: ProcessContext) -> None:
+    """"""
+    Spawn a new process to run the given command.
+    """"""
+    if is_windows:
+        _spawn_windows(args, process_context)
+    else:
+        _spawn_posix(args, process_context)
+
+# httpie/internal/update_warnings.py
+def fetch_updates(env: Environment, lazy: bool = True):
+    if lazy:
+        spawn_daemon('fetch_updates')
+    else:
+        _fetch_updates(env)",,
+48,duplicated_logic,httpie/internal/update_warnings.py,httpie/internal/update_warnings.py::_update_checker@91|httpie/internal/update_warnings.py::wrapper@97,gate,AST similarity 0.906,True,medium,Both functions perform the same computation with the same steps.,Extract a helper function and make each copy call it.,"# httpie/internal/update_warnings.py
+def _update_checker(
+    func: Callable[[Environment], None]
+) -> Callable[[Environment], None]:
+    """"""Control the execution of the update checker (suppress errors, trigger
+    auto updates etc.)""""""
+
+    def wrapper(env: Environment) -> None:
+        with _get_suppress_context(env):
+            func(env)
+
+        with _get_suppress_context(env):
+            maybe_fetch_updates(env)
+
+    return wrapper
+
+# httpie/internal/update_warnings.py
+def wrapper(env: Environment) -> None:
+        with _get_suppress_context(env):
+            func(env)
+
+        with _get_suppress_context(env):
+            maybe_fetch_updates(env)",,
+49,flag_argument,httpie/internal/update_warnings.py,fetch_updates,gate,boolean parameter(s) ['lazy'] select a branch,True,medium,Boolean parameter 'lazy' selects between two different behaviors.,Split into two functions: fetch_updates_lazy and fetch_updates_eager.,"def fetch_updates(env: Environment, lazy: bool = True):
+    if lazy:
+        spawn_daemon('fetch_updates')
+    else:
+        _fetch_updates(env)",,
+50,duplicated_logic,httpie/legacy/v3_1_0_session_cookie_format.py,httpie/legacy/v3_1_0_session_cookie_format.py::post_process@67|httpie/legacy/v3_2_0_session_header_format.py::post_process@49,gate,AST similarity 0.806,False,low,Both functions perform a similar transformation on a list of dictionaries based on the original type.,Extract a helper function to handle the transformation and call it from both functions.,"# httpie/legacy/v3_1_0_session_cookie_format.py
+def post_process(
+    normalized_cookies: List[Dict[str, Any]],
+    *,
+    original_type: Type[Any]
+) -> Any:
+    """"""Convert the cookies to their original format for
+    maximum compatibility.""""""
+
+    if issubclass(original_type, dict):
+        return {
+            cookie.pop('name'): cookie
+            for cookie in normalized_cookies
+        }
+    else:
+        return normalized_cookies
+
+# httpie/legacy/v3_2_0_session_header_format.py
+def post_process(
+    normalized_headers: List[Dict[str, Any]],
+    *,
+    original_type: Type[Any]
+) -> Any:
+    """"""Deserialize given header store into the original form it was
+    used in.""""""
+
+    if issubclass(original_type, dict):
+        # For the legacy behavior, preserve the last value.
+        return {
+            item['name']: item['value']
+            for item in normalized_headers
+        }
+    else:
+        return normalized_headers",,
+51,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller.setup_plugins_dir,gate,attribute chain of 3 hops,False,low,self.env.stderr.write,Add a method on PluginInstaller to handle the error message.,"def setup_plugins_dir(self) -> None:
+        try:
+            self.dir.mkdir(
+                exist_ok=True,
+                parents=True
+            )
+        except OSError:
+            self.env.stderr.write(
+                f'Couldn\'t create ""{self.dir!s}""'
+                ' directory for plugin installation.'
+                ' Please re-check the permissions for that directory,'
+                ' and if needed, allow write-access.'
+            )
+            raise",,
+52,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller.fail,gate,attribute chain of 3 hops,False,low,self.env.stderr.write,Add a method on self.env to write the message.,"def fail(
+        self,
+        command: str,
+        target: Optional[str] = None,
+        reason: Optional[str] = None
+    ) -> ExitStatus:
+        message = f'Can\'t {command}'
+        if target:
+            message += f' {target!r}'
+        if reason:
+            message += f': {reason}'
+
+        self.env.stderr.write(message + '\n')
+        return ExitStatus.ERROR",,
+53,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller._install,gate,attribute chain of 3 hops,False,low,self.env.stderr.write and self.env.stdout.write,Add methods on PluginInstaller to handle logging.,"def _install(self, targets: List[str], mode='install') -> Tuple[
+        bytes, ExitStatus
+    ]:
+        pip_args = [
+            'install',
+            '--prefer-binary',
+            f'--prefix={self.dir}',
+            '--no-warn-script-location',
+        ]
+        if mode == 'upgrade':
+            pip_args.append('--upgrade')
+        pip_args.extend(targets)
+
+        try:
+            stdout = run_pip(pip_args)
+        except PipError as pip_error:
+            error = pip_error
+            stdout = pip_error.stdout
+        else:
+            error = None
+
+        self.env.stdout.write(stdout.decode())
+
+        if error:
+            reason = None
+            if error.stderr:
+                stderr = error.stderr.decode()
+
+                if self.debug:
+                    self.env.stderr.write('Command failed: ')
+                    self.env.stderr.write('pip ' + ' '.join(pip_args) + '\n')
+                    self.env.stderr.write(textwrap.indent('  ', stderr))
+
+                last_line = stderr.strip().splitlines()[-1]
+                severity, _, message = last_line.partition(': ')
+                if severity == 'ERROR':
+                    reason = message
+
+            stdout = error.stdout
+            exit_status = self.fail(mode, ', '.join(targets), reason)
+# ...",,
+54,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller.install,gate,attribute chain of 3 hops,False,low,self.env.stdout.write and self.env.stdout.flush chained through 2 project objects.,Add a method on PluginInstaller to handle the output.,"def install(self, targets: List[str]) -> ExitStatus:
+        self.env.stdout.write(f""Installing {', '.join(targets)}...\n"")
+        self.env.stdout.flush()
+        _, exit_status = self._install(targets)
+        return exit_status",,
+55,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller._clear_metadata,gate,attribute chain of 3 hops,True,medium,"PEP_503.sub('-', name).lower().replace('-', '_')",Add a method on PEP_503 to handle the transformation.,"def _clear_metadata(self, targets: List[str]) -> None:
+        # Due to an outstanding pip problem[0], we have to get rid of
+        # existing metadata for old versions manually.
+        # [0]: https://github.com/pypa/pip/issues/10727
+        result_deps = defaultdict(list)
+        for site_dir in get_site_paths(self.dir):
+            for child in site_dir.iterdir():
+                if child.suffix in {'.dist-info', '.egg-info'}:
+                    name, _, version = child.stem.rpartition('-')
+                    result_deps[name].append((version, child))
+
+        for target in targets:
+            name, _, version = target.rpartition('-')
+            name = PEP_503.sub(""-"", name).lower().replace('-', '_')
+            if name not in result_deps:
+                continue
+
+            for result_version, meta_path in result_deps[name]:
+                if version != result_version:
+                    shutil.rmtree(meta_path)",,
+56,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller.upgrade,gate,attribute chain of 3 hops,False,low,self.env.stdout.write and self.env.stdout.flush chained through self.env,Add a method on PluginInstaller to handle the output,"def upgrade(self, targets: List[str]) -> ExitStatus:
+        self.env.stdout.write(f""Upgrading {', '.join(targets)}...\n"")
+        self.env.stdout.flush()
+
+        raw_stdout, exit_status = self._install(
+            targets,
+            mode='upgrade'
+        )
+        if not raw_stdout:
+            return exit_status
+
+        stdout = raw_stdout.decode()
+        installation_line = stdout.splitlines()[-1]
+        if installation_line.startswith('Successfully installed'):
+            self._clear_metadata(installation_line.split()[2:])",,
+57,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller._uninstall,gate,attribute chain of 3 hops,False,low,self.env.stdout.write,Add a method on PluginInstaller to handle the write operation.,"def _uninstall(self, target: str) -> Optional[ExitStatus]:
+        try:
+            distribution = importlib_metadata.distribution(target)
+        except importlib_metadata.PackageNotFoundError:
+            return self.fail('uninstall', target, 'package is not installed')
+
+        base_dir = Path(distribution.locate_file('.')).resolve()
+        if self.dir not in base_dir.parents:
+            # If the package is installed somewhere else (e.g on the site packages
+            # of the real python interpreter), than that means this package is not
+            # installed through us.
+            return self.fail('uninstall', target,
+                             'package is not installed through httpie plugins'
+                             ' interface')
+
+        files = distribution.files
+        if files is None:
+            return self.fail('uninstall', target, 'couldn\'t locate the package')
+
+        # TODO: Consider handling failures here (e.g if it fails,
+        # just revert the operation and leave the site-packages
+        # in a proper shape).
+        for file in files:
+            with suppress(FileNotFoundError):
+                os.unlink(distribution.locate_file(file))
+
+        metadata_path = getattr(distribution, '_path', None)
+        if (
+            metadata_path
+            and metadata_path.exists()
+            and not any(metadata_path.iterdir())
+        ):
+            metadata_path.rmdir()
+
+        self.env.stdout.write(f'Successfully uninstalled {target}\n')",,
+58,message_chains,httpie/manager/tasks/plugins.py,PluginInstaller.list,gate,attribute chain of 3 hops,False,low,self.env.stdout.write is called multiple times,Add a method on PluginInstaller to handle the output,"def list(self) -> None:
+        from httpie.plugins.registry import plugin_manager
+
+        known_plugins = defaultdict(list)
+
+        for entry_point in plugin_manager.iter_entry_points(self.dir):
+            ep_info = (entry_point.group, entry_point.name)
+            ep_name = get_dist_name(entry_point) or entry_point.module
+            known_plugins[ep_name].append(ep_info)
+
+        for plugin, entry_points in known_plugins.items():
+            self.env.stdout.write(plugin)
+
+            version = importlib_metadata.version(plugin)
+            if version is not None:
+                self.env.stdout.write(f' ({version})')
+            self.env.stdout.write('\n')
+
+            for group, entry_point in sorted(entry_points):
+                self.env.stdout.write(f'  {entry_point} ({group})\n')",,
+59,duplicated_logic,httpie/manager/tasks/sessions.py,httpie/manager/tasks/sessions.py::cli_upgrade_session@63|httpie/output/formatters/colors.py::get_lexer_for_body@105,gate,AST similarity 0.837,False,,,,"# httpie/manager/tasks/sessions.py
+def cli_upgrade_session(env: Environment, args: argparse.Namespace) -> ExitStatus:
+    return upgrade_session(
+        env,
+        args=args,
+        hostname=args.hostname,
+        session_name=args.session
+    )
+
+# httpie/output/formatters/colors.py
+def get_lexer_for_body(
+        self, mime: str,
+        body: str
+    ) -> Optional[Type[Lexer]]:
+        return get_lexer(
+            mime=mime,
+            explicit_json=self.explicit_json,
+            body=body,
+        )",,
+60,message_chains,httpie/models.py,HTTPMessage.content_type,gate,attribute chain of 3 hops,False,,,,"def content_type(self) -> str:
+        """"""Return the message content type.""""""
+        ct = self._orig.headers.get('Content-Type', '')
+        if not isinstance(ct, str):
+            ct = ct.decode()
+        return ct",,
+61,message_chains,httpie/models.py,HTTPResponse.metadata,gate,attribute chain of 3 hops,False,low,self._orig.elapsed.total_seconds() involves navigating through multiple objects' internals.,Add a method on HTTPResponse to return elapsed time directly.,"def metadata(self) -> str:
+        data = {}
+        time_to_parse_headers = self._orig.elapsed.total_seconds()
+        # noinspection PyProtectedMember
+        time_since_headers_parsed = monotonic() - self._orig._httpie_headers_parsed_at
+        time_elapsed = time_to_parse_headers + time_since_headers_parsed
+        # data['Headers time'] = str(round(time_to_parse_headers, 5)) + 's'
+        # data['Body time'] = str(round(time_since_headers_parsed, 5)) + 's'
+        data[ELAPSED_TIME_LABEL] = str(round(time_elapsed, 10)) + 's'
+        return '\n'.join(
+            f'{key}: {value}'
+            for key, value in data.items()
+        )",,
+62,magic_numbers,httpie/models.py,HTTPResponse.version,gate,"numeric literals [9, 10, 11, 20, 11] in the function body",True,medium,"Numeric literals 9, 10, 11, 20 used in version mapping.",Name each version as a module constant and use the constants in the code.,"def version(self) -> str:
+        """"""
+        Return the HTTP version used by the server, e.g. '1.1'.
+
+        Assume HTTP/1.1 if version is not available.
+
+        """"""
+        mapping = {
+            9: '0.9',
+            10: '1.0',
+            11: '1.1',
+            20: '2.0',
+        }
+        fallback = 11
+        version = None
+        try:
+            raw = self._orig.raw
+            if getattr(raw, '_original_response', None):
+                version = raw._original_response.version
+            else:
+                version = raw.version
+        except AttributeError:
+            pass
+        return mapping[version or fallback]",,
+63,message_chains,httpie/models.py,HTTPRequest.headers,gate,attribute chain of 3 hops,False,low,self._orig.headers.copy,Add a method on HTTPRequest to return the headers directly.,"def headers(self):
+        url = urlsplit(self._orig.url)
+
+        request_line = '{method} {path}{query} HTTP/1.1'.format(
+            method=self._orig.method,
+            path=url.path or '/',
+            query=f'?{url.query}' if url.query else ''
+        )
+
+        headers = self._orig.headers.copy()
+        if 'Host' not in self._orig.headers:
+            headers['Host'] = url.netloc.split('@')[-1]
+
+        headers = [
+            f'{name}: {value if isinstance(value, str) else value.decode()}'
+            for name, value in headers.items()
+            if not (name.lower() in SKIPPABLE_HEADERS and value == SKIP_HEADER)
+        ]
+
+        headers.insert(0, request_line)
+        headers = '\r\n'.join(headers).strip()
+        return headers",,
+64,duplicated_logic,httpie/output/formatters/colors.py,httpie/output/formatters/colors.py::format_headers@81|httpie/output/formatters/colors.py::format_metadata@98,gate,AST similarity 0.962,False,low,Both functions use pygments.highlight with different lexers but the same formatter.,"Extract a helper function that takes code, lexer, and formatter as parameters.","# httpie/output/formatters/colors.py
+def format_headers(self, headers: str) -> str:
+        return pygments.highlight(
+            code=headers,
+            lexer=self.http_lexer,
+            formatter=self.header_formatter,
+        ).strip()
+
+# httpie/output/formatters/colors.py
+def format_metadata(self, metadata: str) -> str:
+        return pygments.highlight(
+            code=metadata,
+            lexer=self.metadata_lexer,
+            formatter=self.header_formatter,
+        ).strip()",,
+65,magic_numbers,httpie/output/formatters/colors.py,ColorFormatter.__init__,gate,numeric literals [256] in the function body,True,medium,Numeric literal 256 used to check for 256 colors,Define a constant for 256 colors and use it in the code,"def __init__(
+        self,
+        env: Environment,
+        explicit_json=False,
+        color_scheme=DEFAULT_STYLE,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+
+        if not env.colors:
+            self.enabled = False
+            return
+
+        use_auto_style = color_scheme == AUTO_STYLE
+        has_256_colors = env.colors == 256
+        if use_auto_style or not has_256_colors:
+            http_lexer = PygmentsHttpLexer()
+            body_formatter = header_formatter = TerminalFormatter()
+            precise = False
+        else:
+            from ..lexers.http import SimplifiedHTTPLexer
+            header_formatter, body_formatter, precise = self.get_formatters(color_scheme)
+            http_lexer = SimplifiedHTTPLexer(precise=precise)
+
+        self.explicit_json = explicit_json  # --json
+        self.header_formatter = header_formatter
+        self.body_formatter = body_formatter
+        self.http_lexer = http_lexer
+        self.metadata_lexer = MetadataLexer(precise=precise)",,
+66,flag_argument,httpie/output/formatters/colors.py,get_lexer,gate,boolean parameter(s) ['explicit_json'] select a branch,True,medium,The function uses 'explicit_json' to switch between two different behaviors.,"Split the function into two, one for each behavior.","def get_lexer(
+    mime: str,
+    explicit_json=False,
+    body=''
+) -> Optional[Type[Lexer]]:
+    # Build candidate mime type and lexer names.
+    mime_types, lexer_names = [mime], []
+    type_, subtype = mime.split('/', 1)
+    if '+' not in subtype:
+        lexer_names.append(subtype)
+    else:
+        subtype_name, subtype_suffix = subtype.split('+', 1)
+        lexer_names.extend([subtype_name, subtype_suffix])
+        mime_types.extend([
+            f'{type_}/{subtype_name}',
+            f'{type_}/{subtype_suffix}',
+        ])
+
+    # As a last resort, if no lexer feels responsible, and
+    # the subtype contains 'json', take the JSON lexer
+    if 'json' in subtype:
+        lexer_names.append('json')
+
+    # Try to resolve the right lexer.
+    lexer = None
+    for mime_type in mime_types:
+        try:
+            lexer = pygments.lexers.get_lexer_for_mimetype(mime_type)
+            break
+        except ClassNotFound:
+            pass
+    else:
+        for name in lexer_names:
+            try:
+                lexer = pygments.lexers.get_lexer_by_name(name)
+            except ClassNotFound:
+                pass
+
+    if explicit_json and body and (not lexer or isinstance(lexer, TextLexer)):
+        # JSON response with an incorrect Content-Type?
+# ...",,
+67,long_method,httpie/output/formatters/colors.py,get_lexer,rule,"53 lines, cyclomatic complexity 15, nesting 3",True,,,,"def get_lexer(
+    mime: str,
+    explicit_json=False,
+    body=''
+) -> Optional[Type[Lexer]]:
+    # Build candidate mime type and lexer names.
+    mime_types, lexer_names = [mime], []
+    type_, subtype = mime.split('/', 1)
+    if '+' not in subtype:
+        lexer_names.append(subtype)
+    else:
+        subtype_name, subtype_suffix = subtype.split('+', 1)
+        lexer_names.extend([subtype_name, subtype_suffix])
+        mime_types.extend([
+            f'{type_}/{subtype_name}',
+            f'{type_}/{subtype_suffix}',
+        ])
+
+    # As a last resort, if no lexer feels responsible, and
+    # the subtype contains 'json', take the JSON lexer
+    if 'json' in subtype:
+        lexer_names.append('json')
+
+    # Try to resolve the right lexer.
+    lexer = None
+    for mime_type in mime_types:
+        try:
+            lexer = pygments.lexers.get_lexer_for_mimetype(mime_type)
+            break
+        except ClassNotFound:
+            pass
+    else:
+        for name in lexer_names:
+            try:
+                lexer = pygments.lexers.get_lexer_by_name(name)
+            except ClassNotFound:
+                pass
+
+    if explicit_json and body and (not lexer or isinstance(lexer, TextLexer)):
+        # JSON response with an incorrect Content-Type?
+# ...",,
+68,message_chains,httpie/output/lexers/http.py,request_method,gate,attribute chain of 3 hops,False,,,,"def request_method(lexer, match, ctx):
+    response_type = precise(
+        lexer,
+        RESPONSE_TYPES.get(match.group()),
+        pygments.token.Name.Function
+    )
+    yield match.start(), response_type, match.group()",,
+69,data_clumps,httpie/output/lexers/http.py,httpie/output/lexers/http.py::http_response_type@25|httpie/output/lexers/http.py::request_method@45|httpie/output/lexers/metadata.py::speed_based_token@13,gate,"parameters ['ctx', 'lexer', 'match'] recur in 3 signatures",True,medium,"Parameters ['ctx', 'lexer', 'match'] recur in 3 signatures","Introduce a dataclass named 'LexerContext' with fields 'lexer' and 'match', and pass 'ctx' as an instance of 'LexerContext'","# httpie/output/lexers/http.py
+def http_response_type(lexer, match, ctx):
+    status_match = RE_STATUS_LINE.match(match.group())
+    if status_match is None:
+        return None
+
+    status_code, text, reason = status_match.groups()
+    status_type = precise(
+        lexer,
+        STATUS_TYPES.get(status_code[0]),
+        pygments.token.Number
+    )
+
+    groups = pygments.lexer.bygroups(
+        status_type,
+        pygments.token.Text,
+        status_type
+    )
+    yield from groups(lexer, status_match, ctx)
+
+# httpie/output/lexers/http.py
+def request_method(lexer, match, ctx):
+    response_type = precise(
+        lexer,
+        RESPONSE_TYPES.get(match.group()),
+        pygments.token.Name.Function
+    )
+    yield match.start(), response_type, match.group()
+
+# httpie/output/lexers/metadata.py
+def speed_based_token(lexer, match, ctx):
+    try:
+        value = float(match.group())
+    except ValueError:
+        return pygments.token.Number
+
+    for limit, token in SPEED_TOKENS.items():
+        if value <= limit:
+            break
+    else:
+# ...",,
+70,message_chains,httpie/output/lexers/metadata.py,speed_based_token,gate,attribute chain of 4 hops,False,,,,"def speed_based_token(lexer, match, ctx):
+    try:
+        value = float(match.group())
+    except ValueError:
+        return pygments.token.Number
+
+    for limit, token in SPEED_TOKENS.items():
+        if value <= limit:
+            break
+    else:
+        token = pygments.token.Number.SPEED.VERY_SLOW
+
+    response_type = precise(
+        lexer,
+        token,
+        pygments.token.Number
+    )
+    yield match.start(), response_type, match.group()",,
+71,duplicated_logic,httpie/output/processing.py,httpie/output/processing.py::format_headers@44|httpie/output/processing.py::format_metadata@55,gate,AST similarity 0.958,False,low,Both functions iterate over enabled_plugins and apply a method to the input string.,Extract a helper method and call it from both functions.,"# httpie/output/processing.py
+def format_headers(self, headers: str) -> str:
+        for p in self.enabled_plugins:
+            headers = p.format_headers(headers)
+        return headers
+
+# httpie/output/processing.py
+def format_metadata(self, metadata: str) -> str:
+        for p in self.enabled_plugins:
+            metadata = p.format_metadata(metadata)
+        return metadata",,
+72,duplicated_logic,httpie/output/streams.py,httpie/cli/nested_json/errors.py::__init__@7|httpie/output/streams.py::__init__@33,gate,AST similarity 0.821; cluster of 3 similar functions,False,,,,"# httpie/cli/nested_json/errors.py
+def __init__(
+        self,
+        source: str,
+        token: Optional[Token],
+        message: str,
+        message_kind: str = 'Syntax',
+    ) -> None:
+        self.source = source
+        self.token = token
+        self.message = message
+        self.message_kind = message_kind
+
+# httpie/output/streams.py
+def __init__(
+        self,
+        msg: HTTPMessage,
+        output_options: OutputOptions,
+        on_body_chunk_downloaded: Callable[[bytes], None] = None,
+        **kwargs
+    ):
+        """"""
+        :param msg: a :class:`models.HTTPMessage` subclass
+        :param output_options: a :class:`OutputOptions` instance to represent
+                               which parts of the message is printed.
+        """"""
+        assert output_options.any()
+        self.msg = msg
+        self.output_options = output_options
+        self.on_body_chunk_downloaded = on_body_chunk_downloaded
+        self.extra_options = kwargs",,
+73,message_chains,httpie/output/streams.py,BaseStream.get_headers,gate,attribute chain of 3 hops,False,low,self.msg.headers.encode,Add a method on BaseStream to return the encoded headers.,"def get_headers(self) -> bytes:
+        """"""Return the headers' bytes.""""""
+        return self.msg.headers.encode()",,
+74,message_chains,httpie/output/streams.py,BaseStream.get_metadata,gate,attribute chain of 3 hops,False,low,self.msg.metadata.encode,Add a method on BaseStream to return the encoded metadata.,"def get_metadata(self) -> bytes:
+        """"""Return the message metadata.""""""
+        return self.msg.metadata.encode()",,
+75,message_chains,httpie/output/streams.py,PrettyStream.get_headers,gate,attribute chain of 3 hops,False,low,self.formatting.format_headers(self.msg.headers).encode,Add a method on PrettyStream to return encoded headers.,"def get_headers(self) -> bytes:
+        return self.formatting.format_headers(
+            self.msg.headers).encode(self.output_encoding)",,
+76,message_chains,httpie/output/streams.py,PrettyStream.get_metadata,gate,attribute chain of 3 hops,False,low,self.formatting.format_metadata(self.msg.metadata).encode,Add a method on PrettyStream to return the encoded metadata.,"def get_metadata(self) -> bytes:
+        return self.formatting.format_metadata(
+            self.msg.metadata).encode(self.output_encoding)",,
+77,long_method,httpie/output/ui/rich_help.py,to_usage,rule,"52 lines, cyclomatic complexity 12, nesting 3",True,,,,"def to_usage(
+    spec: ParserSpec,
+    *,
+    program_name: Optional[str] = None,
+    whitelist: AbstractSet[str] = frozenset()
+) -> RenderableType:
+    shown_arguments = [
+        argument
+        for group in spec.groups
+        for argument in group.arguments
+        if (not argument.aliases or whitelist.intersection(argument.aliases))
+    ]
+
+    # Sort the shown_arguments so that --dash options are
+    # shown first
+    shown_arguments.sort(key=lambda argument: argument.aliases, reverse=True)
+
+    text = Text(program_name or spec.program, style=STYLE_BOLD)
+    for argument in shown_arguments:
+        text.append(' ')
+
+        is_whitelisted = whitelist.intersection(argument.aliases)
+        if argument.aliases:
+            name = '/'.join(sorted(argument.aliases, key=len))
+        else:
+            name = argument.metavar
+
+        nargs = argument.configuration.get('nargs')
+        if nargs is Qualifiers.OPTIONAL:
+            text.append('[' + name + ']', style=STYLE_USAGE_OPTIONAL)
+        elif nargs is Qualifiers.ZERO_OR_MORE:
+            text.append(
+                '[' + name + ' ...]',
+                style=STYLE_USAGE_OPTIONAL,
+            )
+        else:
+            text.append(
+                name,
+                style=STYLE_USAGE_ERROR
+                if is_whitelisted
+# ...",,
+78,long_method,httpie/output/ui/rich_help.py,to_help_message,rule,"103 lines, cyclomatic complexity 11, nesting 3",True,,,,"def to_help_message(
+    spec: ParserSpec,
+) -> Iterable[RenderableType]:
+    yield Padding(
+        options_highlighter(spec.description),
+        LEFT_INDENT_2,
+    )
+
+    yield Padding(
+        Text('Usage', style=STYLE_SWITCH),
+        LEFT_INDENT_2,
+    )
+    yield Padding(to_usage(spec), LEFT_INDENT_3)
+
+    group_rows = {}
+    for group in spec.groups:
+        options_rows = []
+
+        for argument in group.arguments:
+            if argument.is_hidden:
+                continue
+
+            opt1, opt2 = unpack_argument(argument)
+            if opt2:
+                opt1.append('/')
+                opt1.append(opt2)
+
+            # Column for a metavar, if we have one
+            metavar = Text(style=STYLE_METAVAR)
+            metavar.append(argument.configuration.get('metavar', ''))
+
+            if opt1 == metavar:
+                metavar = Text('')
+
+            raw_form = argument.serialize()
+            desc = raw_form.get('short_description', '')
+            if raw_form.get('choices'):
+                desc += ' (choices: '
+                desc += textwrap.shorten(
+                    ', '.join(raw_form.get('choices')),
+# ...",,
+79,duplicated_logic,httpie/output/ui/rich_palette.py,httpie/output/ui/rich_palette.py::_translate@32|httpie/uploads.py::as_bytes@65,gate,AST similarity 0.884,False,,,,"# httpie/output/ui/rich_palette.py
+def _translate(self, key: Any) -> Any:
+        if isinstance(key, GenericColor):
+            return key.name.lower()
+        else:
+            return key
+
+# httpie/uploads.py
+def as_bytes(data: Union[str, bytes]) -> bytes:
+    if isinstance(data, str):
+        return data.encode()
+    else:
+        return data",,
+80,magic_numbers,httpie/output/ui/rich_progress.py,BaseDisplay._print_summary,gate,"numeric literals [60, 60] in the function body",True,medium,Numeric literals 60 used for time conversion,Define constants for time units and use them,"def _print_summary(
+        self, is_finished: bool, observed_steps: int, time_spent: float
+    ):
+        from rich import filesize
+
+        if is_finished:
+            verb = 'Done'
+        else:
+            verb = 'Interrupted'
+
+        total_size = filesize.decimal(observed_steps)
+        avg_speed = filesize.decimal(observed_steps / time_spent)
+
+        minutes, seconds = divmod(time_spent, 60)
+        hours, minutes = divmod(int(minutes), 60)
+        if hours:
+            total_time = f'{hours:d}:{minutes:02d}:{seconds:0.5f}'
+        else:
+            total_time = f'{minutes:02d}:{seconds:0.5f}'
+
+        self.console.print(
+            f'[progress.description]{verb}. {total_size} in {total_time} ({avg_speed}/s)'
+        )",,
+81,flag_argument,httpie/output/ui/rich_progress.py,BaseDisplay._print_summary,gate,boolean parameter(s) ['is_finished'] select a branch,True,medium,The function uses 'is_finished' to switch between two different behaviors.,Split into two functions: '_print_finished_summary' and '_print_interrupted_summary'.,"def _print_summary(
+        self, is_finished: bool, observed_steps: int, time_spent: float
+    ):
+        from rich import filesize
+
+        if is_finished:
+            verb = 'Done'
+        else:
+            verb = 'Interrupted'
+
+        total_size = filesize.decimal(observed_steps)
+        avg_speed = filesize.decimal(observed_steps / time_spent)
+
+        minutes, seconds = divmod(time_spent, 60)
+        hours, minutes = divmod(int(minutes), 60)
+        if hours:
+            total_time = f'{hours:d}:{minutes:02d}:{seconds:0.5f}'
+        else:
+            total_time = f'{minutes:02d}:{seconds:0.5f}'
+
+        self.console.print(
+            f'[progress.description]{verb}. {total_size} in {total_time} ({avg_speed}/s)'
+        )",,
+82,data_clumps,httpie/output/ui/rich_progress.py,httpie/output/ui/rich_progress.py::start@14|httpie/output/ui/rich_progress.py::start@63|httpie/output/ui/rich_progress.py::start@98,gate,"parameters ['at', 'description', 'total'] recur in 3 signatures",True,medium,"Parameters ['at', 'description', 'total'] recur in 3 signatures","Introduce a dataclass named ProgressData with fields ['at', 'description', 'total'] and pass it to each function.","# httpie/output/ui/rich_progress.py
+def start(
+        self, *, total: Optional[float], at: float, description: str
+    ) -> None:
+        ...
+
+# httpie/output/ui/rich_progress.py
+def start(
+        self, *, total: Optional[float], at: float, description: str
+    ) -> None:
+        self.observed = at
+        self.description = (
+            f'[progress.description]{description}[/progress.description]'
+        )
+
+        self.status = self.console.status(self.description, spinner='line')
+        self.status.start()
+
+# httpie/output/ui/rich_progress.py
+def start(
+        self, *, total: Optional[float], at: float, description: str
+    ) -> None:
+        from rich.progress import (
+            Progress,
+            BarColumn,
+            DownloadColumn,
+            TimeRemainingColumn,
+            TransferSpeedColumn,
+        )
+
+        assert total is not None
+        self.console.print(f'[progress.description]{description}')
+        self.progress_bar = Progress(
+            '[',
+            BarColumn(),
+            ']',
+            '[progress.percentage]{task.percentage:>3.0f}%',
+            '(',
+            DownloadColumn(),
+            ')',
+# ...",,
+83,flag_argument,httpie/output/writer.py,write_stream,gate,boolean parameter(s) ['flush'] select a branch,True,medium,The function writes to the stream and optionally flushes the output.,Split into two functions: write_stream and write_stream_flush.,"def write_stream(
+    stream: BaseStream,
+    outfile: Union[IO, TextIO],
+    flush: bool
+):
+    """"""Write the output stream.""""""
+    try:
+        # Writing bytes so we use the buffer interface.
+        buf = outfile.buffer
+    except AttributeError:
+        buf = outfile
+
+    for chunk in stream:
+        buf.write(chunk)
+        if flush:
+            outfile.flush()",,
+84,flag_argument,httpie/output/writer.py,write_stream_with_colors_win,gate,boolean parameter(s) ['flush'] select a branch,True,medium,The function has a boolean parameter 'flush' that selects between two different behaviors.,"Split the function into two separate functions, one for each behavior.","def write_stream_with_colors_win(
+    stream: 'BaseStream',
+    outfile: TextIO,
+    flush: bool
+):
+    """"""Like `write`, but colorized chunks are written as text
+    directly to `outfile` to ensure it gets processed by colorama.
+    Applies only to Windows and colorized terminal output.
+
+    """"""
+    color = b'\x1b['
+    encoding = outfile.encoding
+    for chunk in stream:
+        if color in chunk:
+            outfile.write(chunk.decode(encoding))
+        else:
+            outfile.buffer.write(chunk)
+        if flush:
+            outfile.flush()",,
+85,data_clumps,httpie/output/writer.py,httpie/output/writer.py::build_output_stream_for_message@122|httpie/output/writer.py::write_message@27,gate,"parameters ['env', 'extra_stream_kwargs', 'output_options', 'processing_options', 'requests_message'] recur in 2 signatures",True,medium,"Parameters ['env', 'extra_stream_kwargs', 'output_options', 'processing_options', 'requests_message'] recur in 2 signatures.",Introduce a dataclass named 'MessageContext' and pass it in each function.,"# httpie/output/writer.py
+def build_output_stream_for_message(
+    env: Environment,
+    requests_message: RequestsMessage,
+    output_options: OutputOptions,
+    processing_options: ProcessingOptions,
+    extra_stream_kwargs: Optional[Dict[str, Any]] = None
+):
+    message_type = {
+        RequestsMessageKind.REQUEST: HTTPRequest,
+        RequestsMessageKind.RESPONSE: HTTPResponse,
+    }[output_options.kind]
+    stream_class, stream_kwargs = get_stream_type_and_kwargs(
+        env=env,
+        processing_options=processing_options,
+        message_type=message_type,
+        headers=requests_message.headers
+    )
+    if extra_stream_kwargs:
+        stream_kwargs.update(extra_stream_kwargs)
+    yield from stream_class(
+        msg=message_type(requests_message),
+        output_options=output_options,
+        **stream_kwargs,
+    )
+    if (env.stdout_isatty and output_options.body and not output_options.meta
+            and not getattr(requests_message, 'is_body_upload_chunk', False)):
+        # Ensure a blank line after the response body.
+        # For terminal output only.
+        yield MESSAGE_SEPARATOR_BYTES
+
+# httpie/output/writer.py
+def write_message(
+    requests_message: RequestsMessage,
+    env: Environment,
+    output_options: OutputOptions,
+    processing_options: ProcessingOptions,
+    extra_stream_kwargs: Optional[Dict[str, Any]] = None
+):
+    if not output_options.any():
+# ...",,
+86,data_clumps,httpie/output/writer.py,httpie/output/writer.py::write_stream@61|httpie/output/writer.py::write_stream_with_colors_win@79,gate,"parameters ['flush', 'outfile', 'stream'] recur in 2 signatures",True,medium,"Parameters ['flush', 'outfile', 'stream'] recur in 2 signatures.","Introduce a dataclass named 'WriteStreamParams' with fields 'flush', 'outfile', 'stream' and pass it to each function.","# httpie/output/writer.py
+def write_stream(
+    stream: BaseStream,
+    outfile: Union[IO, TextIO],
+    flush: bool
+):
+    """"""Write the output stream.""""""
+    try:
+        # Writing bytes so we use the buffer interface.
+        buf = outfile.buffer
+    except AttributeError:
+        buf = outfile
+
+    for chunk in stream:
+        buf.write(chunk)
+        if flush:
+            outfile.flush()
+
+# httpie/output/writer.py
+def write_stream_with_colors_win(
+    stream: 'BaseStream',
+    outfile: TextIO,
+    flush: bool
+):
+    """"""Like `write`, but colorized chunks are written as text
+    directly to `outfile` to ensure it gets processed by colorama.
+    Applies only to Windows and colorized terminal output.
+
+    """"""
+    color = b'\x1b['
+    encoding = outfile.encoding
+    for chunk in stream:
+        if color in chunk:
+            outfile.write(chunk.decode(encoding))
+        else:
+            outfile.buffer.write(chunk)
+        if flush:
+            outfile.flush()",,
+87,data_clumps,httpie/output/writer.py,httpie/output/writer.py::get_stream_type_and_kwargs@153|httpie/output/writer.py::write_raw_data@100,gate,"parameters ['env', 'headers', 'processing_options'] recur in 2 signatures",True,medium,"Parameters ['env', 'headers', 'processing_options'] recur in 2 signatures.",Introduce a dataclass named 'StreamConfig' and pass it in each function.,"# httpie/output/writer.py
+def get_stream_type_and_kwargs(
+    env: Environment,
+    processing_options: ProcessingOptions,
+    message_type: Type[HTTPMessage],
+    headers: HTTPHeadersDict,
+) -> Tuple[Type['BaseStream'], dict]:
+    """"""Pick the right stream type and kwargs for it based on `env` and `args`.
+
+    """"""
+    is_stream = processing_options.stream
+    prettify_groups = processing_options.get_prettify(env)
+    if not is_stream and message_type is HTTPResponse:
+        # If this is a response, then check the headers for determining
+        # auto-streaming.
+        raw_content_type_header = headers.get('Content-Type', None)
+        if raw_content_type_header:
+            content_type_header, _ = parse_content_type_header(raw_content_type_header)
+            is_stream = (content_type_header == 'text/event-stream')
+
+    if not env.stdout_isatty and not prettify_groups:
+        stream_class = RawStream
+        stream_kwargs = {
+            'chunk_size': (
+                RawStream.CHUNK_SIZE_BY_LINE
+                if is_stream
+                else RawStream.CHUNK_SIZE
+            )
+        }
+    else:
+        stream_class = EncodedStream
+        stream_kwargs = {
+            'env': env,
+        }
+        if message_type is HTTPResponse:
+            stream_kwargs.update({
+                'mime_overwrite': processing_options.response_mime,
+                'encoding_overwrite': processing_options.response_charset,
+            })
+        if prettify_groups:
+# ...",,
+88,long_method,httpie/output/writer.py,get_stream_type_and_kwargs,rule,"52 lines, cyclomatic complexity 10, nesting 2",True,,,,"def get_stream_type_and_kwargs(
+    env: Environment,
+    processing_options: ProcessingOptions,
+    message_type: Type[HTTPMessage],
+    headers: HTTPHeadersDict,
+) -> Tuple[Type['BaseStream'], dict]:
+    """"""Pick the right stream type and kwargs for it based on `env` and `args`.
+
+    """"""
+    is_stream = processing_options.stream
+    prettify_groups = processing_options.get_prettify(env)
+    if not is_stream and message_type is HTTPResponse:
+        # If this is a response, then check the headers for determining
+        # auto-streaming.
+        raw_content_type_header = headers.get('Content-Type', None)
+        if raw_content_type_header:
+            content_type_header, _ = parse_content_type_header(raw_content_type_header)
+            is_stream = (content_type_header == 'text/event-stream')
+
+    if not env.stdout_isatty and not prettify_groups:
+        stream_class = RawStream
+        stream_kwargs = {
+            'chunk_size': (
+                RawStream.CHUNK_SIZE_BY_LINE
+                if is_stream
+                else RawStream.CHUNK_SIZE
+            )
+        }
+    else:
+        stream_class = EncodedStream
+        stream_kwargs = {
+            'env': env,
+        }
+        if message_type is HTTPResponse:
+            stream_kwargs.update({
+                'mime_overwrite': processing_options.response_mime,
+                'encoding_overwrite': processing_options.response_charset,
+            })
+        if prettify_groups:
+            stream_class = PrettyStream if is_stream else BufferedPrettyStream
+# ...",,
+89,duplicated_logic,httpie/plugins/base.py,httpie/plugins/base.py::format_headers@142|httpie/plugins/base.py::format_metadata@159,gate,AST similarity 1.0; cluster of 7 similar functions,False,,,,"# httpie/plugins/base.py
+def format_headers(self, headers: str) -> str:
+        """"""Return processed `headers`
+
+        :param headers: The headers as text.
+
+        """"""
+        return headers
+
+# httpie/plugins/base.py
+def format_metadata(self, metadata: str) -> str:
+        """"""Return processed `metadata`.
+
+        :param metadata: The metadata as text.
+
+        """"""
+        return metadata",,
+90,primitive_obsession,httpie/sessions.py,get_httpie_session,gate,domain values passed as raw primitives and checked or transformed: ['url'],True,medium,The function validates and normalises the 'url' parameter itself.,Introduce a URL dataclass that validates once on creation and formats itself.,"def get_httpie_session(
+    env: Environment,
+    config_dir: Path,
+    session_name: str,
+    host: Optional[str],
+    url: str,
+    *,
+    suppress_legacy_warnings: bool = False
+) -> 'Session':
+    bound_hostname = host or url_as_host(url)
+    if not bound_hostname:
+        # HACK/FIXME: httpie-unixsocket's URLs have no hostname.
+        bound_hostname = 'localhost'
+
+    if is_anonymous_session(session_name):
+        path = os.path.expanduser(session_name)
+        session_id = path
+    else:
+        path = config_dir / session_hostname_to_dirname(bound_hostname, session_name)
+        session_id = session_name
+
+    session = Session(
+        path,
+        env=env,
+        session_id=session_id,
+        bound_host=strip_port(bound_hostname),
+        suppress_legacy_warnings=suppress_legacy_warnings
+    )
+    session.load()
+    return session",,
+91,message_chains,httpie/sessions.py,Session.update_headers,gate,attribute chain of 3 hops,True,medium,self._headers.copy().items,Add a method on self to return the headers as a dictionary.,"def update_headers(self, request_headers: HTTPHeadersDict):
+        """"""
+        Update the session headers with the request ones while ignoring
+        certain name prefixes.
+
+        """"""
+
+        new_headers = self._compute_new_headers(request_headers)
+        new_keys = new_headers.copy().keys()
+
+        # New headers will take priority over the existing ones, and override
+        # them directly instead of extending them.
+        for key, value in self._headers.copy().items():
+            if key in new_keys:
+                continue
+
+            new_headers.add(key, value)
+
+        self._headers = new_headers",,
+92,long_parameter_list,httpie/sessions.py,get_httpie_session,rule,6 parameters,True,,,,"def get_httpie_session(
+    env: Environment,
+    config_dir: Path,
+    session_name: str,
+    host: Optional[str],
+    url: str,
+    *,
+    suppress_legacy_warnings: bool = False
+) -> 'Session':
+    bound_hostname = host or url_as_host(url)
+    if not bound_hostname:
+        # HACK/FIXME: httpie-unixsocket's URLs have no hostname.
+        bound_hostname = 'localhost'
+
+    if is_anonymous_session(session_name):
+        path = os.path.expanduser(session_name)
+        session_id = path
+    else:
+        path = config_dir / session_hostname_to_dirname(bound_hostname, session_name)
+        session_id = session_name
+
+    session = Session(
+        path,
+        env=env,
+        session_id=session_id,
+        bound_host=strip_port(bound_hostname),
+        suppress_legacy_warnings=suppress_legacy_warnings
+    )
+    session.load()
+    return session",,
+93,long_method,httpie/sessions.py,Session._compute_new_headers,rule,"29 lines, cyclomatic complexity 12, nesting 4",True,,,,"def _compute_new_headers(self, request_headers: HTTPHeadersDict) -> HTTPHeadersDict:
+        new_headers = HTTPHeadersDict()
+        for name, value in request_headers.copy().items():
+            if value is None:
+                continue  # Ignore explicitly unset headers
+
+            original_value = value
+            if type(value) is not str:
+                value = value.decode()
+
+            if name.lower() == 'user-agent' and value.startswith('HTTPie/'):
+                continue
+
+            if name.lower() == 'cookie':
+                for cookie_name, morsel in SimpleCookie(value).items():
+                    if not morsel['path']:
+                        morsel['path'] = DEFAULT_COOKIE_PATH
+                    self.cookie_jar.set(cookie_name, morsel)
+
+                request_headers.remove_item(name, original_value)
+                continue
+
+            for prefix in SESSION_IGNORED_HEADER_PREFIXES:
+                if name.lower().startswith(prefix.lower()):
+                    break
+            else:
+                new_headers.add(name, value)
+
+        return new_headers",,
+94,flag_argument,httpie/ssl_.py,HTTPieHTTPSAdapter._create_ssl_context,gate,boolean parameter(s) ['verify'] select a branch,True,medium,The function uses a boolean 'verify' parameter to switch between two different behaviors.,"Split the function into two separate functions, one for 'verify=True' and one for 'verify=False'.","def _create_ssl_context(
+        verify: bool,
+        ssl_version: str = None,
+        ciphers: str = None,
+    ) -> 'ssl.SSLContext':
+        ssl_context = create_urllib3_context(
+            ciphers=ciphers,
+            ssl_version=resolve_ssl_version(ssl_version),
+            # Since we are using a custom SSL context, we need to pass this
+            # here manually, even though it’s also passed to the connection
+            # in `super().cert_verify()`.
+            cert_reqs=ssl.CERT_REQUIRED if verify else ssl.CERT_NONE
+        )
+        ensure_default_certs_loaded(ssl_context)
+        return ssl_context",,
+95,magic_numbers,httpie/status.py,http_status_to_exit_status,gate,"numeric literals [300, 399, 400, 499, 500, 599] in the function body",True,medium,"Numeric literals 300, 399, 400, 499, 500, 599 used in status code checks.",Define constants for HTTP status ranges and use them in the function.,"def http_status_to_exit_status(http_status: int, follow=False) -> ExitStatus:
+    """"""
+    Translate HTTP status code to exit status code.
+
+    (Relevant only when invoked with --check-status or --download.)
+
+    """"""
+    if 300 <= http_status <= 399 and not follow:
+        # Redirect
+        return ExitStatus.ERROR_HTTP_3XX
+    elif 400 <= http_status <= 499:
+        # Client Error
+        return ExitStatus.ERROR_HTTP_4XX
+    elif 500 <= http_status <= 599:
+        # Server Error
+        return ExitStatus.ERROR_HTTP_5XX
+    else:
+        return ExitStatus.SUCCESS",,
+96,flag_argument,httpie/status.py,http_status_to_exit_status,gate,boolean parameter(s) ['follow'] select a branch,True,medium,The function uses a boolean 'follow' to switch between two different behaviors.,Split the function into two: one for handling redirects and another for handling other HTTP statuses.,"def http_status_to_exit_status(http_status: int, follow=False) -> ExitStatus:
+    """"""
+    Translate HTTP status code to exit status code.
+
+    (Relevant only when invoked with --check-status or --download.)
+
+    """"""
+    if 300 <= http_status <= 399 and not follow:
+        # Redirect
+        return ExitStatus.ERROR_HTTP_3XX
+    elif 400 <= http_status <= 499:
+        # Client Error
+        return ExitStatus.ERROR_HTTP_4XX
+    elif 500 <= http_status <= 599:
+        # Server Error
+        return ExitStatus.ERROR_HTTP_5XX
+    else:
+        return ExitStatus.SUCCESS",,
+97,flag_argument,httpie/uploads.py,_prepare_file_for_upload,gate,boolean parameter(s) ['chunked'] select a branch,True,medium,The function has a boolean parameter 'chunked' that selects between two different behaviors.,"Split the function into two separate functions, one for each behavior.","def _prepare_file_for_upload(
+    env: Environment,
+    file: Union[IO, 'MultipartEncoder'],
+    callback: CallbackT,
+    chunked: bool = False,
+    content_length_header_value: Optional[int] = None,
+) -> Union[bytes, IO, ChunkedStream]:
+    read_event = threading.Event()
+    if not super_len(file):
+        if is_stdin(file):
+            observe_stdin_for_data_thread(env, file, read_event)
+
+        # Zero-length -> assume stdin.
+        if content_length_header_value is None and not chunked:
+            # Read the whole stdin to determine `Content-Length`.
+            #
+            # TODO: Instead of opt-in --chunked, consider making
+            #   `Transfer-Encoding: chunked` for STDIN opt-out via
+            #   something like --no-chunked.
+            #   This would be backwards-incompatible so wait until v3.0.0.
+            #
+            file = _read_file_with_selectors(file, read_event)
+    else:
+        file.read = _wrap_function_with_callback(
+            file.read,
+            callback
+        )
+
+    if chunked:
+        from requests_toolbelt import MultipartEncoder
+        if isinstance(file, MultipartEncoder):
+            return ChunkedMultipartUploadStream(
+                encoder=file,
+                event=read_event,
+            )
+        else:
+            return ChunkedUploadStream(
+                stream=file,
+                callback=callback,
+                event=read_event
+# ...",,
+98,flag_argument,httpie/uploads.py,prepare_request_body,gate,"boolean parameter(s) ['offline', 'chunked'] select a branch",True,medium,The function handles different behaviors based on 'offline' and 'chunked' flags.,Split into two functions: one for 'offline' and one for 'chunked' behavior.,"def prepare_request_body(
+    env: Environment,
+    raw_body: Union[str, bytes, IO, 'MultipartEncoder', RequestDataDict],
+    body_read_callback: CallbackT,
+    offline: bool = False,
+    chunked: bool = False,
+    content_length_header_value: Optional[int] = None,
+) -> Union[bytes, IO, 'MultipartEncoder', ChunkedStream]:
+    is_file_like = hasattr(raw_body, 'read')
+    if isinstance(raw_body, (bytes, str)):
+        body = as_bytes(raw_body)
+    elif isinstance(raw_body, RequestDataDict):
+        body = as_bytes(urlencode(raw_body, doseq=True))
+    else:
+        body = raw_body
+
+    if offline:
+        if is_file_like:
+            return as_bytes(raw_body.read())
+        else:
+            return body
+
+    if is_file_like:
+        return _prepare_file_for_upload(
+            env,
+            body,
+            chunked=chunked,
+            callback=body_read_callback,
+            content_length_header_value=content_length_header_value
+        )
+    elif chunked:
+        return ChunkedUploadStream(
+            stream=iter([body]),
+            callback=body_read_callback
+        )
+    else:
+        return body",,
+99,flag_argument,httpie/uploads.py,compress_request,gate,boolean parameter(s) ['always'] select a branch,True,medium,The function compress_request has a boolean parameter 'always' that selects between two different behaviors.,"Split the function into two separate functions, one for compressing the request and one for not compressing it.","def compress_request(
+    request: requests.PreparedRequest,
+    always: bool,
+):
+    deflater = zlib.compressobj()
+    if isinstance(request.body, str):
+        body_bytes = request.body.encode()
+    elif hasattr(request.body, 'read'):
+        body_bytes = request.body.read()
+    else:
+        body_bytes = request.body
+    deflated_data = deflater.compress(body_bytes)
+    deflated_data += deflater.flush()
+    is_economical = len(deflated_data) < len(body_bytes)
+    if is_economical or always:
+        request.body = deflated_data
+        request.headers['Content-Encoding'] = 'deflate'
+        request.headers['Content-Length'] = str(len(deflated_data))",,
+100,data_clumps,httpie/uploads.py,httpie/uploads.py::_prepare_file_for_upload@146|httpie/uploads.py::prepare_request_body@191,gate,"parameters ['chunked', 'content_length_header_value', 'env'] recur in 2 signatures",True,medium,"Parameters 'chunked', 'content_length_header_value', 'env' recur in both functions.",Introduce a dataclass for the shared parameters and pass it to both functions.,"# httpie/uploads.py
+def _prepare_file_for_upload(
+    env: Environment,
+    file: Union[IO, 'MultipartEncoder'],
+    callback: CallbackT,
+    chunked: bool = False,
+    content_length_header_value: Optional[int] = None,
+) -> Union[bytes, IO, ChunkedStream]:
+    read_event = threading.Event()
+    if not super_len(file):
+        if is_stdin(file):
+            observe_stdin_for_data_thread(env, file, read_event)
+
+        # Zero-length -> assume stdin.
+        if content_length_header_value is None and not chunked:
+            # Read the whole stdin to determine `Content-Length`.
+            #
+            # TODO: Instead of opt-in --chunked, consider making
+            #   `Transfer-Encoding: chunked` for STDIN opt-out via
+            #   something like --no-chunked.
+            #   This would be backwards-incompatible so wait until v3.0.0.
+            #
+            file = _read_file_with_selectors(file, read_event)
+    else:
+        file.read = _wrap_function_with_callback(
+            file.read,
+            callback
+        )
+
+    if chunked:
+        from requests_toolbelt import MultipartEncoder
+        if isinstance(file, MultipartEncoder):
+            return ChunkedMultipartUploadStream(
+                encoder=file,
+                event=read_event,
+            )
+        else:
+            return ChunkedUploadStream(
+                stream=file,
+                callback=callback,
+# ...",,
+101,long_parameter_list,httpie/uploads.py,prepare_request_body,rule,6 parameters,True,,,,"def prepare_request_body(
+    env: Environment,
+    raw_body: Union[str, bytes, IO, 'MultipartEncoder', RequestDataDict],
+    body_read_callback: CallbackT,
+    offline: bool = False,
+    chunked: bool = False,
+    content_length_header_value: Optional[int] = None,
+) -> Union[bytes, IO, 'MultipartEncoder', ChunkedStream]:
+    is_file_like = hasattr(raw_body, 'read')
+    if isinstance(raw_body, (bytes, str)):
+        body = as_bytes(raw_body)
+    elif isinstance(raw_body, RequestDataDict):
+        body = as_bytes(urlencode(raw_body, doseq=True))
+    else:
+        body = raw_body
+
+    if offline:
+        if is_file_like:
+            return as_bytes(raw_body.read())
+        else:
+            return body
+
+    if is_file_like:
+        return _prepare_file_for_upload(
+            env,
+            body,
+            chunked=chunked,
+            callback=body_read_callback,
+            content_length_header_value=content_length_header_value
+        )
+    elif chunked:
+        return ChunkedUploadStream(
+            stream=iter([body]),
+            callback=body_read_callback
+        )
+    else:
+        return body",,
+102,duplicated_logic,httpie/utils.py,httpie/plugins/base.py::format_headers@142|httpie/utils.py::items@65,gate,AST similarity 0.8; cluster of 3 similar functions,False,,,,"# httpie/plugins/base.py
+def format_headers(self, headers: str) -> str:
+        """"""Return processed `headers`
+
+        :param headers: The headers as text.
+
+        """"""
+        return headers
+
+# httpie/utils.py
+def items(self) -> Items:
+        """"""Return all items, duplicate ones included.
+
+        """"""
+        return self._items",,
+103,magic_numbers,httpie/utils.py,humanize_bytes,gate,"numeric literals [50, 40, 30, 20, 10] in the function body",True,medium,"Numeric literals [50, 40, 30, 20, 10] in the function body",Name each business value as a module constant or configuration field,"def humanize_bytes(n, precision=2):
+    # Author: Doug Latornell
+    # Licence: MIT
+    # URL: https://code.activestate.com/recipes/577081/
+    """"""Return a humanized string representation of a number of bytes.
+
+    >>> humanize_bytes(1)
+    '1 B'
+    >>> humanize_bytes(1024, precision=1)
+    '1.0 kB'
+    >>> humanize_bytes(1024 * 123, precision=1)
+    '123.0 kB'
+    >>> humanize_bytes(1024 * 12342, precision=1)
+    '12.1 MB'
+    >>> humanize_bytes(1024 * 12342, precision=2)
+    '12.05 MB'
+    >>> humanize_bytes(1024 * 1234, precision=2)
+    '1.21 MB'
+    >>> humanize_bytes(1024 * 1234 * 1111, precision=2)
+    '1.31 GB'
+    >>> humanize_bytes(1024 * 1234 * 1111, precision=1)
+    '1.3 GB'
+
+    """"""
+    abbrevs = [
+        (1 << 50, 'PB'),
+        (1 << 40, 'TB'),
+        (1 << 30, 'GB'),
+        (1 << 20, 'MB'),
+        (1 << 10, 'kB'),
+        (1, 'B')
+    ]
+
+    if n == 1:
+        return '1 B'
+
+    for factor, suffix in abbrevs:
+        if n >= factor:
+            break
+
+# ...",,
+104,primitive_obsession,httpie/utils.py,url_as_host,gate,domain values passed as raw primitives and checked or transformed: ['url'],False,low,Function validates and normalises the raw value itself.,Introduce a URL dataclass that validates once on creation and formats itself.,"def url_as_host(url: str) -> str:
+    return urlsplit(url).netloc.split('@')[-1]",,

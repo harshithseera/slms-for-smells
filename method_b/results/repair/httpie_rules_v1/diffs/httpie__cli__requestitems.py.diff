@@ -1,0 +1,64 @@
+--- a/httpie/cli/requestitems.py
++++ b/httpie/cli/requestitems.py
+@@ -93,18 +93,29 @@
+             ),
+         }
+ 
+-        if instance.is_json:
+-            json_item_args, request_item_args = split_iterable(
+-                iterable=request_item_args,
+-                key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
+-            )
+-            if json_item_args:
+-                pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
+-                processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
+-                value = processor_func(pairs)
+-                target_dict.update(value)
+-
+-        # Then handle all other items.
++        request_item_args = cls._process_nested_json_items(instance, request_item_args, rules)
++        cls._process_remaining_items(instance, request_item_args, rules)
++
++        return instance
++
++    @staticmethod
++    def _process_nested_json_items(instance: 'RequestItems', request_item_args: List[KeyValueArg], rules: dict) -> List[KeyValueArg]:
++        if not instance.is_json:
++            return request_item_args
++
++        json_item_args, request_item_args = split_iterable(
++            iterable=request_item_args,
++            key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
++        )
++        if json_item_args:
++            pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
++            processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
++            value = processor_func(pairs)
++            target_dict.update(value)
++        return request_item_args
++
++    @staticmethod
++    def _process_remaining_items(instance: 'RequestItems', request_item_args: List[KeyValueArg], rules: dict):
+         for arg in request_item_args:
+             processor_func, target_dict = rules[arg.sep]
+             value = processor_func(arg)
+@@ -116,8 +127,6 @@
+                 target_dict.add(arg.key, value)
+             else:
+                 target_dict[arg.key] = value
+-
+-        return instance
+ 
+ 
+ JSONType = Union[str, bool, int, list, dict]
+@@ -172,6 +181,10 @@
+     if in_json_mode:
+         return processor
+ 
++    return _create_form_json_wrapper(processor)
++
++
++def _create_form_json_wrapper(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[], str]:
+     @functools.wraps(processor)
+     def wrapper(*args, **kwargs) -> str:
+         try:

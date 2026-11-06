@@ -1,0 +1,105 @@
+--- a/httpie/sessions.py
++++ b/httpie/sessions.py
+@@ -5,6 +5,7 @@
+ import os
+ import re
+ 
++from dataclasses import dataclass
+ from http.cookies import SimpleCookie
+ from http.cookiejar import Cookie
+ from pathlib import Path
+@@ -37,6 +38,20 @@
+ # Cookie related options
+ KEPT_COOKIE_OPTIONS = ['name', 'expires', 'path', 'value', 'domain', 'secure']
+ DEFAULT_COOKIE_PATH = '/'
++
++
++@dataclass
++class SessionTarget:
++    url: str
++    host: Optional[str] = None
++
++    @property
++    def bound_hostname(self) -> str:
++        hostname = self.host or url_as_host(self.url)
++        if not hostname:
++            # HACK/FIXME: httpie-unixsocket's URLs have no hostname.
++            hostname = 'localhost'
++        return hostname
+ 
+ 
+ def is_anonymous_session(session_name: str) -> bool:
+@@ -98,10 +113,8 @@
+     *,
+     suppress_legacy_warnings: bool = False
+ ) -> 'Session':
+-    bound_hostname = host or url_as_host(url)
+-    if not bound_hostname:
+-        # HACK/FIXME: httpie-unixsocket's URLs have no hostname.
+-        bound_hostname = 'localhost'
++    target = SessionTarget(url=url, host=host)
++    bound_hostname = target.bound_hostname
+ 
+     if is_anonymous_session(session_name):
+         path = os.path.expanduser(session_name)
+@@ -197,33 +210,39 @@
+ 
+         return data
+ 
++    def _should_ignore_header(self, name: str, value: Any) -> bool:
++        if value is None:
++            return True
++        if name.lower() == 'user-agent' and str(value).startswith('HTTPie/'):
++            return True
++        for prefix in SESSION_IGNORED_HEADER_PREFIXES:
++            if name.lower().startswith(prefix.lower()):
++                return True
++        return False
++
++    def _handle_cookie_header(self, name: str, value: Any, request_headers: HTTPHeadersDict) -> bool:
++        if name.lower() != 'cookie':
++            return False
++        original_value = value
++        if not isinstance(value, str):
++            value = value.decode()
++        for cookie_name, morsel in SimpleCookie(value).items():
++            if not morsel['path']:
++                morsel['path'] = DEFAULT_COOKIE_PATH
++            self.cookie_jar.set(cookie_name, morsel)
++        request_headers.remove_item(name, original_value)
++        return True
++
+     def _compute_new_headers(self, request_headers: HTTPHeadersDict) -> HTTPHeadersDict:
+         new_headers = HTTPHeadersDict()
+         for name, value in request_headers.copy().items():
+-            if value is None:
+-                continue  # Ignore explicitly unset headers
+-
+-            original_value = value
+-            if type(value) is not str:
+-                value = value.decode()
+-
+-            if name.lower() == 'user-agent' and value.startswith('HTTPie/'):
++            if self._should_ignore_header(name, value):
+                 continue
+-
+-            if name.lower() == 'cookie':
+-                for cookie_name, morsel in SimpleCookie(value).items():
+-                    if not morsel['path']:
+-                        morsel['path'] = DEFAULT_COOKIE_PATH
+-                    self.cookie_jar.set(cookie_name, morsel)
+-
+-                request_headers.remove_item(name, original_value)
++            if self._handle_cookie_header(name, value, request_headers):
+                 continue
+ 
+-            for prefix in SESSION_IGNORED_HEADER_PREFIXES:
+-                if name.lower().startswith(prefix.lower()):
+-                    break
+-            else:
+-                new_headers.add(name, value)
++            header_value = value if isinstance(value, str) else value.decode()
++            new_headers.add(name, header_value)
+ 
+         return new_headers
+ 

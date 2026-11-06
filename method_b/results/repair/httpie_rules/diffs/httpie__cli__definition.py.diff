@@ -1,0 +1,73 @@
+--- a/httpie/cli/definition.py
++++ b/httpie/cli/definition.py
+@@ -246,7 +246,10 @@
+ #######################################################################
+ 
+ 
+-def format_style_help(available_styles, *, isolation_mode: bool = False):
++_STYLE_HELP_WRAP_WIDTH = 60
++
++
++def _format_style_help_base(available_styles, isolation_mode: bool) -> str:
+     text = """
+     Output coloring style (default is "{default}"). It can be one of:
+ 
+@@ -268,13 +271,27 @@
+ 
+     available_styles_text = '\n'.join(
+         f'    {line.strip()}'
+-        for line in textwrap.wrap(', '.join(available_styles), 60)
++        for line in textwrap.wrap(', '.join(available_styles), _STYLE_HELP_WRAP_WIDTH)
+     ).strip()
+     return text.format(
+         default=DEFAULT_STYLE,
+         available_styles=available_styles_text,
+         auto_style=AUTO_STYLE,
+     )
++
++
++def format_style_help(available_styles, *, isolation_mode: bool = False):
++    if isolation_mode:
++        return _format_style_help_isolation(available_styles)
++    return _format_style_help_normal(available_styles)
++
++
++def _format_style_help_normal(available_styles):
++    return _format_style_help_base(available_styles, isolation_mode=False)
++
++
++def _format_style_help_isolation(available_styles):
++    return _format_style_help_base(available_styles, isolation_mode=True)
+ 
+ 
+ _sorted_kwargs = {
+@@ -623,7 +640,7 @@
+ #######################################################################
+ 
+ 
+-def format_auth_help(auth_plugins_mapping, *, isolation_mode: bool = False):
++def _format_auth_help_base(auth_plugins_mapping, isolation_mode: bool) -> str:
+     text = """
+     The authentication mechanism to be used. Defaults to "{default}".
+ 
+@@ -666,6 +683,20 @@
+     )
+ 
+ 
++def format_auth_help(auth_plugins_mapping, *, isolation_mode: bool = False):
++    if isolation_mode:
++        return _format_auth_help_isolation(auth_plugins_mapping)
++    return _format_auth_help_normal(auth_plugins_mapping)
++
++
++def _format_auth_help_normal(auth_plugins_mapping):
++    return _format_auth_help_base(auth_plugins_mapping, isolation_mode=False)
++
++
++def _format_auth_help_isolation(auth_plugins_mapping):
++    return _format_auth_help_base(auth_plugins_mapping, isolation_mode=True)
++
++
+ authentication = options.add_group('Authentication')
+ 
+ authentication.add_argument(

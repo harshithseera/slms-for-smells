@@ -1,0 +1,206 @@
+--- a/httpie/cli/requestitems.py
++++ b/httpie/cli/requestitems.py
+@@ -39,85 +39,7 @@
+         request_item_args: List[KeyValueArg],
+         request_type: Optional[RequestType] = None,
+     ) -> 'RequestItems':
+-        instance = cls(request_type=request_type)
+-        rules: Dict[str, Tuple[Callable, dict]] = {
+-            SEPARATOR_HEADER: (
+-                process_header_arg,
+-                instance.headers,
+-            ),
+-            SEPARATOR_HEADER_EMPTY: (
+-                process_empty_header_arg,
+-                instance.headers,
+-            ),
+-            SEPARATOR_HEADER_EMBED: (
+-                process_embed_header_arg,
+-                instance.headers,
+-            ),
+-            SEPARATOR_QUERY_PARAM: (
+-                process_query_param_arg,
+-                instance.params,
+-            ),
+-            SEPARATOR_QUERY_EMBED_FILE: (
+-                process_embed_query_param_arg,
+-                instance.params,
+-            ),
+-            SEPARATOR_FILE_UPLOAD: (
+-                process_file_upload_arg,
+-                instance.files,
+-            ),
+-            SEPARATOR_DATA_STRING: (
+-                process_data_item_arg,
+-                instance.data,
+-            ),
+-            SEPARATOR_DATA_EMBED_FILE_CONTENTS: (
+-                process_data_embed_file_contents_arg,
+-                instance.data,
+-            ),
+-            SEPARATOR_GROUP_NESTED_JSON_ITEMS: (
+-                process_data_nested_json_embed_args,
+-                instance.data,
+-            ),
+-            SEPARATOR_DATA_RAW_JSON: (
+-                convert_json_value_to_form_if_needed(
+-                    in_json_mode=instance.is_json,
+-                    processor=process_data_raw_json_embed_arg
+-                ),
+-                instance.data,
+-            ),
+-            SEPARATOR_DATA_EMBED_RAW_JSON_FILE: (
+-                convert_json_value_to_form_if_needed(
+-                    in_json_mode=instance.is_json,
+-                    processor=process_data_embed_raw_json_file_arg,
+-                ),
+-                instance.data,
+-            ),
+-        }
+-
+-        if instance.is_json:
+-            json_item_args, request_item_args = split_iterable(
+-                iterable=request_item_args,
+-                key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
+-            )
+-            if json_item_args:
+-                pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
+-                processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
+-                value = processor_func(pairs)
+-                target_dict.update(value)
+-
+-        # Then handle all other items.
+-        for arg in request_item_args:
+-            processor_func, target_dict = rules[arg.sep]
+-            value = processor_func(arg)
+-
+-            if arg.sep in SEPARATORS_GROUP_MULTIPART:
+-                instance.multipart_data[arg.key] = value
+-
+-            if isinstance(target_dict, BaseMultiDict):
+-                target_dict.add(arg.key, value)
+-            else:
+-                target_dict[arg.key] = value
+-
+-        return instance
++        return _request_items_from_args(cls, request_item_args, request_type)
+ 
+ 
+ JSONType = Union[str, bool, int, list, dict]
+@@ -170,8 +92,16 @@
+ 
+     """
+     if in_json_mode:
+-        return processor
+-
++        return _convert_json_value_json_mode(processor)
++
++    return _convert_json_value_form_mode(processor)
++
++
++def _convert_json_value_json_mode(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[KeyValueArg], JSONType]:
++    return processor
++
++
++def _convert_json_value_form_mode(processor: Callable[[KeyValueArg], JSONType]) -> Callable[[KeyValueArg], str]:
+     @functools.wraps(processor)
+     def wrapper(*args, **kwargs) -> str:
+         try:
+@@ -228,3 +158,97 @@
+         return load_json_preserve_order_and_dupe_keys(contents)
+     except ValueError as e:
+         raise ParseError(f'{arg.orig!r}: {e}')
++
++
++def _get_request_item_rules(instance: RequestItems) -> Dict[str, Tuple[Callable, dict]]:
++    return {
++        SEPARATOR_HEADER: (
++            process_header_arg,
++            instance.headers,
++        ),
++        SEPARATOR_HEADER_EMPTY: (
++            process_empty_header_arg,
++            instance.headers,
++        ),
++        SEPARATOR_HEADER_EMBED: (
++            process_embed_header_arg,
++            instance.headers,
++        ),
++        SEPARATOR_QUERY_PARAM: (
++            process_query_param_arg,
++            instance.params,
++        ),
++        SEPARATOR_QUERY_EMBED_FILE: (
++            process_embed_query_param_arg,
++            instance.params,
++        ),
++        SEPARATOR_FILE_UPLOAD: (
++            process_file_upload_arg,
++            instance.files,
++        ),
++        SEPARATOR_DATA_STRING: (
++            process_data_item_arg,
++            instance.data,
++        ),
++        SEPARATOR_DATA_EMBED_FILE_CONTENTS: (
++            process_data_embed_file_contents_arg,
++            instance.data,
++        ),
++        SEPARATOR_GROUP_NESTED_JSON_ITEMS: (
++            process_data_nested_json_embed_args,
++            instance.data,
++        ),
++        SEPARATOR_DATA_RAW_JSON: (
++            convert_json_value_to_form_if_needed(
++                in_json_mode=instance.is_json,
++                processor=process_data_raw_json_embed_arg
++            ),
++            instance.data,
++        ),
++        SEPARATOR_DATA_EMBED_RAW_JSON_FILE: (
++            convert_json_value_to_form_if_needed(
++                in_json_mode=instance.is_json,
++                processor=process_data_embed_raw_json_file_arg,
++            ),
++            instance.data,
++        ),
++    }
++
++
++def _process_nested_json_args(instance: RequestItems, request_item_args: List[KeyValueArg], rules: Dict) -> List[KeyValueArg]:
++    if not instance.is_json:
++        return request_item_args
++
++    json_item_args, remaining_args = split_iterable(
++        iterable=request_item_args,
++        key=lambda arg: arg.sep in SEPARATOR_GROUP_NESTED_JSON_ITEMS
++    )
++    if json_item_args:
++        pairs = [(arg.key, rules[arg.sep][0](arg)) for arg in json_item_args]
++        processor_func, target_dict = rules[SEPARATOR_GROUP_NESTED_JSON_ITEMS]
++        value = processor_func(pairs)
++        target_dict.update(value)
++
++    return remaining_args
++
++
++def _process_remaining_args(instance: RequestItems, request_item_args: List[KeyValueArg], rules: Dict) -> None:
++    for arg in request_item_args:
++        processor_func, target_dict = rules[arg.sep]
++        value = processor_func(arg)
++
++        if arg.sep in SEPARATORS_GROUP_MULTIPART:
++            instance.multipart_data[arg.key] = value
++
++        if isinstance(target_dict, BaseMultiDict):
++            target_dict.add(arg.key, value)
++        else:
++            target_dict[arg.key] = value
++
++
++def _request_items_from_args(cls, request_item_args: List[KeyValueArg], request_type: Optional[RequestType] = None) -> RequestItems:
++    instance = cls(request_type=request_type)
++    rules = _get_request_item_rules(instance)
++    remaining_args = _process_nested_json_args(instance, request_item_args, rules)
++    _process_remaining_args(instance, remaining_args, rules)
++    return instance

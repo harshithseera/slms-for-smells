@@ -1,0 +1,26 @@
+--- a/httpie/plugins/base.py
++++ b/httpie/plugins/base.py
+@@ -139,13 +139,16 @@
+         self.kwargs = kwargs
+         self.format_options = kwargs['format_options']
+ 
++    def _format_pass_through(self, text: str) -> str:
++        return text
++
+     def format_headers(self, headers: str) -> str:
+         """Return processed `headers`
+ 
+         :param headers: The headers as text.
+ 
+         """
+-        return headers
++        return self._format_pass_through(headers)
+ 
+     def format_body(self, content: str, mime: str) -> str:
+         """Return processed `content`.
+@@ -162,4 +165,4 @@
+         :param metadata: The metadata as text.
+ 
+         """
+-        return metadata
++        return self._format_pass_through(metadata)

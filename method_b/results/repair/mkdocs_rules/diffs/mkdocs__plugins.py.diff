@@ -1,0 +1,149 @@
+--- a/mkdocs/plugins.py
++++ b/mkdocs/plugins.py
+@@ -259,12 +259,12 @@
+         loaded and can be used to alter the template.
+ 
+         Args:
+-            template: a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
++            template: a Jinja2 Template object
+             template_name: string filename of template
+             config: global configuration object
+ 
+         Returns:
+-            a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
++            a Jinja2 Template object
+         """
+         return template
+ 
+@@ -292,7 +292,7 @@
+         """
+         The `post_template` event is called after the template is rendered, but before
+         it is written to disc and can be used to alter the output of the template.
+-        If an empty string is returned, the template is skipped and nothing is is
++        If an empty string is returned, the template is skipped and nothing is
+         written to disc.
+ 
+         Args:
+@@ -324,11 +324,6 @@
+ 
+     def on_page_read_source(self, /, *, page: Page, config: MkDocsConfig) -> str | None:
+         """
+-        > DEPRECATED: Instead of this event, prefer one of these alternatives:
+-        >
+-        > * Since MkDocs 1.6, instead set `content_bytes`/`content_string` of a `File` inside [`on_files`][].
+-        > * Usually (although it's not an exact alternative), `on_page_markdown` can serve the same purpose.
+-
+         The `on_page_read_source` event can replace the default mechanism to read
+         the contents of a page's source from the filesystem.
+ 
+@@ -430,24 +425,6 @@
+     Recommended priority values:
+     `100` "first", `50` "early", `0` "default", `-50` "late", `-100` "last".
+     As different plugins discover more precise relations to each other, the values should be further tweaked.
+-
+-    Usage example:
+-
+-    ```python
+-    @plugins.event_priority(-100)  # Wishing to run this after all other plugins' `on_files` events.
+-    def on_files(self, files, config, **kwargs):
+-        ...
+-    ```
+-
+-    New in MkDocs 1.4.
+-    Recommended shim for backwards compatibility:
+-
+-    ```python
+-    try:
+-        from mkdocs.plugins import event_priority
+-    except ImportError:
+-        event_priority = lambda priority: lambda f: f  # No-op fallback
+-    ```
+     """
+ 
+     def decorator(event_method):
+@@ -460,23 +437,6 @@
+ class CombinedEvent(Generic[P, T]):
+     """
+     A descriptor that allows defining multiple event handlers and declaring them under one event's name.
+-
+-    Usage example:
+-
+-    ```python
+-    @plugins.event_priority(100)
+-    def _on_page_markdown_1(self, markdown: str, **kwargs):
+-        ...
+-
+-    @plugins.event_priority(-50)
+-    def _on_page_markdown_2(self, markdown: str, **kwargs):
+-        ...
+-
+-    on_page_markdown = plugins.CombinedEvent(_on_page_markdown_1, _on_page_markdown_2)
+-    ```
+-
+-    NOTE: The names of the sub-methods **can't** start with `on_`;
+-    instead they can start with `_on_` like in the the above example, or anything else.
+     """
+ 
+     def __init__(self, *methods: Callable[Concatenate[Any, P], T]):
+@@ -551,11 +511,6 @@
+     def run_event(self, name: str, item=None, **kwargs):
+         """
+         Run all registered methods of an event.
+-
+-        `item` is the object to be modified or replaced and returned by the event method.
+-        If it isn't given the event method creates a new object to be returned.
+-        All other keywords are variables for context, but would not generally
+-        be modified by the event method.
+         """
+         pass_item = item is not None
+         for method in self.events[name]:
+@@ -650,48 +605,14 @@
+     """A logger adapter to prefix log messages."""
+ 
+     def __init__(self, prefix: str, logger: logging.Logger) -> None:
+-        """
+-        Initialize the logger adapter.
+-
+-        Arguments:
+-            prefix: The string to insert in front of every message.
+-            logger: The logger instance.
+-        """
+         super().__init__(logger, {})
+         self.prefix = prefix
+ 
+     def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> tuple[str, Any]:
+-        """
+-        Process the message.
+-
+-        Arguments:
+-            msg: The message:
+-            kwargs: Remaining arguments.
+-
+-        Returns:
+-            The processed message.
+-        """
+         return f"{self.prefix}: {msg}", kwargs
+ 
+ 
+ def get_plugin_logger(name: str) -> PrefixedLogger:
+-    """
+-    Return a logger for plugins.
+-
+-    Arguments:
+-        name: The name to use with `logging.getLogger`.
+-
+-    Returns:
+-        A logger configured to work well in MkDocs,
+-            prefixing each message with the plugin package name.
+-
+-    Example:
+-        ```python
+-        from mkdocs.plugins import get_plugin_logger
+-
+-        log = get_plugin_logger(__name__)
+-        log.info("My plugin message")
+-        ```
+-    """
++    """Return a logger for plugins."""
+     logger = logging.getLogger(f"mkdocs.plugins.{name}")
+     return PrefixedLogger(name.split(".", 1)[0], logger)

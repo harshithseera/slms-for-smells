@@ -1,0 +1,2269 @@
+{
+  "codebase": "data/external/mkdocs",
+  "files": 35,
+  "loc": 7084,
+  "candidates": 118,
+  "candidates_before_sampling": 118,
+  "static_s": 3.86,
+  "slm_model": "qwen2.5-coder:7b",
+  "slm": {
+    "calls": 92,
+    "latency_s": 2559.07,
+    "tokens_in": 113511,
+    "tokens_out": 8583,
+    "invalid_dropped": 0,
+    "retries": 0,
+    "mean_latency_s": 27.82
+  },
+  "predictions": [
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::verbose_option@163|mkdocs/__main__.py::quiet_option@179",
+      "source": "gate",
+      "reason": "AST similarity 0.981",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/__main__.py::verbose_option | mkdocs/__main__.py::quiet_option",
+            "severity": "low",
+            "evidence": "Both functions set the logger level based on a flag.",
+            "fix": "Extract a helper function to set the logger level and call it in both.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/__main__.py"
+          }
+        ],
+        "latency_s": 30.26,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::new_command@362|mkdocs/structure/pages.py::_set_title@222",
+      "source": "gate",
+      "reason": "AST similarity 0.8",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.78,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R1",
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::callback@164|mkdocs/__main__.py::callback@180",
+      "source": "gate",
+      "reason": "AST similarity 0.967",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.65,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "verbose_option",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 11.59,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "quiet_option",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 11.69,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "color_option",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.97,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/__main__.py",
+      "target": "cli",
+      "source": "gate",
+      "reason": "numeric literals [120] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 11.64,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "build_command",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 11.55,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/__main__.py",
+      "target": "gh_deploy_command",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "gh_deploy_command",
+            "severity": "medium",
+            "evidence": "cfg.plugins.on_startup() and cfg.plugins.on_shutdown() navigate through cfg's internal structure.",
+            "fix": "Add methods on cfg to handle on_startup and on_shutdown directly.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/__main__.py"
+          }
+        ],
+        "latency_s": 25.97,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/__main__.py",
+      "target": "mkdocs/__main__.py::gh_deploy_command@305|mkdocs/commands/gh_deploy.py::gh_deploy@100",
+      "source": "gate",
+      "reason": "parameters ['force', 'ignore_version', 'message', 'no_history', 'shell'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/__main__.py::gh_deploy_command | mkdocs/commands/gh_deploy.py::gh_deploy",
+            "severity": "medium",
+            "evidence": "The parameters 'force', 'ignore_version', 'message', 'no_history', 'shell' are shared between the two functions and describe a related concept.",
+            "fix": "Introduce a dataclass named 'DeploymentOptions' and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/__main__.py"
+          }
+        ],
+        "latency_s": 45.59,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/__main__.py",
+      "target": "_showwarning",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/__main__.py",
+      "target": "gh_deploy_command",
+      "source": "rule",
+      "reason": "9 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/commands/build.py",
+      "target": "get_context",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['base_url']",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.4,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_template",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "_build_template",
+            "severity": "medium",
+            "evidence": "config.plugins.on_pre_template(template, template_name=name, config=config)",
+            "fix": "Add a method on config.plugins that returns the pre-processed template.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 34.0,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_populate_page",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "_populate_page",
+            "severity": "medium",
+            "evidence": "config.plugins.on_page_content/page.markdown/page_content",
+            "fix": "Add helper methods on config to return needed data.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 34.05,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "_populate_page",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "_populate_page",
+            "severity": "medium",
+            "evidence": "The function reads the page only if 'dirty' is True, otherwise it skips reading.",
+            "fix": "Split into two functions: _populate_page_if_dirty and _populate_page_if_not_dirty.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 38.89,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 21.84,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty', 'excluded'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "_build_page",
+            "severity": "medium",
+            "evidence": "The function has two branches based on the 'dirty' and 'excluded' flags, each performing different tasks.",
+            "fix": "Split the function into two separate functions, one for handling 'dirty' pages and another for handling 'excluded' pages.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 45.23,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "build",
+            "severity": "medium",
+            "evidence": "config.validation.links.anchors",
+            "fix": "Add a method on config to return the log level.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 42.25,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "build",
+            "severity": "medium",
+            "evidence": "The function 'build' has a 'dirty' flag that switches between cleaning the site directory and not cleaning it, which are two different behaviors.",
+            "fix": "Split the function into two separate functions: 'build_clean' and 'build_dirty'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 58.99,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_template@61|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'nav'] recur in 6 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_extra_template | mkdocs/commands/build.py::_build_template | mkdocs/commands/build.py::_build_theme_template",
+            "severity": "medium",
+            "evidence": "The functions share the same parameters (config, files, nav) which describe one concept (a build context).",
+            "fix": "Introduce a dataclass named BuildContext and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 56.5,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_populate_page@147|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_content@364",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'page'] recur in 8 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_populate_page | mkdocs/commands/build.py::get_context | mkdocs/plugins.py::on_page_content",
+            "severity": "medium",
+            "evidence": "config, files, page appear in multiple functions with related logic.",
+            "fix": "Introduce a dataclass named 'PageContext' with fields 'config', 'files', 'page' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 53.82,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::get_context@29|mkdocs/plugins.py::on_page_context@383",
+      "source": "gate",
+      "reason": "parameters ['config', 'nav', 'page'] recur in 4 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_page | mkdocs/commands/build.py::get_context | mkdocs/plugins.py::on_page_context",
+            "severity": "medium",
+            "evidence": "config, nav, page are shared across functions and form a cohesive concept.",
+            "fix": "Introduce a dataclass named 'PageContext' with fields config, nav, page and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 58.01,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_extra_template@124|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'nav', 'template_name'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_extra_template | mkdocs/commands/build.py::_build_theme_template",
+            "severity": "medium",
+            "evidence": "Both functions share the same parameters: template_name, files, config, nav.",
+            "fix": "Introduce a dataclass named `TemplateContext` with fields `template_name`, `files`, `config`, `nav` and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 49.24,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_build_theme_template@91",
+      "source": "gate",
+      "reason": "parameters ['config', 'env', 'nav'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_page | mkdocs/commands/build.py::_build_theme_template",
+            "severity": "medium",
+            "evidence": "Both functions share the same parameters: config, env, and nav.",
+            "fix": "Introduce a dataclass named 'BuildContext' with fields 'config', 'env', and 'nav', and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 47.69,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_theme_template@91|mkdocs/plugins.py::on_env@213|mkdocs/plugins.py::on_env@598",
+      "source": "gate",
+      "reason": "parameters ['config', 'env', 'files'] recur in 3 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_theme_template | mkdocs/plugins.py::on_env | mkdocs/plugins.py::on_env",
+            "severity": "medium",
+            "evidence": "config, env, files shared across functions",
+            "fix": "Introduce a dataclass for config, env, files",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 52.63,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/commands/build.py",
+      "target": "mkdocs/commands/build.py::_build_page@185|mkdocs/commands/build.py::_populate_page@147",
+      "source": "gate",
+      "reason": "parameters ['config', 'dirty', 'page'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/commands/build.py::_build_page | mkdocs/commands/build.py::_populate_page",
+            "severity": "medium",
+            "evidence": "Both functions share the parameters 'page', 'config', and 'dirty'.",
+            "fix": "Introduce a dataclass named 'BuildContext' with fields 'page', 'config', and 'dirty', and pass it to both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/build.py"
+          }
+        ],
+        "latency_s": 50.06,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "rule",
+      "reason": "62 lines, cyclomatic complexity 8, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/build.py",
+      "target": "_build_page",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/build.py",
+      "target": "build",
+      "source": "rule",
+      "reason": "116 lines, cyclomatic complexity 24, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/gh_deploy.py",
+      "target": "gh_deploy",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['ignore_version'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "gh_deploy",
+            "severity": "medium",
+            "evidence": "The function gh_deploy has a boolean parameter 'ignore_version' that switches between two different behaviors.",
+            "fix": "Split the function into two well-named functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/gh_deploy.py"
+          }
+        ],
+        "latency_s": 35.88,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/gh_deploy.py",
+      "target": "gh_deploy",
+      "source": "rule",
+      "reason": "70 lines, cyclomatic complexity 9, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/gh_deploy.py",
+      "target": "gh_deploy",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "gate",
+      "reason": "numeric literals [404, 500] in the function body",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "serve",
+            "severity": "medium",
+            "evidence": "HTTP status codes 404 and 500 are used without explanation.",
+            "fix": "Define constants for HTTP status codes.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/serve.py"
+          }
+        ],
+        "latency_s": 33.5,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "serve",
+            "severity": "medium",
+            "evidence": "config.plugins.on_startup() and config.plugins.on_serve() navigate through config object's internal attributes.",
+            "fix": "Add methods on config to return needed data and call those instead.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/serve.py"
+          }
+        ],
+        "latency_s": 42.07,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['livereload', 'watch_theme'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "serve",
+            "severity": "medium",
+            "evidence": "The function serves two different behaviors based on the 'livereload' and 'watch_theme' flags.",
+            "fix": "Split the function into two separate functions, one for serving with livereload and one for serving without.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/commands/serve.py"
+          }
+        ],
+        "latency_s": 43.01,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "rule",
+      "reason": "91 lines, cyclomatic complexity 10, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/commands/serve.py",
+      "target": "serve",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::pre_validation@60|mkdocs/config/base.py::post_validation@75",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 8 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/config/base.py::pre_validation | mkdocs/config/base.py::post_validation",
+            "severity": "low",
+            "evidence": "Both functions have the same signature and docstring, indicating duplicated logic.",
+            "fix": "Extract a helper method and delegate to it from both functions.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/base.py"
+          }
+        ],
+        "latency_s": 33.07,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::run_validation@67|mkdocs/plugins.py::on_config@156",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 5 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 16.05,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::_pre_validate@200|mkdocs/config/base.py::_post_validate@214",
+      "source": "gate",
+      "reason": "AST similarity 0.989",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/config/base.py::_pre_validate | mkdocs/config/base.py::_post_validate",
+            "severity": "low",
+            "evidence": "Both functions perform the same computation with different method calls.",
+            "fix": "Extract a helper function and make both calls it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/base.py"
+          }
+        ],
+        "latency_s": 32.81,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/base.py",
+      "target": "mkdocs/config/base.py::user_configs@266|mkdocs/theme.py::_vars@86",
+      "source": "gate",
+      "reason": "AST similarity 0.941; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 15.6,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/base.py",
+      "target": "load_config",
+      "source": "rule",
+      "reason": "53 lines, cyclomatic complexity 12, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__init__@70|mkdocs/config/config_options.py::__init__@76",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 6 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.74,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__class_getitem__@98|mkdocs/plugins.py::__class_getitem__@72",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/config/config_options.py::__class_getitem__ | mkdocs/plugins.py::__class_getitem__",
+            "severity": "low",
+            "evidence": "Both functions perform the same computation with the same parameters and logic.",
+            "fix": "Extract a helper function and delegate the logic to it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/config_options.py"
+          }
+        ],
+        "latency_s": 33.98,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::run_validation@554|mkdocs/utils/__init__.py::__get__@395",
+      "source": "gate",
+      "reason": "AST similarity 0.8",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.94,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__init__@1171|mkdocs/plugins.py::__init__@652",
+      "source": "gate",
+      "reason": "AST similarity 0.809",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 15.25,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "PropagatingSubConfig.run_validation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "PropagatingSubConfig.run_validation",
+            "severity": "medium",
+            "evidence": "The code navigates through self.config_class._schema to reach data.",
+            "fix": "Add a method on PropagatingSubConfig to return the needed data.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/config_options.py"
+          }
+        ],
+        "latency_s": 28.69,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Deprecated.__init__",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['removed'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "Deprecated.__init__",
+            "severity": "medium",
+            "evidence": "The function uses 'removed' to switch between two different message generation behaviors.",
+            "fix": "Split into two functions: one for deprecated and one for removed.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/config_options.py"
+          }
+        ],
+        "latency_s": 32.56,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Nav.run_validation",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['top'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "Nav.run_validation",
+            "severity": "medium",
+            "evidence": "The function switches behavior based on the 'top' flag, which controls whether it sets 'value' to None if it's an empty list.",
+            "fix": "Split into two functions: one for validating a list and another for validating a dictionary.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/config_options.py"
+          }
+        ],
+        "latency_s": 33.3,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "MarkdownExtensions.pre_validation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.96,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Hooks._load_hook",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.81,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/config/config_options.py",
+      "target": "PathSpec.run_validation",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.9,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/config/config_options.py",
+      "target": "mkdocs/config/config_options.py::__init__@504|mkdocs/config/config_options.py::__init__@507",
+      "source": "gate",
+      "reason": "parameters ['default', 'is_dir', 'required'] recur in 2 signatures",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/config/config_options.py::__init__ | mkdocs/config/config_options.py::__init__",
+            "severity": "medium",
+            "evidence": "The parameters 'default', 'required', and 'is_dir' are shared and describe one concept.",
+            "fix": "Introduce a dataclass named 'ConfigOption' with fields 'default', 'required', and 'is_dir', and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/config/config_options.py"
+          }
+        ],
+        "latency_s": 41.22,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "ListOfItems.run_validation",
+      "source": "rule",
+      "reason": "31 lines, cyclomatic complexity 12, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "DictOfItems.run_validation",
+      "source": "rule",
+      "reason": "33 lines, cyclomatic complexity 12, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "RepoURL.post_validation",
+      "source": "rule",
+      "reason": "29 lines, cyclomatic complexity 13, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Theme.run_validation",
+      "source": "rule",
+      "reason": "40 lines, cyclomatic complexity 16, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Nav.run_validation",
+      "source": "rule",
+      "reason": "16 lines, cyclomatic complexity 11, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "MarkdownExtensions.run_validation",
+      "source": "rule",
+      "reason": "42 lines, cyclomatic complexity 12, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/config/config_options.py",
+      "target": "Plugins.load_plugin",
+      "source": "rule",
+      "reason": "61 lines, cyclomatic complexity 21, nesting 2",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/contrib/search/__init__.py",
+      "target": "SearchPlugin.on_config",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "SearchPlugin.on_config",
+            "severity": "low",
+            "evidence": "config.theme.locale.language",
+            "fix": "Add a method on config to return the language.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/contrib/search/__init__.py"
+          }
+        ],
+        "latency_s": 29.95,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/contrib/search/__init__.py",
+      "target": "SearchPlugin.on_post_build",
+      "source": "rule",
+      "reason": "26 lines, cyclomatic complexity 11, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.__init__",
+      "source": "gate",
+      "reason": "numeric literals [0.1] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "LiveReloadServer.__init__",
+            "severity": "low",
+            "evidence": "0.1 is used as a polling interval and build delay.",
+            "fix": "Define constants for polling_interval and build_delay.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/livereload/__init__.py"
+          }
+        ],
+        "latency_s": 30.43,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.__init__",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "LiveReloadServer.__init__",
+            "severity": "medium",
+            "evidence": "self.observer = watchdog.observers.polling.PollingObserver(timeout=polling_interval)",
+            "fix": "Add a method on watchdog.observers.polling.PollingObserver to return the observer instance.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/livereload/__init__.py"
+          }
+        ],
+        "latency_s": 31.37,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.serve",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['open_in_browser'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "LiveReloadServer.serve",
+            "severity": "medium",
+            "evidence": "The function serves the same purpose but with an optional browser opening.",
+            "fix": "Split into two functions: serve_without_browser and serve_with_browser.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/livereload/__init__.py"
+          }
+        ],
+        "latency_s": 27.29,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.shutdown",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['wait'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "LiveReloadServer.shutdown",
+            "severity": "medium",
+            "evidence": "The function performs two different actions based on the 'wait' flag.",
+            "fix": "Split into two functions: 'shutdown' and 'shutdown_and_wait'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/livereload/__init__.py"
+          }
+        ],
+        "latency_s": 26.77,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.serve_request",
+      "source": "gate",
+      "reason": "numeric literals [500, 404] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 15.33,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R3"
+        ]
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "_timestamp",
+      "source": "gate",
+      "reason": "numeric literals [1000] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "_timestamp",
+            "severity": "low",
+            "evidence": "The literal 1000 is used to convert seconds to milliseconds.",
+            "fix": "Name the conversion factor as a module constant.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/livereload/__init__.py"
+          }
+        ],
+        "latency_s": 24.45,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer.__init__",
+      "source": "rule",
+      "reason": "7 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/livereload/__init__.py",
+      "target": "LiveReloadServer._serve_request",
+      "source": "rule",
+      "reason": "62 lines, cyclomatic complexity 12, nesting 4",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/config/base.py::pre_validation@60|mkdocs/plugins.py::on_startup@100",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 28 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/config/base.py::pre_validation | mkdocs/plugins.py::on_startup",
+            "severity": "low",
+            "evidence": "Both functions have the same structure but serve different purposes.",
+            "fix": "Extract a helper function and delegate the logic to it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/plugins.py"
+          }
+        ],
+        "latency_s": 29.69,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_serve@581|mkdocs/plugins.py::on_pre_template@607",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 6 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.53,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_serve@134|mkdocs/plugins.py::on_serve@581",
+      "source": "gate",
+      "reason": "parameters ['builder', 'config', 'server'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 16.06,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_pre_template@254|mkdocs/plugins.py::on_pre_template@607",
+      "source": "gate",
+      "reason": "parameters ['config', 'template', 'template_name'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 18.05,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_template_context@271|mkdocs/plugins.py::on_template_context@612",
+      "source": "gate",
+      "reason": "parameters ['config', 'context', 'template_name'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 17.33,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_post_template@289|mkdocs/plugins.py::on_post_template@619",
+      "source": "gate",
+      "reason": "parameters ['config', 'output_content', 'template_name'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 22.28,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_markdown@345|mkdocs/plugins.py::on_page_markdown@632",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'markdown', 'page'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 19.19,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_content@364|mkdocs/plugins.py::on_page_content@637",
+      "source": "gate",
+      "reason": "parameters ['config', 'files', 'html', 'page'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 17.81,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_page_context@383|mkdocs/plugins.py::on_page_context@640",
+      "source": "gate",
+      "reason": "parameters ['config', 'context', 'nav', 'page'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 18.73,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/plugins.py",
+      "target": "mkdocs/plugins.py::on_post_page@401|mkdocs/plugins.py::on_post_page@645",
+      "source": "gate",
+      "reason": "parameters ['config', 'output', 'page'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 24.54,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::src_uris@86|mkdocs/structure/nav.py::active@66",
+      "source": "gate",
+      "reason": "AST similarity 0.875; cluster of 4 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 18.51,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R1",
+          "R2",
+          "R3",
+          "R4"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::generated@271|mkdocs/structure/files.py::generated@287",
+      "source": "gate",
+      "reason": "AST similarity 1.0; cluster of 5 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/structure/files.py::generated | mkdocs/structure/files.py::generated",
+            "severity": "low",
+            "evidence": "Both functions have the same structure and perform the same computation.",
+            "fix": "Extract a helper function to handle the common logic.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 39.11,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::content_bytes@426|mkdocs/structure/files.py::content_string@450",
+      "source": "gate",
+      "reason": "AST similarity 0.924",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/structure/files.py::content_bytes | mkdocs/structure/files.py::content_string",
+            "severity": "medium",
+            "evidence": "Both functions perform the same computation with minor differences in encoding and error handling.",
+            "fix": "Extract a helper function to handle the common logic and call it from both `content_bytes` and `content_string`.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 36.14,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "Files.add_files_from_theme",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "Files.add_files_from_theme",
+            "severity": "medium",
+            "evidence": "config.theme.dirs and config.theme.static_templates accessed through config object.",
+            "fix": "Add methods on config to return theme dirs and static templates.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 29.49,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "File.generated",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 10.55,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "File.copy_file",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['dirty'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "File.copy_file",
+            "severity": "medium",
+            "evidence": "Function copies file differently based on 'dirty' flag.",
+            "fix": "Split into two functions: 'copy_file' and 'copy_file_if_modified'.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 27.86,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/files.py",
+      "target": "get_files",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "get_files",
+            "severity": "medium",
+            "evidence": "The method navigates through 'a.inclusion.is_included()' and 'b.inclusion.is_included()' to reach data that could be provided directly by the first object.",
+            "fix": "Add a method on 'a' or 'b' that returns the needed data and call that instead of navigating.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 32.61,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/files.py",
+      "target": "_filter_paths",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['is_dir'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "_filter_paths",
+            "severity": "medium",
+            "evidence": "The function uses 'is_dir' to switch between two different behaviors.",
+            "fix": "Split into two functions: one for directories and one for files.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 26.26,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/files.py",
+      "target": "mkdocs/structure/files.py::generated@271|mkdocs/structure/files.py::generated@287",
+      "source": "gate",
+      "reason": "parameters ['config', 'inclusion', 'src_uri'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/structure/files.py::generated | mkdocs/structure/files.py::generated",
+            "severity": "low",
+            "evidence": "config, inclusion, src_uri appear in both functions.",
+            "fix": "Introduce a dataclass for config, inclusion, src_uri.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/files.py"
+          }
+        ],
+        "latency_s": 31.09,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_parameter_list",
+      "file": "mkdocs/structure/files.py",
+      "target": "File.__init__",
+      "source": "rule",
+      "reason": "6 parameters",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/structure/nav.py",
+      "target": "mkdocs/structure/nav.py::active@75|mkdocs/structure/pages.py::active@119",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/structure/nav.py::active | mkdocs/structure/pages.py::active",
+            "severity": "low",
+            "evidence": "Both functions set active status and propagate it to parent.",
+            "fix": "Extract a helper method to set active status and propagate it.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/nav.py"
+          }
+        ],
+        "latency_s": 28.06,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "get_navigation",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "get_navigation",
+            "severity": "medium",
+            "evidence": "The method navigates through multiple objects to reach data that could be provided directly.",
+            "fix": "Add a method on the first object that returns what the caller needs.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/nav.py"
+          }
+        ],
+        "latency_s": 30.21,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_data_to_navigation",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "_data_to_navigation",
+            "severity": "medium",
+            "evidence": "The function navigates through `config.validation.nav.absolute_links` and `config.validation.nav.not_found`.",
+            "fix": "Add methods on `config.validation.nav` to return the needed data directly.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/nav.py"
+          }
+        ],
+        "latency_s": 29.12,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/nav.py",
+      "target": "get_navigation",
+      "source": "rule",
+      "reason": "56 lines, cyclomatic complexity 14, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/nav.py",
+      "target": "_data_to_navigation",
+      "source": "rule",
+      "reason": "36 lines, cyclomatic complexity 15, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "Page.read_source",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 12.19,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_ExtractAnchorsTreeprocessor._register",
+      "source": "gate",
+      "reason": "numeric literals [5] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "_ExtractAnchorsTreeprocessor._register",
+            "severity": "low",
+            "evidence": "The priority value 5 is a magic number.",
+            "fix": "Define a constant for the priority value.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 32.06,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_ExtractAnchorsTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 14.26,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "flag_argument",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._possible_target_uris",
+      "source": "gate",
+      "reason": "boolean parameter(s) ['use_directory_urls'] select a branch",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "flag_argument",
+            "location": "_RelativePathTreeprocessor._possible_target_uris",
+            "severity": "medium",
+            "evidence": "The function uses 'use_directory_urls' to switch between two different behaviors.",
+            "fix": "Split the function into two separate functions, one for each behavior.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 41.3,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "_RelativePathTreeprocessor.path_to_url",
+            "severity": "medium",
+            "evidence": "The function validates, normalises, and formats the raw URL value itself.",
+            "fix": "Introduce a URL dataclass that validates once on creation and formats itself.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 47.43,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "gate",
+      "reason": "navigates 3 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "_RelativePathTreeprocessor.path_to_url",
+            "severity": "medium",
+            "evidence": "The method navigates through multiple project objects' internal attributes to reach data.",
+            "fix": "Add a method on the first object that returns the required data.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 45.29,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.42,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RawHTMLPreprocessor._register",
+      "source": "gate",
+      "reason": "numeric literals [21] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "magic_numbers",
+            "location": "_RawHTMLPreprocessor._register",
+            "severity": "low",
+            "evidence": "Priority 21 is a magic number.",
+            "fix": "Define a constant for the priority.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 29.45,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RawHTMLPreprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 14.09,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_ExtractTitleTreeprocessor._register",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 14.25,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "data_clumps",
+      "file": "mkdocs/structure/pages.py",
+      "target": "mkdocs/structure/pages.py::__init__@330|mkdocs/structure/pages.py::__init__@347",
+      "source": "gate",
+      "reason": "parameters ['config', 'file', 'files'] recur in 2 signatures",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "data_clumps",
+            "location": "mkdocs/structure/pages.py::__init__ | mkdocs/structure/pages.py::__init__",
+            "severity": "low",
+            "evidence": "The same group of values ('config', 'file', 'files') is passed to multiple functions.",
+            "fix": "Introduce a dataclass named 'PageInitializationData' and pass it to each function.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/structure/pages.py"
+          }
+        ],
+        "latency_s": 40.63,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "Page._set_edit_url",
+      "source": "rule",
+      "reason": "36 lines, cyclomatic complexity 13, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor._possible_target_uris",
+      "source": "rule",
+      "reason": "36 lines, cyclomatic complexity 13, nesting 3",
+      "confirmed": true
+    },
+    {
+      "smell": "long_method",
+      "file": "mkdocs/structure/pages.py",
+      "target": "_RelativePathTreeprocessor.path_to_url",
+      "source": "rule",
+      "reason": "98 lines, cyclomatic complexity 32, nesting 6",
+      "confirmed": true
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "mkdocs/config/base.py::user_configs@266|mkdocs/utils/__init__.py::path_to_url@249",
+      "source": "gate",
+      "reason": "AST similarity 0.811; cluster of 3 similar functions",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 15.16,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R1",
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "get_relative_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "primitive_obsession",
+            "location": "get_relative_url",
+            "severity": "medium",
+            "evidence": "The function validates and normalises the raw string values.",
+            "fix": "Introduce a URL dataclass to handle validation and formatting.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/utils/__init__.py"
+          }
+        ],
+        "latency_s": 35.21,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "magic_numbers",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "_get_norm_url",
+      "source": "gate",
+      "reason": "numeric literals [3] in the function body",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 16.26,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "get_theme_dir",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "get_theme_dir",
+            "severity": "medium",
+            "evidence": "theme.load().__file__ navigates through theme object's internal structure.",
+            "fix": "Add a method on theme to return the file path.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/utils/__init__.py"
+          }
+        ],
+        "latency_s": 28.94,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/utils/__init__.py",
+      "target": "get_themes",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": true,
+      "slm": {
+        "findings": [
+          {
+            "smell": "message_chains",
+            "location": "get_themes",
+            "severity": "medium",
+            "evidence": "The function navigates through `theme.dist.name` to reach data that could be provided directly by `theme.name`.",
+            "fix": "Add a method on `EntryPoint` that returns `theme.name` and call that instead.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/utils/__init__.py"
+          }
+        ],
+        "latency_s": 29.9,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "primitive_obsession",
+      "file": "mkdocs/utils/cache.py",
+      "target": "download_url",
+      "source": "gate",
+      "reason": "domain values passed as raw primitives and checked or transformed: ['url']",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.42,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R2"
+        ]
+      }
+    },
+    {
+      "smell": "duplicated_logic",
+      "file": "mkdocs/utils/rendering.py",
+      "target": "mkdocs/utils/rendering.py::_remove_fnrefs@65|mkdocs/utils/rendering.py::_extract_alt_texts@77",
+      "source": "gate",
+      "reason": "AST similarity 1.0",
+      "confirmed": false,
+      "slm": {
+        "findings": [
+          {
+            "smell": "duplicated_logic",
+            "location": "mkdocs/utils/rendering.py::_remove_fnrefs | mkdocs/utils/rendering.py::_extract_alt_texts",
+            "severity": "low",
+            "evidence": "Both functions perform the same computation with different element types.",
+            "fix": "Extract a helper function to replace elements with text based on a predicate.",
+            "source": "slm:qwen2.5-coder:7b",
+            "file": "mkdocs/utils/rendering.py"
+          }
+        ],
+        "latency_s": 33.71,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": []
+      }
+    },
+    {
+      "smell": "message_chains",
+      "file": "mkdocs/utils/yaml.py",
+      "target": "RelativeDirPlaceholder.value",
+      "source": "gate",
+      "reason": "navigates 2 objects deep",
+      "confirmed": false,
+      "slm": {
+        "findings": [],
+        "latency_s": 13.66,
+        "invalid": 0,
+        "retries": 0,
+        "rejected_by": [
+          "R3"
+        ]
+      }
+    }
+  ],
+  "by_smell": {
+    "data_clumps": {
+      "candidates": 19,
+      "decided_by": "slm",
+      "judged": 19,
+      "confirmed": 9,
+      "mean_latency_s": 35.8
+    },
+    "duplicated_logic": {
+      "candidates": 19,
+      "decided_by": "slm",
+      "judged": 19,
+      "confirmed": 1,
+      "mean_latency_s": 23.4
+    },
+    "flag_argument": {
+      "candidates": 12,
+      "decided_by": "slm",
+      "judged": 12,
+      "confirmed": 12,
+      "mean_latency_s": 36.4
+    },
+    "long_method": {
+      "candidates": 19,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "long_parameter_list": {
+      "candidates": 7,
+      "decided_by": "rule",
+      "judged": 0,
+      "confirmed": null,
+      "mean_latency_s": null
+    },
+    "magic_numbers": {
+      "candidates": 8,
+      "decided_by": "slm",
+      "judged": 8,
+      "confirmed": 1,
+      "mean_latency_s": 24.1
+    },
+    "message_chains": {
+      "candidates": 30,
+      "decided_by": "slm",
+      "judged": 30,
+      "confirmed": 14,
+      "mean_latency_s": 23.2
+    },
+    "primitive_obsession": {
+      "candidates": 4,
+      "decided_by": "slm",
+      "judged": 4,
+      "confirmed": 2,
+      "mean_latency_s": 27.4
+    }
+  }
+}

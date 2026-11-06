@@ -1,0 +1,45 @@
+--- a/httpie/manager/tasks/plugins.py
++++ b/httpie/manager/tasks/plugins.py
+@@ -34,13 +34,16 @@
+                 parents=True
+             )
+         except OSError:
+-            self.env.stderr.write(
+-                f'Couldn\'t create "{self.dir!s}"'
+-                ' directory for plugin installation.'
+-                ' Please re-check the permissions for that directory,'
+-                ' and if needed, allow write-access.'
+-            )
++            self._write_dir_creation_error()
+             raise
++
++    def _write_dir_creation_error(self) -> None:
++        self.env.stderr.write(
++            f'Couldn\'t create "{self.dir!s}"'
++            ' directory for plugin installation.'
++            ' Please re-check the permissions for that directory,'
++            ' and if needed, allow write-access.'
++        )
+ 
+     def fail(
+         self,
+@@ -115,7 +118,7 @@
+         result_deps = defaultdict(list)
+         for site_dir in get_site_paths(self.dir):
+             for child in site_dir.iterdir():
+-                if child.suffix in {'.dist-info', '.egg-info'}:
++                if self._is_metadata_suffix(child.suffix):
+                     name, _, version = child.stem.rpartition('-')
+                     result_deps[name].append((version, child))
+ 
+@@ -128,6 +131,10 @@
+             for result_version, meta_path in result_deps[name]:
+                 if version != result_version:
+                     shutil.rmtree(meta_path)
++
++    @staticmethod
++    def _is_metadata_suffix(suffix: str) -> bool:
++        return suffix in {'.dist-info', '.egg-info'}
+ 
+     def upgrade(self, targets: List[str]) -> ExitStatus:
+         self.env.stdout.write(f"Upgrading {', '.join(targets)}...\n")

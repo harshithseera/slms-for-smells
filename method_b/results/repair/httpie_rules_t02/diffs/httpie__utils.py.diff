@@ -1,0 +1,54 @@
+--- a/httpie/utils.py
++++ b/httpie/utils.py
+@@ -75,6 +75,14 @@
+ 
+ def repr_dict(d: dict) -> str:
+     return pformat(d)
++
++
++BYTE_UNIT_PB = 1 << 50
++BYTE_UNIT_TB = 1 << 40
++BYTE_UNIT_GB = 1 << 30
++BYTE_UNIT_MB = 1 << 20
++BYTE_UNIT_KB = 1 << 10
++BYTE_UNIT_B = 1
+ 
+ 
+ def humanize_bytes(n, precision=2):
+@@ -102,12 +110,12 @@
+ 
+     """
+     abbrevs = [
+-        (1 << 50, 'PB'),
+-        (1 << 40, 'TB'),
+-        (1 << 30, 'GB'),
+-        (1 << 20, 'MB'),
+-        (1 << 10, 'kB'),
+-        (1, 'B')
++        (BYTE_UNIT_PB, 'PB'),
++        (BYTE_UNIT_TB, 'TB'),
++        (BYTE_UNIT_GB, 'GB'),
++        (BYTE_UNIT_MB, 'MB'),
++        (BYTE_UNIT_KB, 'kB'),
++        (BYTE_UNIT_B, 'B')
+     ]
+ 
+     if n == 1:
+@@ -263,8 +271,16 @@
+         return exc
+ 
+ 
++class Url:
++    def __init__(self, value: str):
++        self.value = value
++
++    def as_host(self) -> str:
++        return urlsplit(self.value).netloc.split('@')[-1]
++
++
+ def url_as_host(url: str) -> str:
+-    return urlsplit(url).netloc.split('@')[-1]
++    return Url(url).as_host()
+ 
+ 
+ class LockFileError(ValueError):

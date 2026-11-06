@@ -1,0 +1,114 @@
+--- a/httpie/cli/argtypes.py
++++ b/httpie/cli/argtypes.py
+@@ -158,6 +158,15 @@
+ class AuthCredentials(KeyValueArg, PromptMixin):
+     """Represents parsed credentials."""
+ 
++    def __init__(
++        self,
++        source: str,
++        token: Optional[str],
++        message: str,
++        message_kind: str = 'Syntax',
++    ) -> None:
++        super().__init__(source, token, message, message_kind)
++
+     def has_password(self) -> bool:
+         return self.value is not None
+ 
+@@ -199,6 +208,47 @@
+         raise argparse.ArgumentTypeError(f'{ex.filename}: {ex.strerror}')
+ 
+ 
++def _parse_format_option_value(value: str) -> Union[bool, int, str]:
++    value_map = {
++        'true': True,
++        'false': False,
++    }
++    if value in value_map:
++        return value_map[value]
++    if value.isnumeric():
++        return int(value)
++    return value
++
++
++def _apply_format_option(options: dict, option: str, defaults: Optional[dict]) -> None:
++    try:
++        path, raw_value = option.lower().split(':')
++        section, key = path.split('.')
++    except ValueError:
++        raise argparse.ArgumentTypeError(f'invalid option {option!r}')
++
++    parsed_value = _parse_format_option_value(raw_value)
++
++    if defaults is None:
++        options.setdefault(section, {})
++    else:
++        try:
++            default_value = defaults[section][key]
++        except KeyError:
++            raise argparse.ArgumentTypeError(f'invalid key {path!r}')
++
++        default_type, parsed_type = type(default_value), type(parsed_value)
++        if parsed_type is not default_type:
++            raise argparse.ArgumentTypeError(
++                'invalid value'
++                f' {raw_value!r} in {option!r}'
++                f' (expected {default_type.__name__}'
++                f' got {parsed_type.__name__})'
++            )
++
++    options[section][key] = parsed_value
++
++
+ def parse_format_options(s: str, defaults: Optional[dict]) -> dict:
+     """
+     Parse `s` and update `defaults` with the parsed values.
+@@ -210,46 +260,9 @@
+     {'json': {'indent': 2, 'sort_keys': False}}
+ 
+     """
+-    value_map = {
+-        'true': True,
+-        'false': False,
+-    }
+     options = deepcopy(defaults or {})
+     for option in s.split(','):
+-        try:
+-            path, value = option.lower().split(':')
+-            section, key = path.split('.')
+-        except ValueError:
+-            raise argparse.ArgumentTypeError(f'invalid option {option!r}')
+-
+-        if value in value_map:
+-            parsed_value = value_map[value]
+-        else:
+-            if value.isnumeric():
+-                parsed_value = int(value)
+-            else:
+-                parsed_value = value
+-
+-        if defaults is None:
+-            options.setdefault(section, {})
+-        else:
+-            try:
+-                default_value = defaults[section][key]
+-            except KeyError:
+-                raise argparse.ArgumentTypeError(
+-                    f'invalid key {path!r}')
+-
+-            default_type, parsed_type = type(default_value), type(parsed_value)
+-            if parsed_type is not default_type:
+-                raise argparse.ArgumentTypeError(
+-                    'invalid value'
+-                    f' {value!r} in {option!r}'
+-                    f' (expected {default_type.__name__}'
+-                    f' got {parsed_type.__name__})'
+-                )
+-
+-        options[section][key] = parsed_value
+-
++        _apply_format_option(options, option, defaults)
+     return options
+ 
+ 

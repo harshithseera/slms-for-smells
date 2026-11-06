@@ -1,0 +1,41 @@
+--- a/httpie/legacy/v3_1_0_session_cookie_format.py
++++ b/httpie/legacy/v3_1_0_session_cookie_format.py
+@@ -31,6 +31,18 @@
+ '''
+ 
+ INSECURE_COOKIE_SECURITY_LINK = '\nSee https://pie.co/docs/security for more information.'
++
++
++def _post_process_helper(
++    items: List[Dict[str, Any]],
++    *,
++    original_type: Type[Any],
++    dict_transformer: Any
++) -> Any:
++    if issubclass(original_type, dict):
++        return dict_transformer(items)
++    else:
++        return items
+ 
+ 
+ def pre_process(session: 'Session', cookies: Any) -> List[Dict[str, Any]]:
+@@ -72,13 +84,14 @@
+     """Convert the cookies to their original format for
+     maximum compatibility."""
+ 
+-    if issubclass(original_type, dict):
+-        return {
++    return _post_process_helper(
++        normalized_cookies,
++        original_type=original_type,
++        dict_transformer=lambda items: {
+             cookie.pop('name'): cookie
+-            for cookie in normalized_cookies
++            for cookie in items
+         }
+-    else:
+-        return normalized_cookies
++    )
+ 
+ 
+ def fix_layout(session: 'Session', hostname: str, args: argparse.Namespace) -> None:

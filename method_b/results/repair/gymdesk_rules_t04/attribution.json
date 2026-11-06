@@ -1,0 +1,72 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/gymdesk_rules_t04",
+  "fixed_set": 20,
+  "files": [
+    {
+      "file": "gymdesk/billing.py",
+      "findings": 6,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/checkin.py",
+      "findings": 4,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/club.py",
+      "findings": 8,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/notifications.py",
+      "findings": 1,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/reports.py",
+      "findings": 3,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/scheduling.py",
+      "findings": 3,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/stats.py",
+      "findings": 2,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "gymdesk/timeslot.py",
+      "findings": 2,
+      "still_passing": 20,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    }
+  ],
+  "files_safe": 8,
+  "files_breaking": 0
+}

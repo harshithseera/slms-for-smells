@@ -1,0 +1,309 @@
+--- a/httpie/client.py
++++ b/httpie/client.py
+@@ -3,6 +3,7 @@
+ import json
+ import sys
+ from contextlib import contextmanager
++from dataclasses import dataclass
+ from time import monotonic
+ from typing import Any, Dict, Callable, Iterable
+ from urllib.parse import urlparse, urlunparse
+@@ -40,54 +41,97 @@
+ IGNORE_CONTENT_LENGTH_METHODS = frozenset([HTTP_OPTIONS])
+ 
+ 
++@dataclass
++class RequestContext:
++    env: Environment
++    args: argparse.Namespace
++    request_body_read_callback: Callable[[bytes], None] = None
++
++
++@dataclass
++class SSLContextConfig:
++    verify: bool
++    ssl_version: str = None
++    ciphers: str = None
++
++
+ def collect_messages(
+     env: Environment,
+     args: argparse.Namespace,
+     request_body_read_callback: Callable[[bytes], None] = None,
+ ) -> Iterable[RequestsMessage]:
+-    httpie_session = None
+-    httpie_session_headers = None
+-    if args.session or args.session_read_only:
+-        httpie_session = get_httpie_session(
+-            env=env,
+-            config_dir=env.config.directory,
+-            session_name=args.session or args.session_read_only,
+-            host=args.headers.get('Host'),
+-            url=args.url,
+-        )
+-        httpie_session_headers = httpie_session.headers
++    context = RequestContext(env=env, args=args, request_body_read_callback=request_body_read_callback)
++    return _collect_messages_impl(context)
++
++
++def _collect_messages_impl(context: RequestContext) -> Iterable[RequestsMessage]:
++    env = context.env
++    args = context.args
++
++    httpie_session, httpie_session_headers = _init_httpie_session(context)
+ 
+     request_kwargs = make_request_kwargs(
+         env,
+         args=args,
+         base_headers=httpie_session_headers,
+-        request_body_read_callback=request_body_read_callback
++        request_body_read_callback=context.request_body_read_callback
+     )
+     send_kwargs = make_send_kwargs(args)
+     send_kwargs_mergeable_from_env = make_send_kwargs_mergeable_from_env(args)
+-    requests_session = build_requests_session(
++    
++    ssl_config = SSLContextConfig(
++        verify=bool(send_kwargs_mergeable_from_env['verify']),
+         ssl_version=args.ssl_version,
+         ciphers=args.ciphers,
+-        verify=bool(send_kwargs_mergeable_from_env['verify'])
+     )
++    requests_session = build_requests_session(ssl_config)
+ 
+     if httpie_session:
+-        httpie_session.update_headers(request_kwargs['headers'])
+-        requests_session.cookies = httpie_session.cookies
+-        if args.auth_plugin:
+-            # Save auth from CLI to HTTPie session.
+-            httpie_session.auth = {
+-                'type': args.auth_plugin.auth_type,
+-                'raw_auth': args.auth_plugin.raw_auth,
+-            }
+-        elif httpie_session.auth:
+-            # Apply auth from HTTPie session
+-            request_kwargs['auth'] = httpie_session.auth
++        _update_session_with_request_data(httpie_session, requests_session, request_kwargs, args)
+ 
+     if args.debug:
+-        # TODO: reflect the split between request and send kwargs.
+         dump_request(request_kwargs)
+ 
++    prepared_request = _prepare_and_transform_request(requests_session, request_kwargs, args)
++    
++    yield from _send_request_iter(requests_session, prepared_request, send_kwargs_mergeable_from_env, send_kwargs, args)
++
++    if httpie_session:
++        _save_httpie_session(httpie_session, requests_session, args)
++
++
++def _init_httpie_session(context: RequestContext):
++    args = context.args
++    env = context.env
++    if not (args.session or args.session_read_only):
++        return None, None
++
++    config_dir = env.config.directory if hasattr(env.config, 'directory') else env.config.get_directory()
++    httpie_session = get_httpie_session(
++        env=env,
++        config_dir=config_dir,
++        session_name=args.session or args.session_read_only,
++        host=args.headers.get('Host'),
++        url=args.url,
++    )
++    return httpie_session, httpie_session.headers
++
++
++def _update_session_with_request_data(httpie_session, requests_session, request_kwargs, args):
++    httpie_session.update_headers(request_kwargs['headers'])
++    requests_session.cookies = httpie_session.cookies
++    if args.auth_plugin:
++        auth_type = args.auth_plugin.auth_type if hasattr(args.auth_plugin, 'auth_type') else args.auth_plugin.get_auth_type()
++        raw_auth = args.auth_plugin.raw_auth if hasattr(args.auth_plugin, 'raw_auth') else args.auth_plugin.get_raw_auth()
++        httpie_session.auth = {
++            'type': auth_type,
++            'raw_auth': raw_auth,
++        }
++    elif httpie_session.auth:
++        request_kwargs['auth'] = httpie_session.auth
++
++
++def _prepare_and_transform_request(requests_session, request_kwargs, args):
+     request = requests.Request(**request_kwargs)
+     prepared_request = requests_session.prepare_request(request)
+     transform_headers(request, prepared_request)
+@@ -101,43 +145,50 @@
+             request=prepared_request,
+             always=args.compress > 1,
+         )
++    return prepared_request
++
++
++def _send_request_iter(requests_session, prepared_request, send_kwargs_mergeable_from_env, send_kwargs, args):
+     response_count = 0
+     expired_cookies = []
+     while prepared_request:
+         yield prepared_request
+-        if not args.offline:
+-            send_kwargs_merged = requests_session.merge_environment_settings(
+-                url=prepared_request.url,
+-                **send_kwargs_mergeable_from_env,
++        if args.offline:
++            break
++
++        send_kwargs_merged = requests_session.merge_environment_settings(
++            url=prepared_request.url,
++            **send_kwargs_mergeable_from_env,
++        )
++        with max_headers(args.max_headers):
++            response = requests_session.send(
++                request=prepared_request,
++                **send_kwargs_merged,
++                **send_kwargs,
+             )
+-            with max_headers(args.max_headers):
+-                response = requests_session.send(
+-                    request=prepared_request,
+-                    **send_kwargs_merged,
+-                    **send_kwargs,
+-                )
+-            response._httpie_headers_parsed_at = monotonic()
+-            expired_cookies += get_expired_cookies(
+-                response.headers.get('Set-Cookie', '')
+-            )
+-
+-            response_count += 1
+-            if response.next:
+-                if args.max_redirects and response_count == args.max_redirects:
+-                    raise requests.TooManyRedirects
+-                if args.follow:
+-                    prepared_request = response.next
+-                    if args.all:
+-                        yield response
+-                    continue
+-            yield response
++        response._httpie_headers_parsed_at = monotonic()
++        expired_cookies += get_expired_cookies(
++            response.headers.get('Set-Cookie', '')
++        )
++
++        response_count += 1
++        if response.next:
++            if args.max_redirects and response_count == args.max_redirects:
++                raise requests.TooManyRedirects
++            if args.follow:
++                prepared_request = response.next
++                if args.all:
++                    yield response
++                continue
++        yield response
+         break
+ 
+-    if httpie_session:
+-        if httpie_session.is_new() or not args.session_read_only:
+-            httpie_session.cookies = requests_session.cookies
+-            httpie_session.remove_cookies(expired_cookies)
+-            httpie_session.save()
++
++def _save_httpie_session(httpie_session, requests_session, args):
++    if httpie_session.is_new() or not args.session_read_only:
++        httpie_session.cookies = requests_session.cookies
++        httpie_session.remove_cookies(expired_cookies if 'expired_cookies' in locals() else [])
++        httpie_session.save()
+ 
+ 
+ # noinspection PyProtectedMember
+@@ -154,20 +205,29 @@
+ 
+ 
+ def build_requests_session(
+-    verify: bool,
++    verify_or_config: Any,
+     ssl_version: str = None,
+     ciphers: str = None,
+ ) -> requests.Session:
++    if isinstance(verify_or_config, SSLContextConfig):
++        ssl_config = verify_or_config
++    else:
++        ssl_config = SSLContextConfig(
++            verify=verify_or_config,
++            ssl_version=ssl_version,
++            ciphers=ciphers,
++        )
++
+     requests_session = requests.Session()
+ 
+     # Install our adapter.
+     http_adapter = HTTPieHTTPAdapter()
+     https_adapter = HTTPieHTTPSAdapter(
+-        ciphers=ciphers,
+-        verify=verify,
++        ciphers=ssl_config.ciphers,
++        verify=ssl_config.verify,
+         ssl_version=(
+-            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_version]
+-            if ssl_version else None
++            AVAILABLE_SSL_VERSION_ARG_MAPPING[ssl_config.ssl_version]
++            if ssl_config.ssl_version else None
+         ),
+     )
+     requests_session.mount('http://', http_adapter)
+@@ -332,23 +392,21 @@
+     Translate our `args` into `requests.Request` keyword arguments.
+ 
+     """
++    context = RequestContext(env=env, args=args, request_body_read_callback=request_body_read_callback)
++    return _make_request_kwargs_impl(context, base_headers)
++
++
++def _make_request_kwargs_impl(context: RequestContext, base_headers: HTTPHeadersDict = None) -> dict:
++    args = context.args
++    env = context.env
++
+     files = args.files
+-    # Serialize JSON data, if needed.
+     data = args.data
+     auto_json = data and not args.form
+     if (args.json or auto_json) and isinstance(data, dict):
+         data = json_dict_to_request_body(data)
+ 
+-    # Finalize headers.
+-    headers = make_default_headers(args)
+-    if base_headers:
+-        headers.update(base_headers)
+-    headers.update(args.headers)
+-    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
+-        # When online, we let requests set the header instead to be able more
+-        # easily verify chunking is taking place.
+-        headers['Transfer-Encoding'] = 'chunked'
+-    headers = finalize_headers(headers)
++    headers = _build_request_headers(args, base_headers)
+ 
+     if (args.form and files) or args.multipart:
+         data, headers['Content-Type'] = get_multipart_data_and_content_type(
+@@ -364,7 +422,7 @@
+         'data': prepare_request_body(
+             env,
+             data,
+-            body_read_callback=request_body_read_callback,
++            body_read_callback=context.request_body_read_callback,
+             chunked=args.chunked,
+             offline=args.offline,
+             content_length_header_value=headers.get('Content-Length'),
+@@ -372,6 +430,16 @@
+         'auth': args.auth,
+         'params': args.params.items(),
+     }
++
++
++def _build_request_headers(args: argparse.Namespace, base_headers: HTTPHeadersDict = None) -> HTTPHeadersDict:
++    headers = make_default_headers(args)
++    if base_headers:
++        headers.update(base_headers)
++    headers.update(args.headers)
++    if args.offline and args.chunked and 'Transfer-Encoding' not in headers:
++        headers['Transfer-Encoding'] = 'chunked'
++    return finalize_headers(headers)
+ 
+ 
+ def ensure_path_as_is(orig_url: str, prepped_url: str) -> str:

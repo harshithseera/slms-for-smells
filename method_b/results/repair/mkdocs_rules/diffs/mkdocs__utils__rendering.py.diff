@@ -1,0 +1,36 @@
+--- a/mkdocs/utils/rendering.py
++++ b/mkdocs/utils/rendering.py
+@@ -64,8 +64,7 @@
+ 
+ def _remove_fnrefs(root: etree.Element) -> None:
+     """Remove footnote references from the element, if any are present."""
+-    for parent in root.findall('.//sup[@id]/..'):
+-        _replace_elements_with_text(parent, _predicate_for_fnrefs)
++    _extract_or_remove_elements(root, './/sup[@id]/..', _predicate_for_fnrefs)
+ 
+ 
+ def _predicate_for_fnrefs(el: etree.Element) -> str | None:
+@@ -76,14 +75,21 @@
+ 
+ def _extract_alt_texts(root: etree.Element) -> None:
+     """For images that have an `alt` attribute, replace them with this content."""
+-    for parent in root.findall('.//img[@alt]/..'):
+-        _replace_elements_with_text(parent, _predicate_for_alt_texts)
++    _extract_or_remove_elements(root, './/img[@alt]/..', _predicate_for_alt_texts)
+ 
+ 
+ def _predicate_for_alt_texts(el: etree.Element) -> str | None:
+     if el.tag == 'img' and (alt := el.get('alt')):
+         return alt
+     return None
++
++
++def _extract_or_remove_elements(
++    root: etree.Element, path: str, predicate: Callable[[etree.Element], str | None]
++) -> None:
++    """For matching parents, replace or remove child elements based on the predicate."""
++    for parent in root.findall(path):
++        _replace_elements_with_text(parent, predicate)
+ 
+ 
+ def _replace_elements_with_text(

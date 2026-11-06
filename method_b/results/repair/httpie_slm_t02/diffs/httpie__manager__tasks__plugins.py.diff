@@ -1,0 +1,28 @@
+--- a/httpie/manager/tasks/plugins.py
++++ b/httpie/manager/tasks/plugins.py
+@@ -108,6 +108,11 @@
+         _, exit_status = self._install(targets)
+         return exit_status
+ 
++    @staticmethod
++    def _extract_name_and_version(path_or_target: str) -> Tuple[str, str]:
++        name, _, version = path_or_target.rpartition('-')
++        return name, version
++
+     def _clear_metadata(self, targets: List[str]) -> None:
+         # Due to an outstanding pip problem[0], we have to get rid of
+         # existing metadata for old versions manually.
+@@ -116,11 +121,11 @@
+         for site_dir in get_site_paths(self.dir):
+             for child in site_dir.iterdir():
+                 if child.suffix in {'.dist-info', '.egg-info'}:
+-                    name, _, version = child.stem.rpartition('-')
++                    name, version = self._extract_name_and_version(child.stem)
+                     result_deps[name].append((version, child))
+ 
+         for target in targets:
+-            name, _, version = target.rpartition('-')
++            name, version = self._extract_name_and_version(target)
+             name = PEP_503.sub("-", name).lower().replace('-', '_')
+             if name not in result_deps:
+                 continue

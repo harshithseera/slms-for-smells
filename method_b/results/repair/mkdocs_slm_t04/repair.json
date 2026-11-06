@@ -1,0 +1,274 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/method_b/data/external/mkdocs",
+  "condition": "slm",
+  "scan_before": "results/mkdocs_7b_v3.json",
+  "findings_sent": 65,
+  "files_edited": 13,
+  "edits": [
+    {
+      "file": "mkdocs/__main__.py",
+      "findings": 4,
+      "latency_s": 8.82,
+      "tokens_in": 4806,
+      "tokens_out": 3784,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 382,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/commands/build.py",
+      "findings": 16,
+      "latency_s": 16.8,
+      "tokens_in": 5690,
+      "tokens_out": 3693,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 216,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/commands/gh_deploy.py",
+      "findings": 4,
+      "latency_s": 9.27,
+      "tokens_in": 6304,
+      "tokens_out": 3355,
+      "format_retries": 1,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 184,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/commands/serve.py",
+      "findings": 5,
+      "latency_s": 2.41,
+      "tokens_in": 1464,
+      "tokens_out": 928,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 91,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/config/base.py",
+      "findings": 1,
+      "latency_s": 7.98,
+      "tokens_in": 3726,
+      "tokens_out": 3505,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 56,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/config/config_options.py",
+      "findings": 11,
+      "latency_s": 24.93,
+      "tokens_in": 12544,
+      "tokens_out": 12312,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 1239,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/contrib/search/__init__.py",
+      "findings": 1,
+      "latency_s": 3.47,
+      "tokens_in": 1758,
+      "tokens_out": 1501,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 34,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/livereload/__init__.py",
+      "findings": 5,
+      "latency_s": 8.42,
+      "tokens_in": 4233,
+      "tokens_out": 4013,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 279,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/plugins.py",
+      "findings": 3,
+      "latency_s": 25.56,
+      "tokens_in": 23854,
+      "tokens_out": 12149,
+      "format_retries": 1,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 662,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/structure/files.py",
+      "findings": 6,
+      "latency_s": 13.6,
+      "tokens_in": 7092,
+      "tokens_out": 6615,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 500,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/structure/nav.py",
+      "findings": 4,
+      "latency_s": 5.83,
+      "tokens_in": 2939,
+      "tokens_out": 2527,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 133,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/structure/pages.py",
+      "findings": 6,
+      "latency_s": 27.02,
+      "tokens_in": 19763,
+      "tokens_out": 13386,
+      "format_retries": 1,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 603,
+      "import_ok": true
+    },
+    {
+      "file": "mkdocs/utils/__init__.py",
+      "findings": 3,
+      "latency_s": 8.27,
+      "tokens_in": 3933,
+      "tokens_out": 3721,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 396,
+      "import_ok": true
+    }
+  ],
+  "repair_s": 163.8,
+  "llm": {
+    "model": "gemini-3.5-flash-lite",
+    "temperature": 0.4,
+    "calls": 13,
+    "tokens_in": 98106,
+    "tokens_out": 71489
+  },
+  "tests": {
+    "fixed_set": 720,
+    "still_passing": 703,
+    "pass_rate": 0.9764,
+    "newly_failing": [
+      "mkdocs.tests.build_tests.BuildTests::test_draft_pages_with_invalid_links",
+      "mkdocs.tests.build_tests.BuildTests::test_plugins_adding_files_and_interacting",
+      "mkdocs.tests.structure.file_tests.TestFiles::test_copy_file_clean_modified",
+      "mkdocs.tests.structure.file_tests.TestFiles::test_copy_file_dirty_modified",
+      "mkdocs.tests.structure.file_tests.TestFiles::test_copy_file_dirty_not_modified",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_anchor_link_with_validation_and_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_link_preserved_and_warned",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_link_with_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_self_anchor_link_with_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_self_anchor_link_with_validation_and_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_absolute_win_local_path",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_image_link_with_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_relative_slash_link_with_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_self_anchor_link_with_suggestion",
+      "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir",
+      "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir_importerror",
+      "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_themes_error"
+    ],
+    "summary": {
+      "tests": 1089,
+      "passed": 1065,
+      "failures": 19,
+      "errors": 1,
+      "skipped": 4
+    }
+  },
+  "recheck": "static",
+  "smells": {
+    "candidates": {
+      "data_clumps": {
+        "before": 19,
+        "after": 25,
+        "resolved": 1,
+        "persisted": 18,
+        "introduced": 7
+      },
+      "duplicated_logic": {
+        "before": 19,
+        "after": 25,
+        "resolved": 1,
+        "persisted": 18,
+        "introduced": 7
+      },
+      "flag_argument": {
+        "before": 12,
+        "after": 13,
+        "resolved": 3,
+        "persisted": 9,
+        "introduced": 4
+      },
+      "long_method": {
+        "before": 19,
+        "after": 5,
+        "resolved": 17,
+        "persisted": 2,
+        "introduced": 3
+      },
+      "long_parameter_list": {
+        "before": 7,
+        "after": 6,
+        "resolved": 1,
+        "persisted": 6,
+        "introduced": 0
+      },
+      "magic_numbers": {
+        "before": 8,
+        "after": 7,
+        "resolved": 1,
+        "persisted": 7,
+        "introduced": 0
+      },
+      "message_chains": {
+        "before": 30,
+        "after": 38,
+        "resolved": 5,
+        "persisted": 25,
+        "introduced": 13
+      },
+      "primitive_obsession": {
+        "before": 4,
+        "after": 5,
+        "resolved": 0,
+        "persisted": 4,
+        "introduced": 1
+      },
+      "_total": {
+        "before": 118,
+        "after": 124,
+        "resolved": 29,
+        "persisted": 89,
+        "introduced": 35
+      }
+    },
+    "sent_resolved": 28,
+    "sent_total": 65
+  }
+}

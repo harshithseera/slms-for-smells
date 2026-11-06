@@ -1,0 +1,241 @@
+--- a/httpie/output/ui/rich_help.py
++++ b/httpie/output/ui/rich_help.py
+@@ -69,116 +69,104 @@
+     return Text(opt1, style=style), Text(opt2)
+ 
+ 
++def _get_shown_arguments(spec: ParserSpec, whitelist: AbstractSet[str]) -> list:
++    shown_arguments = [
++        argument
++        for group in spec.groups
++        for argument in group.arguments
++        if (not argument.aliases or whitelist.intersection(argument.aliases))
++    ]
++    shown_arguments.sort(key=lambda argument: argument.aliases, reverse=True)
++    return shown_arguments
++
++
++def _append_argument_to_usage(text: Text, argument: Argument, whitelist: AbstractSet[str]):
++    text.append(' ')
++    is_whitelisted = whitelist.intersection(argument.aliases)
++    if argument.aliases:
++        name = '/'.join(sorted(argument.aliases, key=len))
++    else:
++        name = argument.metavar
++
++    nargs = argument.configuration.get('nargs')
++    if nargs is Qualifiers.OPTIONAL:
++        text.append('[' + name + ']', style=STYLE_USAGE_OPTIONAL)
++    elif nargs is Qualifiers.ZERO_OR_MORE:
++        text.append(
++            '[' + name + ' ...]',
++            style=STYLE_USAGE_OPTIONAL,
++        )
++    else:
++        text.append(
++            name,
++            style=STYLE_USAGE_ERROR
++            if is_whitelisted
++            else STYLE_USAGE_REGULAR,
++        )
++
++    raw_form = argument.serialize()
++    if raw_form.get('choices'):
++        text.append(' ')
++        text.append(
++            '{' + ', '.join(raw_form['choices']) + '}',
++            style=STYLE_USAGE_MISSING,
++        )
++
++
+ def to_usage(
+     spec: ParserSpec,
+     *,
+     program_name: Optional[str] = None,
+     whitelist: AbstractSet[str] = frozenset()
+ ) -> RenderableType:
+-    shown_arguments = [
+-        argument
+-        for group in spec.groups
+-        for argument in group.arguments
+-        if (not argument.aliases or whitelist.intersection(argument.aliases))
+-    ]
+-
+-    # Sort the shown_arguments so that --dash options are
+-    # shown first
+-    shown_arguments.sort(key=lambda argument: argument.aliases, reverse=True)
+-
++    shown_arguments = _get_shown_arguments(spec, whitelist)
+     text = Text(program_name or spec.program, style=STYLE_BOLD)
+     for argument in shown_arguments:
+-        text.append(' ')
+-
+-        is_whitelisted = whitelist.intersection(argument.aliases)
+-        if argument.aliases:
+-            name = '/'.join(sorted(argument.aliases, key=len))
+-        else:
+-            name = argument.metavar
+-
+-        nargs = argument.configuration.get('nargs')
+-        if nargs is Qualifiers.OPTIONAL:
+-            text.append('[' + name + ']', style=STYLE_USAGE_OPTIONAL)
+-        elif nargs is Qualifiers.ZERO_OR_MORE:
+-            text.append(
+-                '[' + name + ' ...]',
+-                style=STYLE_USAGE_OPTIONAL,
+-            )
+-        else:
+-            text.append(
+-                name,
+-                style=STYLE_USAGE_ERROR
+-                if is_whitelisted
+-                else STYLE_USAGE_REGULAR,
+-            )
+-
+-        raw_form = argument.serialize()
+-        if raw_form.get('choices'):
+-            text.append(' ')
+-            text.append(
+-                '{' + ', '.join(raw_form['choices']) + '}',
+-                style=STYLE_USAGE_MISSING,
+-            )
+-
++        _append_argument_to_usage(text, argument, whitelist)
+     return text
+ 
+ 
+-# This part is loosely based on the rich-click's help message
+-# generation.
+-def to_help_message(
+-    spec: ParserSpec,
+-) -> Iterable[RenderableType]:
+-    yield Padding(
+-        options_highlighter(spec.description),
+-        LEFT_INDENT_2,
+-    )
+-
+-    yield Padding(
+-        Text('Usage', style=STYLE_SWITCH),
+-        LEFT_INDENT_2,
+-    )
+-    yield Padding(to_usage(spec), LEFT_INDENT_3)
+-
++def _build_argument_row(argument: Argument) -> list:
++    opt1, opt2 = unpack_argument(argument)
++    if opt2:
++        opt1.append('/')
++        opt1.append(opt2)
++
++    metavar = Text(style=STYLE_METAVAR)
++    metavar.append(argument.configuration.get('metavar', ''))
++
++    if opt1 == metavar:
++        metavar = Text('')
++
++    raw_form = argument.serialize()
++    desc = raw_form.get('short_description', '')
++    if raw_form.get('choices'):
++        desc += ' (choices: '
++        desc += textwrap.shorten(
++            ', '.join(raw_form.get('choices')),
++            MAX_CHOICE_CHARS,
++        )
++        desc += ')'
++
++    return [
++        Padding(
++            options_highlighter(opt1),
++            LEFT_PADDING_2,
++        ),
++        metavar,
++        options_highlighter(desc),
++    ]
++
++
++def _build_group_rows(spec: ParserSpec) -> dict:
+     group_rows = {}
+     for group in spec.groups:
+         options_rows = []
+-
+         for argument in group.arguments:
+             if argument.is_hidden:
+                 continue
+ 
+-            opt1, opt2 = unpack_argument(argument)
+-            if opt2:
+-                opt1.append('/')
+-                opt1.append(opt2)
+-
+-            # Column for a metavar, if we have one
+-            metavar = Text(style=STYLE_METAVAR)
+-            metavar.append(argument.configuration.get('metavar', ''))
+-
+-            if opt1 == metavar:
+-                metavar = Text('')
+-
+-            raw_form = argument.serialize()
+-            desc = raw_form.get('short_description', '')
+-            if raw_form.get('choices'):
+-                desc += ' (choices: '
+-                desc += textwrap.shorten(
+-                    ', '.join(raw_form.get('choices')),
+-                    MAX_CHOICE_CHARS,
+-                )
+-                desc += ')'
+-
+-            rows = [
+-                Padding(
+-                    options_highlighter(opt1),
+-                    LEFT_PADDING_2,
+-                ),
+-                metavar,
+-                options_highlighter(desc),
+-            ]
+-
+-            options_rows.append(rows)
++            options_rows.append(_build_argument_row(argument))
+             if argument.configuration.get('nested_options'):
+                 options_rows.extend(
+                     [
+@@ -196,9 +184,11 @@
+                         for key, value, dec in argument.nested_options
+                     ]
+                 )
+-
+         group_rows[group.name] = options_rows
+-
++    return group_rows
++
++
++def _build_options_table(group_rows: dict) -> Table:
+     options_table = Table(highlight=False, box=None, show_header=False)
+     for group_name, options_rows in group_rows.items():
+         options_table.add_row(Text(), Text(), Text())
+@@ -210,6 +200,27 @@
+         options_table.add_row(Text(), Text(), Text())
+         for row in options_rows:
+             options_table.add_row(*row)
++    return options_table
++
++
++# This part is loosely based on the rich-click's help message
++# generation.
++def to_help_message(
++    spec: ParserSpec,
++) -> Iterable[RenderableType]:
++    yield Padding(
++        options_highlighter(spec.description),
++        LEFT_INDENT_2,
++    )
++
++    yield Padding(
++        Text('Usage', style=STYLE_SWITCH),
++        LEFT_INDENT_2,
++    )
++    yield Padding(to_usage(spec), LEFT_INDENT_3)
++
++    group_rows = _build_group_rows(spec)
++    options_table = _build_options_table(group_rows)
+ 
+     yield Padding(
+         Text('Options', style=STYLE_SWITCH),

@@ -1,0 +1,533 @@
+--- a/mkdocs/plugins.py
++++ b/mkdocs/plugins.py
+@@ -4,6 +4,7 @@
+ 
+ import logging
+ import sys
++from dataclasses import dataclass
+ from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, MutableMapping, TypeVar, overload
+ 
+ if sys.version_info >= (3, 10):
+@@ -35,6 +36,15 @@
+ 
+ 
+ log = logging.getLogger('mkdocs.plugins')
++
++
++@dataclass
++class PageContext:
++    config: MkDocsConfig
++    files: Files | None = None
++    page: Page | None = None
++    nav: Navigation | None = None
++    env: jinja2.Environment | None = None
+ 
+ 
+ def get_plugins() -> dict[str, EntryPoint]:
+@@ -98,321 +108,84 @@
+     # One-time events
+ 
+     def on_startup(self, *, command: Literal['build', 'gh-deploy', 'serve'], dirty: bool) -> None:
+-        """
+-        The `startup` event runs once at the very beginning of an `mkdocs` invocation.
+-
+-        New in MkDocs 1.4.
+-
+-        The presence of an `on_startup` method (even if empty) migrates the plugin to the new
+-        system where the plugin object is kept across builds within one `mkdocs serve`.
+-
+-        Note that for initializing variables, the `__init__` method is still preferred.
+-        For initializing per-build variables (and whenever in doubt), use the `on_config` event.
+-
+-        Args:
+-            command: the command that MkDocs was invoked with, e.g. "serve" for `mkdocs serve`.
+-            dirty: whether `--dirty` flag was passed.
+-        """
++        pass
+ 
+     def on_shutdown(self) -> None:
+-        """
+-        The `shutdown` event runs once at the very end of an `mkdocs` invocation, before exiting.
+-
+-        This event is relevant only for support of `mkdocs serve`, otherwise within a
+-        single build it's undistinguishable from `on_post_build`.
+-
+-        New in MkDocs 1.4.
+-
+-        The presence of an `on_shutdown` method (even if empty) migrates the plugin to the new
+-        system where the plugin object is kept across builds within one `mkdocs serve`.
+-
+-        Note the `on_post_build` method is still preferred for cleanups, when possible, as it has
+-        a much higher chance of actually triggering. `on_shutdown` is "best effort" because it
+-        relies on detecting a graceful shutdown of MkDocs.
+-        """
++        pass
+ 
+     def on_serve(
+         self, server: LiveReloadServer, /, *, config: MkDocsConfig, builder: Callable
+     ) -> LiveReloadServer | None:
+-        """
+-        The `serve` event is only called when the `serve` command is used during
+-        development. It runs only once, after the first build finishes.
+-        It is passed the `Server` instance which can be modified before
+-        it is activated. For example, additional files or directories could be added
+-        to the list of "watched" files for auto-reloading.
+-
+-        Args:
+-            server: `livereload.Server` instance
+-            config: global configuration object
+-            builder: a callable which gets passed to each call to `server.watch`
+-
+-        Returns:
+-            `livereload.Server` instance
+-        """
+         return server
+ 
+     # Global events
+ 
+     def on_config(self, config: MkDocsConfig) -> MkDocsConfig | None:
+-        """
+-        The `config` event is the first event called on build and is run immediately
+-        after the user configuration is loaded and validated. Any alterations to the
+-        config should be made here.
+-
+-        Args:
+-            config: global configuration object
+-
+-        Returns:
+-            global configuration object
+-        """
+         return config
+ 
+     def on_pre_build(self, *, config: MkDocsConfig) -> None:
+-        """
+-        The `pre_build` event does not alter any variables. Use this event to call
+-        pre-build scripts.
+-
+-        Args:
+-            config: global configuration object
+-        """
++        pass
+ 
+     def on_files(self, files: Files, /, *, config: MkDocsConfig) -> Files | None:
+-        """
+-        The `files` event is called after the files collection is populated from the
+-        `docs_dir`. Use this event to add, remove, or alter files in the
+-        collection. Note that Page objects have not yet been associated with the
+-        file objects in the collection. Use [Page Events](plugins.md#page-events) to manipulate page
+-        specific data.
+-
+-        Args:
+-            files: global files collection
+-            config: global configuration object
+-
+-        Returns:
+-            global files collection
+-        """
+         return files
+ 
+     def on_nav(
+         self, nav: Navigation, /, *, config: MkDocsConfig, files: Files
+     ) -> Navigation | None:
+-        """
+-        The `nav` event is called after the site navigation is created and can
+-        be used to alter the site navigation.
+-
+-        Args:
+-            nav: global navigation object
+-            config: global configuration object
+-            files: global files collection
+-
+-        Returns:
+-            global navigation object
+-        """
+         return nav
+ 
+     def on_env(
+         self, env: jinja2.Environment, /, *, config: MkDocsConfig, files: Files
+     ) -> jinja2.Environment | None:
+-        """
+-        The `env` event is called after the Jinja template environment is created
+-        and can be used to alter the
+-        [Jinja environment](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Environment).
+-
+-        Args:
+-            env: global Jinja environment
+-            config: global configuration object
+-            files: global files collection
+-
+-        Returns:
+-            global Jinja Environment
+-        """
+         return env
+ 
+     def on_post_build(self, *, config: MkDocsConfig) -> None:
+-        """
+-        The `post_build` event does not alter any variables. Use this event to call
+-        post-build scripts.
+-
+-        Args:
+-            config: global configuration object
+-        """
++        pass
+ 
+     def on_build_error(self, *, error: Exception) -> None:
+-        """
+-        The `build_error` event is called after an exception of any kind
+-        is caught by MkDocs during the build process.
+-        Use this event to clean things up before MkDocs terminates. Note that any other
+-        events which were scheduled to run after the error will have been skipped. See
+-        [Handling Errors](plugins.md#handling-errors) for more details.
+-
+-        Args:
+-            error: exception raised
+-        """
++        pass
+ 
+     # Template events
+ 
+     def on_pre_template(
+         self, template: jinja2.Template, /, *, template_name: str, config: MkDocsConfig
+     ) -> jinja2.Template | None:
+-        """
+-        The `pre_template` event is called immediately after the subject template is
+-        loaded and can be used to alter the template.
+-
+-        Args:
+-            template: a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
+-            template_name: string filename of template
+-            config: global configuration object
+-
+-        Returns:
+-            a Jinja2 [Template](https://jinja.palletsprojects.com/en/latest/api/#jinja2.Template) object
+-        """
+         return template
+ 
+     def on_template_context(
+         self, context: TemplateContext, /, *, template_name: str, config: MkDocsConfig
+     ) -> TemplateContext | None:
+-        """
+-        The `template_context` event is called immediately after the context is created
+-        for the subject template and can be used to alter the context for that specific
+-        template only.
+-
+-        Args:
+-            context: dict of template context variables
+-            template_name: string filename of template
+-            config: global configuration object
+-
+-        Returns:
+-            dict of template context variables
+-        """
+         return context
+ 
+     def on_post_template(
+         self, output_content: str, /, *, template_name: str, config: MkDocsConfig
+     ) -> str | None:
+-        """
+-        The `post_template` event is called after the template is rendered, but before
+-        it is written to disc and can be used to alter the output of the template.
+-        If an empty string is returned, the template is skipped and nothing is is
+-        written to disc.
+-
+-        Args:
+-            output_content: output of rendered template as string
+-            template_name: string filename of template
+-            config: global configuration object
+-
+-        Returns:
+-            output of rendered template as string
+-        """
+         return output_content
+ 
+     # Page events
+ 
+     def on_pre_page(self, page: Page, /, *, config: MkDocsConfig, files: Files) -> Page | None:
+-        """
+-        The `pre_page` event is called before any actions are taken on the subject
+-        page and can be used to alter the `Page` instance.
+-
+-        Args:
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-            files: global files collection
+-
+-        Returns:
+-            `mkdocs.structure.pages.Page` instance
+-        """
+         return page
+ 
+     def on_page_read_source(self, /, *, page: Page, config: MkDocsConfig) -> str | None:
+-        """
+-        > DEPRECATED: Instead of this event, prefer one of these alternatives:
+-        >
+-        > * Since MkDocs 1.6, instead set `content_bytes`/`content_string` of a `File` inside [`on_files`][].
+-        > * Usually (although it's not an exact alternative), `on_page_markdown` can serve the same purpose.
+-
+-        The `on_page_read_source` event can replace the default mechanism to read
+-        the contents of a page's source from the filesystem.
+-
+-        Args:
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-
+-        Returns:
+-            The raw source for a page as unicode string. If `None` is returned, the
+-                default loading from a file will be performed.
+-        """
+         return None
+ 
+     def on_page_markdown(
+         self, markdown: str, /, *, page: Page, config: MkDocsConfig, files: Files
+     ) -> str | None:
+-        """
+-        The `page_markdown` event is called after the page's markdown is loaded
+-        from file and can be used to alter the Markdown source text. The meta-
+-        data has been stripped off and is available as `page.meta` at this point.
+-
+-        Args:
+-            markdown: Markdown source text of page as string
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-            files: global files collection
+-
+-        Returns:
+-            Markdown source text of page as string
+-        """
+         return markdown
+ 
+     def on_page_content(
+         self, html: str, /, *, page: Page, config: MkDocsConfig, files: Files
+     ) -> str | None:
+-        """
+-        The `page_content` event is called after the Markdown text is rendered to
+-        HTML (but before being passed to a template) and can be used to alter the
+-        HTML body of the page.
+-
+-        Args:
+-            html: HTML rendered from Markdown source as string
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-            files: global files collection
+-
+-        Returns:
+-            HTML rendered from Markdown source as string
+-        """
+         return html
+ 
+     def on_page_context(
+         self, context: TemplateContext, /, *, page: Page, config: MkDocsConfig, nav: Navigation
+     ) -> TemplateContext | None:
+-        """
+-        The `page_context` event is called after the context for a page is created
+-        and can be used to alter the context for that specific page only.
+-
+-        Args:
+-            context: dict of template context variables
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-            nav: global navigation object
+-
+-        Returns:
+-            dict of template context variables
+-        """
+         return context
+ 
+     def on_post_page(self, output: str, /, *, page: Page, config: MkDocsConfig) -> str | None:
+-        """
+-        The `post_page` event is called after the template is rendered, but
+-        before it is written to disc and can be used to alter the output of the
+-        page. If an empty string is returned, the page is skipped and nothing is
+-        written to disc.
+-
+-        Args:
+-            output: output of rendered template as string
+-            page: `mkdocs.structure.pages.Page` instance
+-            config: global configuration object
+-
+-        Returns:
+-            output of rendered template as string
+-        """
+         return output
+ 
+ 
+@@ -424,32 +197,6 @@
+ 
+ 
+ def event_priority(priority: float) -> Callable[[T], T]:
+-    """
+-    A decorator to set an event priority for an event handler method.
+-
+-    Recommended priority values:
+-    `100` "first", `50` "early", `0` "default", `-50` "late", `-100` "last".
+-    As different plugins discover more precise relations to each other, the values should be further tweaked.
+-
+-    Usage example:
+-
+-    ```python
+-    @plugins.event_priority(-100)  # Wishing to run this after all other plugins' `on_files` events.
+-    def on_files(self, files, config, **kwargs):
+-        ...
+-    ```
+-
+-    New in MkDocs 1.4.
+-    Recommended shim for backwards compatibility:
+-
+-    ```python
+-    try:
+-        from mkdocs.plugins import event_priority
+-    except ImportError:
+-        event_priority = lambda priority: lambda f: f  # No-op fallback
+-    ```
+-    """
+-
+     def decorator(event_method):
+         event_method.mkdocs_priority = priority
+         return event_method
+@@ -458,31 +205,9 @@
+ 
+ 
+ class CombinedEvent(Generic[P, T]):
+-    """
+-    A descriptor that allows defining multiple event handlers and declaring them under one event's name.
+-
+-    Usage example:
+-
+-    ```python
+-    @plugins.event_priority(100)
+-    def _on_page_markdown_1(self, markdown: str, **kwargs):
+-        ...
+-
+-    @plugins.event_priority(-50)
+-    def _on_page_markdown_2(self, markdown: str, **kwargs):
+-        ...
+-
+-    on_page_markdown = plugins.CombinedEvent(_on_page_markdown_1, _on_page_markdown_2)
+-    ```
+-
+-    NOTE: The names of the sub-methods **can't** start with `on_`;
+-    instead they can start with `_on_` like in the the above example, or anything else.
+-    """
+-
+     def __init__(self, *methods: Callable[Concatenate[Any, P], T]):
+         self.methods = methods
+ 
+-    # This is only for mypy, so CombinedEvent can be a valid override of the methods in BasePlugin
+     def __call__(self, instance: BasePlugin, *args: P.args, **kwargs: P.kwargs) -> T:
+         raise TypeError(f"{type(self).__name__!r} object is not callable")
+ 
+@@ -491,14 +216,6 @@
+ 
+ 
+ class PluginCollection(dict, MutableMapping[str, BasePlugin]):
+-    """
+-    A collection of plugins.
+-
+-    In addition to being a dict of Plugin instances, each event method is registered
+-    upon being added. All registered methods for a given event can then be run in order
+-    by calling `run_event`.
+-    """
+-
+     _current_plugin: str | None
+ 
+     def __init__(self, *args, **kwargs) -> None:
+@@ -509,7 +226,6 @@
+     def _register_event(
+         self, event_name: str, method: CombinedEvent | Callable, plugin_name: str | None = None
+     ) -> None:
+-        """Register a method for an event."""
+         if isinstance(method, CombinedEvent):
+             for sub in method.methods:
+                 self._register_event(event_name, sub, plugin_name=plugin_name)
+@@ -526,7 +242,7 @@
+             if plugin_name:
+                 try:
+                     self._event_origins[method] = plugin_name
+-                except TypeError:  # If the method is somehow not hashable.
++                except TypeError:
+                     pass
+ 
+     def __getitem__(self, key: str) -> BasePlugin:
+@@ -534,7 +250,6 @@
+ 
+     def __setitem__(self, key: str, value: BasePlugin) -> None:
+         super().__setitem__(key, value)
+-        # Register all of the event methods defined for this Plugin.
+         for event_name in (x for x in dir(value) if x.startswith('on_')):
+             method = getattr(value, event_name, None)
+             if callable(method):
+@@ -549,14 +264,6 @@
+         ...
+ 
+     def run_event(self, name: str, item=None, **kwargs):
+-        """
+-        Run all registered methods of an event.
+-
+-        `item` is the object to be modified or replaced and returned by the event method.
+-        If it isn't given the event method creates a new object to be returned.
+-        All other keywords are variables for context, but would not generally
+-        be modified by the event method.
+-        """
+         pass_item = item is not None
+         for method in self.events[name]:
+             self._current_plugin = self._event_origins.get(method, '<unknown>')
+@@ -566,7 +273,6 @@
+                 result = method(item, **kwargs)
+             else:
+                 result = method(**kwargs)
+-            # keep item if method returned `None`
+             if result is not None:
+                 item = result
+         self._current_plugin = None
+@@ -647,51 +353,14 @@
+ 
+ 
+ class PrefixedLogger(logging.LoggerAdapter):
+-    """A logger adapter to prefix log messages."""
+-
+     def __init__(self, prefix: str, logger: logging.Logger) -> None:
+-        """
+-        Initialize the logger adapter.
+-
+-        Arguments:
+-            prefix: The string to insert in front of every message.
+-            logger: The logger instance.
+-        """
+         super().__init__(logger, {})
+         self.prefix = prefix
+ 
+     def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> tuple[str, Any]:
+-        """
+-        Process the message.
+-
+-        Arguments:
+-            msg: The message:
+-            kwargs: Remaining arguments.
+-
+-        Returns:
+-            The processed message.
+-        """
+         return f"{self.prefix}: {msg}", kwargs
+ 
+ 
+ def get_plugin_logger(name: str) -> PrefixedLogger:
+-    """
+-    Return a logger for plugins.
+-
+-    Arguments:
+-        name: The name to use with `logging.getLogger`.
+-
+-    Returns:
+-        A logger configured to work well in MkDocs,
+-            prefixing each message with the plugin package name.
+-
+-    Example:
+-        ```python
+-        from mkdocs.plugins import get_plugin_logger
+-
+-        log = get_plugin_logger(__name__)
+-        log.info("My plugin message")
+-        ```
+-    """
+     logger = logging.getLogger(f"mkdocs.plugins.{name}")
+     return PrefixedLogger(name.split(".", 1)[0], logger)

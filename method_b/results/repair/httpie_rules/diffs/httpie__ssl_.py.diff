@@ -1,0 +1,88 @@
+--- a/httpie/ssl_.py
++++ b/httpie/ssl_.py
+@@ -1,3 +1,4 @@
++from dataclasses import dataclass
+ import ssl
+ from typing import NamedTuple, Optional
+ 
+@@ -26,6 +27,13 @@
+ }
+ 
+ 
++@dataclass
++class SSLContextOptions:
++    verify: bool
++    ssl_version: Optional[str] = None
++    ciphers: Optional[str] = None
++
++
+ class HTTPieCertificate(NamedTuple):
+     cert_file: Optional[str] = None
+     key_file: Optional[str] = None
+@@ -45,11 +53,12 @@
+         ciphers: str = None,
+         **kwargs
+     ):
+-        self._ssl_context = self._create_ssl_context(
++        options = SSLContextOptions(
+             verify=verify,
+             ssl_version=ssl_version,
+             ciphers=ciphers,
+         )
++        self._ssl_context = self._create_ssl_context_from_options(options)
+         super().__init__(**kwargs)
+ 
+     def init_poolmanager(self, *args, **kwargs):
+@@ -73,15 +82,46 @@
+         ssl_version: str = None,
+         ciphers: str = None,
+     ) -> 'ssl.SSLContext':
++        options = SSLContextOptions(
++            verify=verify,
++            ssl_version=ssl_version,
++            ciphers=ciphers,
++        )
++        return HTTPieHTTPSAdapter._create_ssl_context_from_options(options)
++
++    @staticmethod
++    def _create_ssl_context_from_options(
++        options: SSLContextOptions,
++    ) -> 'ssl.SSLContext':
++        if options.verify:
++            return HTTPieHTTPSAdapter._create_verified_ssl_context(options)
++        return HTTPieHTTPSAdapter._create_unverified_ssl_context(options)
++
++    @staticmethod
++    def _create_base_ssl_context(
++        options: SSLContextOptions,
++    ) -> 'ssl.SSLContext':
+         ssl_context = create_urllib3_context(
+-            ciphers=ciphers,
+-            ssl_version=resolve_ssl_version(ssl_version),
+-            # Since we are using a custom SSL context, we need to pass this
+-            # here manually, even though it’s also passed to the connection
+-            # in `super().cert_verify()`.
+-            cert_reqs=ssl.CERT_REQUIRED if verify else ssl.CERT_NONE
++            ciphers=options.ciphers,
++            ssl_version=resolve_ssl_version(options.ssl_version),
+         )
+         ensure_default_certs_loaded(ssl_context)
++        return ssl_context
++
++    @staticmethod
++    def _create_verified_ssl_context(
++        options: SSLContextOptions,
++    ) -> 'ssl.SSLContext':
++        ssl_context = HTTPieHTTPSAdapter._create_base_ssl_context(options)
++        ssl_context.cert_reqs = ssl.CERT_REQUIRED
++        return ssl_context
++
++    @staticmethod
++    def _create_unverified_ssl_context(
++        options: SSLContextOptions,
++    ) -> 'ssl.SSLContext':
++        ssl_context = HTTPieHTTPSAdapter._create_base_ssl_context(options)
++        ssl_context.cert_reqs = ssl.CERT_NONE
+         return ssl_context
+ 
+     @classmethod

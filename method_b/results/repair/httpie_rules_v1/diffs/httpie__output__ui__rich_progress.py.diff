@@ -1,0 +1,112 @@
+--- a/httpie/output/ui/rich_progress.py
++++ b/httpie/output/ui/rich_progress.py
+@@ -5,6 +5,16 @@
+ 
+ if TYPE_CHECKING:
+     from rich.console import Console
++
++_SECONDS_PER_MINUTE = 60
++_MINUTES_PER_HOUR = 60
++
++
++@dataclass
++class ProgressParams:
++    total: Optional[float]
++    at: float
++    description: str
+ 
+ 
+ @dataclass
+@@ -27,21 +37,34 @@
+         """Returns the default console to be used with displays (stderr)."""
+         return self.env.rich_error_console
+ 
+-    def _print_summary(
+-        self, is_finished: bool, observed_steps: int, time_spent: float
++    def _print_finished_summary(
++        self, observed_steps: int, time_spent: float
++    ):
++        self._print_summary_base(
++            verb='Done',
++            observed_steps=observed_steps,
++            time_spent=time_spent,
++        )
++
++    def _print_interrupted_summary(
++        self, observed_steps: int, time_spent: float
++    ):
++        self._print_summary_base(
++            verb='Interrupted',
++            observed_steps=observed_steps,
++            time_spent=time_spent,
++        )
++
++    def _print_summary_base(
++        self, verb: str, observed_steps: int, time_spent: float
+     ):
+         from rich import filesize
+-
+-        if is_finished:
+-            verb = 'Done'
+-        else:
+-            verb = 'Interrupted'
+ 
+         total_size = filesize.decimal(observed_steps)
+         avg_speed = filesize.decimal(observed_steps / time_spent)
+ 
+-        minutes, seconds = divmod(time_spent, 60)
+-        hours, minutes = divmod(int(minutes), 60)
++        minutes, seconds = divmod(time_spent, _SECONDS_PER_MINUTE)
++        hours, minutes = divmod(int(minutes), _MINUTES_PER_HOUR)
+         if hours:
+             total_time = f'{hours:d}:{minutes:02d}:{seconds:0.5f}'
+         else:
+@@ -50,6 +73,14 @@
+         self.console.print(
+             f'[progress.description]{verb}. {total_size} in {total_time} ({avg_speed}/s)'
+         )
++
++    def _print_summary(
++        self, is_finished: bool, observed_steps: int, time_spent: float
++    ):
++        if is_finished:
++            self._print_finished_summary(observed_steps, time_spent)
++        else:
++            self._print_interrupted_summary(observed_steps, time_spent)
+ 
+ 
+ class DummyDisplay(BaseDisplay):
+@@ -63,9 +94,10 @@
+     def start(
+         self, *, total: Optional[float], at: float, description: str
+     ) -> None:
+-        self.observed = at
++        params = ProgressParams(total=total, at=at, description=description)
++        self.observed = params.at
+         self.description = (
+-            f'[progress.description]{description}[/progress.description]'
++            f'[progress.description]{params.description}[/progress.description]'
+         )
+ 
+         self.status = self.console.status(self.description, spinner='line')
+@@ -106,8 +138,9 @@
+             TransferSpeedColumn,
+         )
+ 
+-        assert total is not None
+-        self.console.print(f'[progress.description]{description}')
++        params = ProgressParams(total=total, at=at, description=description)
++        assert params.total is not None
++        self.console.print(f'[progress.description]{params.description}')
+         self.progress_bar = Progress(
+             '[',
+             BarColumn(),
+@@ -123,7 +156,7 @@
+         )
+         self.progress_bar.start()
+         self.transfer_task = self.progress_bar.add_task(
+-            description, completed=at, total=total
++            params.description, completed=params.at, total=params.total
+         )
+ 
+     def update(self, steps: float) -> None:

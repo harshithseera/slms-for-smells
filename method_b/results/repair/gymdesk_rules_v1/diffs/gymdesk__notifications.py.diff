@@ -1,0 +1,59 @@
+--- a/gymdesk/notifications.py
++++ b/gymdesk/notifications.py
+@@ -4,21 +4,44 @@
+ from gymdesk.models import GymClass, Member
+ 
+ 
+-def booking_email(member: Member, gym_class: GymClass) -> dict:
+-    subject = f"Booked: {gym_class.title}"
++def _base_email(member: Member, gym_class: GymClass, action_text: str, ending: str) -> dict:
++    subject = f"{action_text}: {gym_class.title}"
+     when = gym_class.start.strftime("%a %d %b %H:%M")
+-    lines = [f"Hi {member.first_name},", "",
+-             f"You are booked for {gym_class.title} on {when} in {gym_class.room}.", "",
+-             "See you there!", "gymdesk"]
++    lines = [
++        f"Hi {member.first_name},",
++        "",
++        f"You are booked for {gym_class.title} on {when} in {gym_class.room}." if action_text == "Booked" else f"Your booking for {gym_class.title} on {when} in {gym_class.room} is cancelled.",
++        "",
++        ending,
++        "gymdesk",
++    ]
++    # Adjust line 2 specifically to match original exact text for both functions
++    if action_text == "Booked":
++        lines[2] = f"You are booked for {gym_class.title} on {when} in {gym_class.room}."
++    else:
++        lines[2] = f"Your booking for {gym_class.title} on {when} in {gym_class.room} is cancelled."
++
+     body = "\n".join(lines)
+     return {"to": member.email, "subject": subject, "body": body}
+ 
+ 
++def _render_email(action: str, member: Member, gym_class: GymClass) -> dict:
++    if action == "booking":
++        subject = f"Booked: {gym_class.title}"
++        middle = f"You are booked for {gym_class.title} on {gym_class.start.strftime('%a %d %b %H:%M')} in {gym_class.room}."
++        ending = "See you there!"
++    else:
++        subject = f"Cancelled: {gym_class.title}"
++        middle = f"Your booking for {gym_class.title} on {gym_class.start.strftime('%a %d %b %H:%M')} in {gym_class.room} is cancelled."
++        ending = "Hope to see you soon!"
++
++    lines = [f"Hi {member.first_name},", "", middle, "", ending, "gymdesk"]
++    return {"to": member.email, "subject": subject, "body": "\n".join(lines)}
++
++
++def booking_email(member: Member, gym_class: GymClass) -> dict:
++    return _render_email("booking", member, gym_class)
++
++
+ def cancellation_email(member: Member, gym_class: GymClass) -> dict:
+-    subject = f"Cancelled: {gym_class.title}"
+-    when = gym_class.start.strftime("%a %d %b %H:%M")
+-    lines = [f"Hi {member.first_name},", "",
+-             f"Your booking for {gym_class.title} on {when} in {gym_class.room} is cancelled.", "",
+-             "Hope to see you soon!", "gymdesk"]
+-    body = "\n".join(lines)
+-    return {"to": member.email, "subject": subject, "body": body}
++    return _render_email("cancellation", member, gym_class)

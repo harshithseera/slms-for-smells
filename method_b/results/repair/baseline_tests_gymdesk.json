@@ -1,0 +1,31 @@
+{
+  "tests": 20,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "passed": 20,
+  "failed_cases": [],
+  "passed_cases": [
+    "unit_tests.test_additions::test_loyalty_discount_on_fees",
+    "unit_tests.test_additions::test_apply_charge_and_refund",
+    "unit_tests.test_additions::test_find_by_email_and_dry_run",
+    "unit_tests.test_additions::test_money_helpers",
+    "unit_tests.test_additions::test_room_free",
+    "unit_tests.test_additions::test_session_summary",
+    "unit_tests.test_additions::test_check_in",
+    "unit_tests.test_additions::test_email_helpers_and_filename",
+    "unit_tests.test_club::test_booking_flow_and_emails",
+    "unit_tests.test_club::test_capacity",
+    "unit_tests.test_club::test_members",
+    "unit_tests.test_club::test_fees_and_payments",
+    "unit_tests.test_club::test_reminders",
+    "unit_tests.test_club::test_export_and_report",
+    "unit_tests.test_helpers::test_billing",
+    "unit_tests.test_helpers::test_stats",
+    "unit_tests.test_helpers::test_emails",
+    "unit_tests.test_helpers::test_timeslot",
+    "unit_tests.test_scheduling::test_plan_week_accepts_and_warns",
+    "unit_tests.test_scheduling::test_specialty_warning"
+  ],
+  "output_tail": "....................                                                     [100%]\n20 passed in 0.01s\n"
+}

@@ -1,0 +1,109 @@
+--- a/httpie/cli/argtypes.py
++++ b/httpie/cli/argtypes.py
+@@ -199,6 +199,47 @@
+         raise argparse.ArgumentTypeError(f'{ex.filename}: {ex.strerror}')
+ 
+ 
++def _parse_format_option_tokens(option: str):
++    try:
++        path, value = option.lower().split(':')
++        section, key = path.split('.')
++        return section, key, path, value
++    except ValueError:
++        raise argparse.ArgumentTypeError(f'invalid option {option!r}')
++
++
++def _parse_format_option_value(value: str):
++    value_map = {
++        'true': True,
++        'false': False,
++    }
++    if value in value_map:
++        return value_map[value]
++    if value.isnumeric():
++        return int(value)
++    return value
++
++
++def _validate_and_get_format_value(defaults, section, key, path, value, parsed_value, option):
++    if defaults is None:
++        return parsed_value
++
++    try:
++        default_value = defaults[section][key]
++    except KeyError:
++        raise argparse.ArgumentTypeError(f'invalid key {path!r}')
++
++    default_type, parsed_type = type(default_value), type(parsed_value)
++    if parsed_type is not default_type:
++        raise argparse.ArgumentTypeError(
++            'invalid value'
++            f' {value!r} in {option!r}'
++            f' (expected {default_type.__name__}'
++            f' got {parsed_type.__name__})'
++        )
++    return parsed_value
++
++
+ def parse_format_options(s: str, defaults: Optional[dict]) -> dict:
+     """
+     Parse `s` and update `defaults` with the parsed values.
+@@ -210,45 +251,21 @@
+     {'json': {'indent': 2, 'sort_keys': False}}
+ 
+     """
+-    value_map = {
+-        'true': True,
+-        'false': False,
+-    }
+     options = deepcopy(defaults or {})
+     for option in s.split(','):
+-        try:
+-            path, value = option.lower().split(':')
+-            section, key = path.split('.')
+-        except ValueError:
+-            raise argparse.ArgumentTypeError(f'invalid option {option!r}')
+-
+-        if value in value_map:
+-            parsed_value = value_map[value]
+-        else:
+-            if value.isnumeric():
+-                parsed_value = int(value)
+-            else:
+-                parsed_value = value
+-
+-        if defaults is None:
+-            options.setdefault(section, {})
+-        else:
+-            try:
+-                default_value = defaults[section][key]
+-            except KeyError:
+-                raise argparse.ArgumentTypeError(
+-                    f'invalid key {path!r}')
+-
+-            default_type, parsed_type = type(default_value), type(parsed_value)
+-            if parsed_type is not default_type:
+-                raise argparse.ArgumentTypeError(
+-                    'invalid value'
+-                    f' {value!r} in {option!r}'
+-                    f' (expected {default_type.__name__}'
+-                    f' got {parsed_type.__name__})'
+-                )
+-
+-        options[section][key] = parsed_value
++        section, key, path, raw_value = _parse_format_option_tokens(option)
++        parsed_value = _parse_format_option_value(raw_value)
++        final_value = _validate_and_get_format_value(
++            defaults=defaults,
++            section=section,
++            key=key,
++            path=path,
++            value=raw_value,
++            parsed_value=parsed_value,
++            option=option,
++        )
++        options.setdefault(section, {})
++        options[section][key] = final_value
+ 
+     return options
+ 

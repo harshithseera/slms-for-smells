@@ -1,0 +1,59 @@
+--- a/httpie/internal/update_warnings.py
++++ b/httpie/internal/update_warnings.py
+@@ -52,18 +52,27 @@
+         json.dump(data, stream)
+ 
+ 
++def fetch_updates_lazy(env: Environment):
++    spawn_daemon('fetch_updates')
++
++
++def fetch_updates_eager(env: Environment):
++    _fetch_updates(env)
++
++
+ def fetch_updates(env: Environment, lazy: bool = True):
+     if lazy:
+-        spawn_daemon('fetch_updates')
++        fetch_updates_lazy(env)
+     else:
+-        _fetch_updates(env)
++        fetch_updates_eager(env)
+ 
+ 
+ def maybe_fetch_updates(env: Environment) -> None:
+     if env.config.get('disable_update_warnings'):
+         return None
+ 
+-    data = _read_data_error_free(env.config.version_info_file)
++    file = env.config.version_info_file
++    data = _read_data_error_free(file)
+ 
+     if data:
+         current_date = datetime.now()
+@@ -88,6 +97,11 @@
+         return suppress(BaseException)
+ 
+ 
++def _run_with_suppressed_errors(env: Environment, func: Callable[[Environment], None]) -> None:
++    with _get_suppress_context(env):
++        func(env)
++
++
+ def _update_checker(
+     func: Callable[[Environment], None]
+ ) -> Callable[[Environment], None]:
+@@ -95,11 +109,8 @@
+     auto updates etc.)"""
+ 
+     def wrapper(env: Environment) -> None:
+-        with _get_suppress_context(env):
+-            func(env)
+-
+-        with _get_suppress_context(env):
+-            maybe_fetch_updates(env)
++        _run_with_suppressed_errors(env, func)
++        _run_with_suppressed_errors(env, maybe_fetch_updates)
+ 
+     return wrapper
+ 

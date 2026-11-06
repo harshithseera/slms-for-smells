@@ -1,0 +1,110 @@
+--- a/httpie/output/formatters/colors.py
++++ b/httpie/output/formatters/colors.py
+@@ -132,19 +132,18 @@
+         )
+ 
+     @staticmethod
+-    def get_style_class(color_scheme: str) -> Type[pygments.style.Style]:
++    def style_class(color_scheme: str) -> Type[pygments.style.Style]:
+         try:
+             return pygments.styles.get_style_by_name(color_scheme)
+         except ClassNotFound:
+             return Solarized256Style
+ 
+-
+-def get_lexer(
+-    mime: str,
+-    explicit_json=False,
+-    body=''
+-) -> Optional[Type[Lexer]]:
+-    # Build candidate mime type and lexer names.
++    @staticmethod
++    def get_style_class(color_scheme: str) -> Type[pygments.style.Style]:
++        return ColorFormatter.style_class(color_scheme)
++
++
++def _parse_mime(mime: str) -> Tuple[list, list]:
+     mime_types, lexer_names = [mime], []
+     type_, subtype = mime.split('/', 1)
+     if '+' not in subtype:
+@@ -157,41 +156,55 @@
+             f'{type_}/{subtype_suffix}',
+         ])
+ 
+-    # As a last resort, if no lexer feels responsible, and
+-    # the subtype contains 'json', take the JSON lexer
+     if 'json' in subtype:
+         lexer_names.append('json')
+ 
+-    # Try to resolve the right lexer.
+-    lexer = None
++    return mime_types, lexer_names
++
++
++def _resolve_lexer(mime_types: list, lexer_names: list) -> Optional[Type[Lexer]]:
+     for mime_type in mime_types:
+         try:
+-            lexer = pygments.lexers.get_lexer_for_mimetype(mime_type)
+-            break
++            return pygments.lexers.get_lexer_for_mimetype(mime_type)
+         except ClassNotFound:
+             pass
++
++    for name in lexer_names:
++        try:
++            return pygments.lexers.get_lexer_by_name(name)
++        except ClassNotFound:
++            pass
++
++    return None
++
++
++def _apply_explicit_json(lexer: Optional[Type[Lexer]], body: str, explicit_json: bool) -> Optional[Type[Lexer]]:
++    if not (explicit_json and body and (not lexer or isinstance(lexer, TextLexer))):
++        return lexer
++
++    try:
++        json.loads(body)
++    except ValueError:
++        return lexer
+     else:
+-        for name in lexer_names:
+-            try:
+-                lexer = pygments.lexers.get_lexer_by_name(name)
+-            except ClassNotFound:
+-                pass
+-
+-    if explicit_json and body and (not lexer or isinstance(lexer, TextLexer)):
+-        # JSON response with an incorrect Content-Type?
+-        try:
+-            json.loads(body)  # FIXME: the body also gets parsed in json.py
+-        except ValueError:
+-            pass  # Nope
+-        else:
+-            lexer = pygments.lexers.get_lexer_by_name('json')
+-
+-    # Use our own JSON lexer: it supports JSON bodies preceded by non-JSON data
+-    # as well as legit JSON bodies.
++        return pygments.lexers.get_lexer_by_name('json')
++
++
++def _normalize_lexer(lexer: Optional[Type[Lexer]]) -> Optional[Type[Lexer]]:
+     if isinstance(lexer, JsonLexer):
+-        lexer = EnhancedJsonLexer()
+-
++        return EnhancedJsonLexer()
+     return lexer
++
++
++def get_lexer(
++    mime: str,
++    explicit_json=False,
++    body=''
++) -> Optional[Type[Lexer]]:
++    mime_types, lexer_names = _parse_mime(mime)
++    lexer = _resolve_lexer(mime_types, lexer_names)
++    lexer = _apply_explicit_json(lexer, body, explicit_json)
++    return _normalize_lexer(lexer)
+ 
+ 
+ class Solarized256Style(pygments.style.Style):

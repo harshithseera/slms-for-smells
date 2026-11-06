@@ -1,0 +1,286 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/data/mock_codebase/gymdesk",
+  "condition": "rules",
+  "scan_before": "results/scan_code_7b_v3.json",
+  "findings_sent": 26,
+  "files_edited": 8,
+  "edits": [
+    {
+      "file": "gymdesk/billing.py",
+      "findings": 6,
+      "latency_s": 2.6,
+      "tokens_in": 1492,
+      "tokens_out": 714,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 62
+    },
+    {
+      "file": "gymdesk/checkin.py",
+      "findings": 4,
+      "latency_s": 1.94,
+      "tokens_in": 838,
+      "tokens_out": 454,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 40
+    },
+    {
+      "file": "gymdesk/club.py",
+      "findings": 8,
+      "latency_s": 5.7,
+      "tokens_in": 2683,
+      "tokens_out": 2190,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 179
+    },
+    {
+      "file": "gymdesk/notifications.py",
+      "findings": 1,
+      "latency_s": 3.05,
+      "tokens_in": 607,
+      "tokens_out": 637,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 40
+    },
+    {
+      "file": "gymdesk/reports.py",
+      "findings": 3,
+      "latency_s": 3.28,
+      "tokens_in": 1072,
+      "tokens_out": 564,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 39
+    },
+    {
+      "file": "gymdesk/scheduling.py",
+      "findings": 3,
+      "latency_s": 3.33,
+      "tokens_in": 1446,
+      "tokens_out": 1143,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 95
+    },
+    {
+      "file": "gymdesk/stats.py",
+      "findings": 2,
+      "latency_s": 1.62,
+      "tokens_in": 641,
+      "tokens_out": 376,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 26
+    },
+    {
+      "file": "gymdesk/timeslot.py",
+      "findings": 2,
+      "latency_s": 4.18,
+      "tokens_in": 1186,
+      "tokens_out": 871,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 77
+    }
+  ],
+  "repair_s": 25.7,
+  "llm": {
+    "model": "gemini-3.5-flash-lite",
+    "calls": 8,
+    "tokens_in": 9965,
+    "tokens_out": 6949
+  },
+  "tests": {
+    "fixed_set": 20,
+    "still_passing": 17,
+    "pass_rate": 0.85,
+    "newly_failing": [
+      "unit_tests.test_club::test_export_and_report",
+      "unit_tests.test_helpers::test_billing",
+      "unit_tests.test_scheduling::test_plan_week_accepts_and_warns"
+    ],
+    "summary": {
+      "tests": 20,
+      "passed": 17,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "recheck": "static",
+  "smells": {
+    "candidates": {
+      "data_clumps": {
+        "before": 2,
+        "after": 2,
+        "resolved": 0,
+        "persisted": 2,
+        "introduced": 0
+      },
+      "duplicated_logic": {
+        "before": 4,
+        "after": 3,
+        "resolved": 3,
+        "persisted": 1,
+        "introduced": 2
+      },
+      "flag_argument": {
+        "before": 3,
+        "after": 3,
+        "resolved": 0,
+        "persisted": 3,
+        "introduced": 0
+      },
+      "long_method": {
+        "before": 1,
+        "after": 1,
+        "resolved": 1,
+        "persisted": 0,
+        "introduced": 1
+      },
+      "long_parameter_list": {
+        "before": 2,
+        "after": 3,
+        "resolved": 0,
+        "persisted": 2,
+        "introduced": 1
+      },
+      "magic_numbers": {
+        "before": 6,
+        "after": 1,
+        "resolved": 5,
+        "persisted": 1,
+        "introduced": 0
+      },
+      "message_chains": {
+        "before": 3,
+        "after": 2,
+        "resolved": 2,
+        "persisted": 1,
+        "introduced": 1
+      },
+      "primitive_obsession": {
+        "before": 5,
+        "after": 6,
+        "resolved": 0,
+        "persisted": 5,
+        "introduced": 1
+      },
+      "_total": {
+        "before": 26,
+        "after": 21,
+        "resolved": 11,
+        "persisted": 15,
+        "introduced": 6
+      }
+    },
+    "sent_resolved": 11,
+    "sent_total": 26
+  },
+  "labels_after": {
+    "rules": {
+      "data_clumps": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 0,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "duplicated_logic": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 0,
+        "fp": 3,
+        "fn": 2,
+        "unlabelled_fp": [
+          "gymdesk/club.py::apply_refund@133|gymdesk/club.py::_apply_charge_action@139",
+          "gymdesk/club.py::apply_charge@128|gymdesk/club.py::send_reminders@155"
+        ],
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "flag_argument": {
+        "positives": 2,
+        "negatives": 1,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "long_method": {
+        "positives": 1,
+        "negatives": 0,
+        "tp": 0,
+        "fp": 1,
+        "fn": 1,
+        "unlabelled_fp": [
+          "Scheduler._validate_class"
+        ],
+        "precision": 0.0,
+        "recall": 0.0
+      },
+      "long_parameter_list": {
+        "positives": 2,
+        "negatives": 0,
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "unlabelled_fp": [
+          "Scheduler._validate_class"
+        ],
+        "precision": 0.6666666666666666,
+        "recall": 1.0
+      },
+      "magic_numbers": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 1,
+        "fp": 0,
+        "fn": 1,
+        "unlabelled_fp": [],
+        "precision": 1.0,
+        "recall": 0.5
+      },
+      "message_chains": {
+        "positives": 2,
+        "negatives": 4,
+        "tp": 1,
+        "fp": 1,
+        "fn": 1,
+        "unlabelled_fp": [
+          "CheckInDesk._class_for"
+        ],
+        "precision": 0.5,
+        "recall": 0.5
+      },
+      "primitive_obsession": {
+        "positives": 2,
+        "negatives": 2,
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "unlabelled_fp": [
+          "compute_late_fee"
+        ],
+        "precision": 0.4,
+        "recall": 1.0
+      }
+    }
+  }
+}

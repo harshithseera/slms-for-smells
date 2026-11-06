@@ -1,0 +1,92 @@
+--- a/mkdocs/__main__.py
++++ b/mkdocs/__main__.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ import logging
+ import os
+ import shutil
+@@ -25,7 +26,26 @@
+ log = logging.getLogger(__name__)
+ 
+ 
+-def _showwarning(message, category, filename, lineno, file=None, line=None):
++@dataclass
++class DeploymentOptions:
++    message: str | None = None
++    force: bool = False
++    no_history: bool = False
++    ignore_version: bool = False
++    shell: bool = False
++
++
++@dataclass
++class WarningDetails:
++    message: str
++    category: type[Warning]
++    filename: str
++    lineno: int
++    file: object = None
++    line: str | None = None
++
++
++def _showwarning(details: WarningDetails):
+     try:
+         # Last stack frames:
+         # * ...
+@@ -35,14 +55,14 @@
+         # * (this function) Location of call to extract_stack()
+         stack = [frame for frame in traceback.extract_stack() if frame.line][-4:-2]
+         # Make sure the actual affected file's name is still present (the case of syntax warning):
+-        if not any(frame.filename == filename for frame in stack):
+-            stack = stack[-1:] + [traceback.FrameSummary(filename, lineno, '')]
++        if not any(frame.filename == details.filename for frame in stack):
++            stack = stack[-1:] + [traceback.FrameSummary(details.filename, details.lineno, '')]
+ 
+         tb = ''.join(traceback.format_list(stack))
+     except Exception:
+-        tb = f'  File "{filename}", line {lineno}'
+-
+-    log.info(f'{category.__name__}: {message}\n{tb}')
++        tb = f'  File "{details.filename}", line {details.lineno}'
++
++    log.info(f'{details.category.__name__}: {details.message}\n{tb}')
+ 
+ 
+ def _enable_warnings():
+@@ -55,7 +75,9 @@
+         build.log.addFilter(utils.DuplicateFilter())
+ 
+         warnings.simplefilter('module', DeprecationWarning)
+-        warnings.showwarning = _showwarning
++        warnings.showwarning = lambda message, category, filename, lineno, file=None, line=None: _showwarning(
++            WarningDetails(message, category, filename, lineno, file, line)
++        )
+ 
+ 
+ class ColorFormatter(logging.Formatter):
+@@ -315,13 +337,20 @@
+         build.build(cfg, dirty=not clean)
+     finally:
+         cfg.plugins.on_shutdown()
+-    gh_deploy.gh_deploy(
+-        cfg,
++    options = DeploymentOptions(
+         message=message,
+         force=force,
+         no_history=no_history,
+         ignore_version=ignore_version,
+         shell=shell,
++    )
++    gh_deploy.gh_deploy(
++        cfg,
++        message=options.message,
++        force=options.force,
++        no_history=options.no_history,
++        ignore_version=options.ignore_version,
++        shell=options.shell,
+     )
+ 
+ 

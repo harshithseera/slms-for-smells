@@ -1,0 +1,59 @@
+--- a/httpie/sessions.py
++++ b/httpie/sessions.py
+@@ -197,33 +197,38 @@
+ 
+         return data
+ 
++    def _should_ignore_header(self, name: str, value: Any) -> bool:
++        if value is None:
++            return True
++        if name.lower() == 'user-agent' and (isinstance(value, str) and value.startswith('HTTPie/')):
++            return True
++        for prefix in SESSION_IGNORED_HEADER_PREFIXES:
++            if name.lower().startswith(prefix.lower()):
++                return True
++        return False
++
++    def _process_cookie_header(self, value: Any, name: str, original_value: Any, request_headers: HTTPHeadersDict) -> None:
++        for cookie_name, morsel in SimpleCookie(value if isinstance(value, str) else value.decode()).items():
++            if not morsel['path']:
++                morsel['path'] = DEFAULT_COOKIE_PATH
++            self.cookie_jar.set(cookie_name, morsel)
++        request_headers.remove_item(name, original_value)
++
+     def _compute_new_headers(self, request_headers: HTTPHeadersDict) -> HTTPHeadersDict:
+         new_headers = HTTPHeadersDict()
+         for name, value in request_headers.copy().items():
+-            if value is None:
+-                continue  # Ignore explicitly unset headers
++            if self._should_ignore_header(name, value):
++                continue
+ 
+             original_value = value
+-            if type(value) is not str:
++            if not isinstance(value, str):
+                 value = value.decode()
+ 
+-            if name.lower() == 'user-agent' and value.startswith('HTTPie/'):
++            if name.lower() == 'cookie':
++                self._process_cookie_header(value, name, original_value, request_headers)
+                 continue
+ 
+-            if name.lower() == 'cookie':
+-                for cookie_name, morsel in SimpleCookie(value).items():
+-                    if not morsel['path']:
+-                        morsel['path'] = DEFAULT_COOKIE_PATH
+-                    self.cookie_jar.set(cookie_name, morsel)
+-
+-                request_headers.remove_item(name, original_value)
+-                continue
+-
+-            for prefix in SESSION_IGNORED_HEADER_PREFIXES:
+-                if name.lower().startswith(prefix.lower()):
+-                    break
+-            else:
+-                new_headers.add(name, value)
++            new_headers.add(name, value)
+ 
+         return new_headers
+ 

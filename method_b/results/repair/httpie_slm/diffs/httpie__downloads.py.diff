@@ -1,0 +1,286 @@
+--- a/httpie/downloads.py
++++ b/httpie/downloads.py
+@@ -5,6 +5,7 @@
+ import mimetypes
+ import os
+ import re
++from dataclasses import dataclass
+ from mailbox import Message
+ from time import monotonic
+ from typing import IO, Optional, Tuple
+@@ -18,37 +19,38 @@
+ 
+ 
+ PARTIAL_CONTENT = 206
++DEFAULT_MAX_FILENAME_LENGTH = 255
+ 
+ 
+ class ContentRangeError(ValueError):
+     pass
+ 
+ 
+-def parse_content_range(content_range: str, resumed_from: int) -> int:
+-    """
+-    Parse and validate Content-Range header.
+-
+-    <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html>
+-
+-    :param content_range: the value of a Content-Range response header
+-                          eg. "bytes 21010-47021/47022"
+-    :param resumed_from: first byte pos. from the Range request header
+-    :return: total size of the response body when fully downloaded.
+-
+-    """
+-    if content_range is None:
+-        raise ContentRangeError('Missing Content-Range')
+-
+-    pattern = (
+-        r'^bytes (?P<first_byte_pos>\d+)-(?P<last_byte_pos>\d+)'
+-        r'/(\*|(?P<instance_length>\d+))$'
+-    )
+-    match = re.match(pattern, content_range)
+-
+-    if not match:
+-        raise ContentRangeError(
+-            f'Invalid Content-Range format {content_range!r}')
+-
++@dataclass
++class URL:
++    value: str
++
++    def filename(self, content_type: Optional[str]) -> str:
++        fn = urlsplit(self.value).path.rstrip('/')
++        fn = os.path.basename(fn) if fn else 'index'
++        if '.' not in fn and content_type:
++            content_type = content_type.split(';')[0]
++            if content_type == 'text/plain':
++                # mimetypes returns '.ksh'
++                ext = '.txt'
++            else:
++                ext = mimetypes.guess_extension(content_type)
++
++            if ext == '.htm':
++                ext = '.html'
++
++            if ext:
++                fn += ext
++
++        return fn
++
++
++def _parse_content_range_match(content_range: str, match: re.Match) -> Tuple[int, int, Optional[int]]:
+     content_range_dict = match.groupdict()
+     first_byte_pos = int(content_range_dict['first_byte_pos'])
+     last_byte_pos = int(content_range_dict['last_byte_pos'])
+@@ -57,27 +59,74 @@
+         if content_range_dict['instance_length']
+         else None
+     )
+-
+-    # "A byte-content-range-spec with a byte-range-resp-spec whose
+-    # last- byte-pos value is less than its first-byte-pos value,
+-    # or whose instance-length value is less than or equal to its
+-    # last-byte-pos value, is invalid. The recipient of an invalid
+-    # byte-content-range- spec MUST ignore it and any content
+-    # transferred along with it."
++    return first_byte_pos, last_byte_pos, instance_length
++
++
++def _validate_content_range_bounds(
++    content_range: str,
++    first_byte_pos: int,
++    last_byte_pos: int,
++    instance_length: Optional[int]
++):
+     if (first_byte_pos > last_byte_pos
+         or (instance_length is not None
+             and instance_length <= last_byte_pos)):
+         raise ContentRangeError(
+             f'Invalid Content-Range returned: {content_range!r}')
+ 
++
++def _validate_content_range_match_request(
++    content_range: str,
++    resumed_from: int,
++    first_byte_pos: int,
++    last_byte_pos: int,
++    instance_length: Optional[int]
++):
+     if (first_byte_pos != resumed_from
+         or (instance_length is not None
+             and last_byte_pos + 1 != instance_length)):
+-        # Not what we asked for.
+         raise ContentRangeError(
+             f'Unexpected Content-Range returned ({content_range!r})'
+             f' for the requested Range ("bytes={resumed_from}-")'
+         )
++
++
++def parse_content_range(content_range: str, resumed_from: int) -> int:
++    """
++    Parse and validate Content-Range header.
++
++    <https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html>
++
++    :param content_range: the value of a Content-Range response header
++                          eg. "bytes 21010-47021/47022"
++    :param resumed_from: first byte pos. from the Range request header
++    :return: total size of the response body when fully downloaded.
++
++    """
++    if content_range is None:
++        raise ContentRangeError('Missing Content-Range')
++
++    pattern = (
++        r'^bytes (?P<first_byte_pos>\d+)-(?P<last_byte_pos>\d+)'
++        r'/(\*|(?P<instance_length>\d+))$'
++    )
++    match = re.match(pattern, content_range)
++
++    if not match:
++        raise ContentRangeError(
++            f'Invalid Content-Range format {content_range!r}')
++
++    first_byte_pos, last_byte_pos, instance_length = _parse_content_range_match(
++        content_range, match
++    )
++
++    _validate_content_range_bounds(
++        content_range, first_byte_pos, last_byte_pos, instance_length
++    )
++
++    _validate_content_range_match_request(
++        content_range, resumed_from, first_byte_pos, last_byte_pos, instance_length
++    )
+ 
+     return last_byte_pos + 1
+ 
+@@ -104,23 +153,7 @@
+ 
+ 
+ def filename_from_url(url: str, content_type: Optional[str]) -> str:
+-    fn = urlsplit(url).path.rstrip('/')
+-    fn = os.path.basename(fn) if fn else 'index'
+-    if '.' not in fn and content_type:
+-        content_type = content_type.split(';')[0]
+-        if content_type == 'text/plain':
+-            # mimetypes returns '.ksh'
+-            ext = '.txt'
+-        else:
+-            ext = mimetypes.guess_extension(content_type)
+-
+-        if ext == '.htm':
+-            ext = '.html'
+-
+-        if ext:
+-            fn += ext
+-
+-    return fn
++    return URL(url).filename(content_type)
+ 
+ 
+ def trim_filename(filename: str, max_len: int) -> str:
+@@ -135,7 +168,7 @@
+ 
+ 
+ def get_filename_max_length(directory: str) -> int:
+-    max_len = 255
++    max_len = DEFAULT_MAX_FILENAME_LENGTH
+     if hasattr(os, 'pathconf') and 'PC_NAME_MAX' in os.pathconf_names:
+         max_len = os.pathconf(directory, 'PC_NAME_MAX')
+     return max_len
+@@ -199,29 +232,19 @@
+                 request_headers['Range'] = f'bytes={bytes_have}-'
+                 self._resumed_from = bytes_have
+ 
+-    def start(
++    def _extract_total_size(self, final_response: requests.Response) -> Optional[int]:
++        try:
++            return int(final_response.headers['Content-Length'])
++        except (KeyError, ValueError, TypeError):
++            return None
++
++    def _prepare_output_file(
+         self,
+         initial_url: str,
+         final_response: requests.Response
+-    ) -> Tuple[RawStream, IO]:
+-        """
+-        Initiate and return a stream for `response` body  with progress
+-        callback attached. Can be called only once.
+-
+-        :param initial_url: The original requested URL
+-        :param final_response: Initiated response object with headers already fetched
+-
+-        :return: RawStream, output_file
+-
+-        """
+-        assert not self.status.time_started
+-
+-        # FIXME: some servers still might sent Content-Encoding: gzip
+-        # <https://github.com/httpie/cli/issues/423>
+-        try:
+-            total_size = int(final_response.headers['Content-Length'])
+-        except (KeyError, ValueError, TypeError):
+-            total_size = None
++    ) -> Tuple[Optional[int], int]:
++        total_size = self._extract_total_size(final_response)
++        resumed_from = self._resumed_from
+ 
+         if not self._output_file:
+             self._output_file = self._get_output_file_from_response(
+@@ -229,21 +252,41 @@
+                 final_response=final_response,
+             )
+         else:
+-            # `--output, -o` provided
+             if self._resume and final_response.status_code == PARTIAL_CONTENT:
+                 total_size = parse_content_range(
+                     final_response.headers.get('Content-Range'),
+-                    self._resumed_from
++                    resumed_from
+                 )
+-
+             else:
+-                self._resumed_from = 0
++                resumed_from = 0
+                 try:
+                     self._output_file.seek(0)
+                     self._output_file.truncate()
+                 except OSError:
+                     pass  # stdout
+ 
++        self._resumed_from = resumed_from
++        return total_size, resumed_from
++
++    def start(
++        self,
++        initial_url: str,
++        final_response: requests.Response
++    ) -> Tuple[RawStream, IO]:
++        """
++        Initiate and return a stream for `response` body  with progress
++        callback attached. Can be called only once.
++
++        :param initial_url: The original requested URL
++        :param final_response: Initiated response object with headers already fetched
++
++        :return: RawStream, output_file
++
++        """
++        assert not self.status.time_started
++
++        total_size, resumed_from = self._prepare_output_file(initial_url, final_response)
++
+         output_options = OutputOptions.from_message(final_response, headers=False, body=True)
+         stream = RawStream(
+             msg=HTTPResponse(final_response),
+@@ -253,7 +296,7 @@
+ 
+         self.status.started(
+             output_file=self._output_file,
+-            resumed_from=self._resumed_from,
++            resumed_from=resumed_from,
+             total_size=total_size
+         )
+ 

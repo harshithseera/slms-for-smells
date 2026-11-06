@@ -1,0 +1,12 @@
+--- a/httpie/internal/update_warnings.py
++++ b/httpie/internal/update_warnings.py
+@@ -63,7 +63,8 @@
+     if env.config.get('disable_update_warnings'):
+         return None
+ 
+-    data = _read_data_error_free(env.config.version_info_file)
++    file = env.config.version_info_file
++    data = _read_data_error_free(file)
+ 
+     if data:
+         current_date = datetime.now()

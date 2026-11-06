@@ -1,0 +1,195 @@
+--- a/httpie/cli/argparser.py
++++ b/httpie/cli/argparser.py
+@@ -280,23 +280,20 @@
+             self.args.cert_key_pass.prompt_password(self.args.cert_key)
+ 
+     def _process_auth(self):
+-        # TODO: refactor & simplify this method.
+         self.args.auth_plugin = None
+         default_auth_plugin = plugin_manager.get_auth_plugins()[0]
+         auth_type_set = self.args.auth_type is not None
+         url = urlsplit(self.args.url)
+ 
+-        if self.args.auth is None and not auth_type_set:
+-            if url.username is not None:
+-                # Handle http://username:password@hostname/
+-                username = url.username
+-                password = url.password or ''
+-                self.args.auth = AuthCredentials(
+-                    key=username,
+-                    value=password,
+-                    sep=SEPARATOR_CREDENTIALS,
+-                    orig=SEPARATOR_CREDENTIALS.join([username, password])
+-                )
++        if self.args.auth is None and not auth_type_set and url.username is not None:
++            username = url.username
++            password = url.password or ''
++            self.args.auth = AuthCredentials(
++                key=username,
++                value=password,
++                sep=SEPARATOR_CREDENTIALS,
++                orig=SEPARATOR_CREDENTIALS.join([username, password])
++            )
+ 
+         if self.args.auth is not None or auth_type_set:
+             if not self.args.auth_type:
+@@ -306,7 +303,6 @@
+             if (not self.args.ignore_netrc
+                     and self.args.auth is None
+                     and plugin.netrc_parse):
+-                # Only host needed, so it’s OK URL not finalized.
+                 netrc_credentials = get_netrc_auth(self.args.url)
+                 if netrc_credentials:
+                     self.args.auth = AuthCredentials(
+@@ -326,16 +322,11 @@
+             if self.args.auth is None or not plugin.auth_parse:
+                 self.args.auth = plugin.get_auth()
+             else:
+-                if already_parsed:
+-                    # from the URL
+-                    credentials = self.args.auth
+-                else:
+-                    credentials = parse_auth(self.args.auth)
++                credentials = self.args.auth if already_parsed else parse_auth(self.args.auth)
+ 
+                 if (not credentials.has_password()
+                         and plugin.prompt_password):
+                     if self.args.ignore_stdin:
+-                        # Non-tty stdin read by now
+                         self.error(
+                             'Unable to prompt for passwords because'
+                             ' --ignore-stdin is set.'
+@@ -350,8 +341,6 @@
+                     password=credentials.value,
+                 )
+         if not self.args.auth and self.args.ignore_netrc:
+-            # Set a no-op auth to force requests to ignore .netrc
+-            # <https://github.com/psf/requests/issues/2773#issuecomment-174312831>
+             self.args.auth = ExplicitNullAuth()
+ 
+     def _apply_no_options(self, no_options):
+@@ -379,6 +368,9 @@
+         if invalid:
+             self.error(f'unrecognized arguments: {" ".join(invalid)}')
+ 
++    def _set_body_data(self, data):
++        self.args.data = data
++
+     def _body_from_file(self, fd):
+         """Read the data from a file-like object.
+ 
+@@ -386,7 +378,7 @@
+ 
+         """
+         self._ensure_one_data_source(self.args.data, self.args.files)
+-        self.args.data = getattr(fd, 'buffer', fd)
++        self._set_body_data(getattr(fd, 'buffer', fd))
+ 
+     def _body_from_input(self, data):
+         """Read the data from the CLI.
+@@ -394,7 +386,7 @@
+         """
+         self._ensure_one_data_source(self.has_stdin_data, self.args.data,
+                                      self.args.files)
+-        self.args.data = data.encode()
++        self._set_body_data(data.encode())
+ 
+     def _ensure_one_data_source(self, *other_sources):
+         """There can only be one source of input request data.
+@@ -412,38 +404,29 @@
+ 
+         """
+         if self.args.method is None:
+-            # Invoked as `http URL'.
+             assert not self.args.request_items
+-            if self.has_input_data:
+-                self.args.method = HTTP_POST
+-            else:
+-                self.args.method = HTTP_GET
+-
+-        # FIXME: False positive, e.g., "localhost" matches but is a valid URL.
+-        elif not re.match('^[a-zA-Z]+$', self.args.method):
+-            # Invoked as `http URL item+'. The URL is now in `args.method`
+-            # and the first ITEM is now incorrectly in `args.url`.
+-            try:
+-                # Parse the URL as an ITEM and store it as the first ITEM arg.
+-                self.args.request_items.insert(0, KeyValueArgType(
+-                    *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
+-
+-            except argparse.ArgumentTypeError as e:
+-                if self.args.traceback:
+-                    raise
+-                self.error(e.args[0])
+-
+-            else:
+-                # Set the URL correctly
+-                self.args.url = self.args.method
+-                # Infer the method
+-                has_data = (
+-                    self.has_input_data
+-                    or any(
+-                        item.sep in SEPARATOR_GROUP_DATA_ITEMS
+-                        for item in self.args.request_items)
+-                )
+-                self.args.method = HTTP_POST if has_data else HTTP_GET
++            self.args.method = HTTP_POST if self.has_input_data else HTTP_GET
++            return
++
++        if re.match('^[a-zA-Z]+$', self.args.method):
++            return
++
++        try:
++            self.args.request_items.insert(0, KeyValueArgType(
++                *SEPARATOR_GROUP_ALL_ITEMS).__call__(self.args.url))
++        except argparse.ArgumentTypeError as e:
++            if self.args.traceback:
++                raise
++            self.error(e.args[0])
++        else:
++            self.args.url = self.args.method
++            has_data = (
++                self.has_input_data
++                or any(
++                    item.sep in SEPARATOR_GROUP_DATA_ITEMS
++                    for item in self.args.request_items)
++            )
++            self.args.method = HTTP_POST if has_data else HTTP_GET
+ 
+     def _parse_items(self):
+         """
+@@ -468,7 +451,6 @@
+             self.args.multipart_data = request_items.multipart_data
+ 
+         if self.args.files and not self.args.form:
+-            # `http url @/path/to/file`
+             request_file = None
+             for key, file in self.args.files.items():
+                 if key != '':
+@@ -523,8 +505,6 @@
+         check_options(self.args.output_options_history, '--history-print')
+ 
+         if self.args.download and OUT_RESP_BODY in self.args.output_options:
+-            # Response body is always downloaded with --download and it goes
+-            # through a different routine, so we remove it.
+             self.args.output_options = str(
+                 set(self.args.output_options) - set(OUT_RESP_BODY))
+ 
+@@ -536,7 +516,6 @@
+               and self.args.output_file):
+             self.error('Only terminal output can be colorized on Windows.')
+         else:
+-            # noinspection PyTypeChecker
+             self.args.prettify = PRETTY_MAP[self.args.prettify]
+ 
+     def _process_download_options(self):
+@@ -584,10 +563,6 @@
+             and isinstance(exception.args[0], argparse.Action)
+             and exception.args[0].option_strings
+         ):
+-            # add_usage path is also taken when you pass an invalid option,
+-            # e.g --style=invalid. If something like that happens, we want
+-            # to include to action that caused to the invalid usage into
+-            # the list of actions we are displaying.
+             whitelist.add(exception.args[0].option_strings[0])
+ 
+         usage_text = Text('usage', style='bold')

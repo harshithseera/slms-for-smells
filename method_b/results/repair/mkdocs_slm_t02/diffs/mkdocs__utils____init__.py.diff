@@ -1,0 +1,115 @@
+--- a/mkdocs/utils/__init__.py
++++ b/mkdocs/utils/__init__.py
+@@ -6,6 +6,7 @@
+ """
+ from __future__ import annotations
+ 
++import dataclasses
+ import functools
+ import logging
+ import os
+@@ -174,6 +175,32 @@
+     return path.split('/') if path else []
+ 
+ 
++@dataclasses.dataclass(frozen=True)
++class _UrlPath:
++    raw: str
++
++    def __post_init__(self) -> None:
++        # Validation and normalization could be hooked here if needed
++        pass
++
++    def get_relative_to(self, other: str) -> str:
++        dirname, _, basename = other.rpartition('/')
++        if '.' in basename:
++            other = dirname
++
++        other_parts = _norm_parts(other)
++        dest_parts = _norm_parts(self.raw)
++        common = 0
++        for a, b in zip(other_parts, dest_parts):
++            if a != b:
++                break
++            common += 1
++
++        rel_parts = ['..'] * (len(other_parts) - common) + dest_parts[common:]
++        relurl = '/'.join(rel_parts) or '.'
++        return relurl + '/' if self.raw.endswith('/') else relurl
++
++
+ def get_relative_url(url: str, other: str) -> str:
+     """
+     Return given url relative to other.
+@@ -184,22 +211,7 @@
+     Paths are normalized ('..' works as parent directory), but going higher than the
+     root has no effect ('foo/../../bar' ends up just as 'bar').
+     """
+-    # Remove filename from other url if it has one.
+-    dirname, _, basename = other.rpartition('/')
+-    if '.' in basename:
+-        other = dirname
+-
+-    other_parts = _norm_parts(other)
+-    dest_parts = _norm_parts(url)
+-    common = 0
+-    for a, b in zip(other_parts, dest_parts):
+-        if a != b:
+-            break
+-        common += 1
+-
+-    rel_parts = ['..'] * (len(other_parts) - common) + dest_parts[common:]
+-    relurl = '/'.join(rel_parts) or '.'
+-    return relurl + '/' if url.endswith('/') else relurl
++    return _UrlPath(url).get_relative_to(other)
+ 
+ 
+ def normalize_url(path: str, page: Page | None = None, base: str = '') -> str:
+@@ -256,14 +268,36 @@
+ def get_theme_dir(name: str) -> str:
+     """Return the directory of an installed theme by name."""
+     theme = get_themes()[name]
+-    return os.path.dirname(os.path.abspath(theme.load().__file__))
++    return theme.get_file_path()
+ 
+ 
+ @functools.lru_cache(maxsize=None)
+ def get_themes() -> dict[str, EntryPoint]:
+     """Return a dict of all installed themes as {name: EntryPoint}."""
+     themes: dict[str, EntryPoint] = {}
+-    eps: dict[EntryPoint, None] = dict.fromkeys(entry_points(group='mkdocs.themes'))
++    
++    class _ThemeEntryPoint:
++        def __init__(self, ep: EntryPoint) -> None:
++            self._ep = ep
++
++        @property
++        def name(self) -> str:
++            return self._ep.name
++
++        @property
++        def dist(self):
++            return self._ep.dist
++
++        def load(self):
++            return self._ep.load()
++
++        def get_file_path(self) -> str:
++            return os.path.dirname(os.path.abspath(self.load().__file__))
++
++        def __getattr__(self, attr):
++            return getattr(self._ep, attr)
++
++    eps: dict[_ThemeEntryPoint, None] = {_ThemeEntryPoint(ep): None for ep in entry_points(group='mkdocs.themes')}
+     builtins = {ep.name for ep in eps if ep.dist is not None and ep.dist.name == 'mkdocs'}
+ 
+     for theme in eps:
+@@ -282,7 +316,7 @@
+                 f"and '{other_dist.name}'. The one in '{theme.dist.name}' will be used."
+             )
+ 
+-        themes[theme.name] = theme
++        themes[theme.name] = theme  # type: ignore
+ 
+     return themes
+ 

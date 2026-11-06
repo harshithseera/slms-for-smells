@@ -1,0 +1,250 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/data/external/mkdocs",
+  "condition": "slm",
+  "scan_before": "results/mkdocs_7b_v3.json",
+  "findings_sent": 65,
+  "files_edited": 13,
+  "edits": [
+    {
+      "file": "mkdocs/__main__.py",
+      "findings": 4,
+      "latency_s": 10.78,
+      "tokens_in": 4765,
+      "tokens_out": 3810,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 385
+    },
+    {
+      "file": "mkdocs/commands/build.py",
+      "findings": 16,
+      "latency_s": 10.17,
+      "tokens_in": 5649,
+      "tokens_out": 4851,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 326
+    },
+    {
+      "file": "mkdocs/commands/gh_deploy.py",
+      "findings": 4,
+      "latency_s": 6.08,
+      "tokens_in": 2255,
+      "tokens_out": 1680,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 181
+    },
+    {
+      "file": "mkdocs/commands/serve.py",
+      "findings": 5,
+      "latency_s": 6.12,
+      "tokens_in": 1423,
+      "tokens_out": 1130,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 131
+    },
+    {
+      "file": "mkdocs/config/base.py",
+      "findings": 1,
+      "latency_s": 15.67,
+      "tokens_in": 3685,
+      "tokens_out": 3487,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 56
+    },
+    {
+      "file": "mkdocs/config/config_options.py",
+      "findings": 11,
+      "latency_s": 25.14,
+      "tokens_in": 12503,
+      "tokens_out": 12359,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 1111
+    },
+    {
+      "file": "mkdocs/contrib/search/__init__.py",
+      "findings": 1,
+      "latency_s": 4.3,
+      "tokens_in": 1717,
+      "tokens_out": 1501,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 34
+    },
+    {
+      "file": "mkdocs/livereload/__init__.py",
+      "findings": 5,
+      "latency_s": 9.62,
+      "tokens_in": 4192,
+      "tokens_out": 4260,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 344
+    },
+    {
+      "file": "mkdocs/plugins.py",
+      "findings": 3,
+      "latency_s": 27.61,
+      "tokens_in": 23787,
+      "tokens_out": 12060,
+      "format_retries": 1,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 666
+    },
+    {
+      "file": "mkdocs/structure/files.py",
+      "findings": 6,
+      "latency_s": 13.8,
+      "tokens_in": 7051,
+      "tokens_out": 6633,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 498
+    },
+    {
+      "file": "mkdocs/structure/nav.py",
+      "findings": 4,
+      "latency_s": 7.01,
+      "tokens_in": 2898,
+      "tokens_out": 2523,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 115
+    },
+    {
+      "file": "mkdocs/structure/pages.py",
+      "findings": 6,
+      "latency_s": 13.44,
+      "tokens_in": 6483,
+      "tokens_out": 6448,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 608
+    },
+    {
+      "file": "mkdocs/utils/__init__.py",
+      "findings": 3,
+      "latency_s": 8.77,
+      "tokens_in": 3892,
+      "tokens_out": 3856,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 414
+    }
+  ],
+  "repair_s": 159.4,
+  "llm": {
+    "model": "gemini-3.5-flash-lite",
+    "calls": 13,
+    "tokens_in": 80300,
+    "tokens_out": 64598
+  },
+  "tests": {
+    "fixed_set": 720,
+    "still_passing": 713,
+    "pass_rate": 0.9903,
+    "newly_failing": [
+      "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_directory",
+      "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_mount_path",
+      "mkdocs.tests.livereload_tests.BuildTests::test_redirects_to_unicode_mount_path",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_relative_slash_link_with_suggestion",
+      "mkdocs.tests.structure.page_tests.RelativePathExtensionTests::test_self_anchor_link_with_suggestion",
+      "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir",
+      "mkdocs.tests.utils.utils_tests.ThemeUtilsTests::test_get_theme_dir_importerror"
+    ],
+    "summary": {
+      "tests": 1089,
+      "passed": 1075,
+      "failures": 9,
+      "errors": 1,
+      "skipped": 4
+    }
+  },
+  "recheck": "static",
+  "smells": {
+    "candidates": {
+      "data_clumps": {
+        "before": 19,
+        "after": 22,
+        "resolved": 3,
+        "persisted": 16,
+        "introduced": 6
+      },
+      "duplicated_logic": {
+        "before": 19,
+        "after": 28,
+        "resolved": 1,
+        "persisted": 18,
+        "introduced": 10
+      },
+      "flag_argument": {
+        "before": 12,
+        "after": 12,
+        "resolved": 3,
+        "persisted": 9,
+        "introduced": 3
+      },
+      "long_method": {
+        "before": 19,
+        "after": 6,
+        "resolved": 18,
+        "persisted": 1,
+        "introduced": 5
+      },
+      "long_parameter_list": {
+        "before": 7,
+        "after": 7,
+        "resolved": 0,
+        "persisted": 7,
+        "introduced": 0
+      },
+      "magic_numbers": {
+        "before": 8,
+        "after": 7,
+        "resolved": 1,
+        "persisted": 7,
+        "introduced": 0
+      },
+      "message_chains": {
+        "before": 30,
+        "after": 35,
+        "resolved": 8,
+        "persisted": 22,
+        "introduced": 13
+      },
+      "primitive_obsession": {
+        "before": 4,
+        "after": 5,
+        "resolved": 0,
+        "persisted": 4,
+        "introduced": 1
+      },
+      "_total": {
+        "before": 118,
+        "after": 122,
+        "resolved": 34,
+        "persisted": 84,
+        "introduced": 38
+      }
+    },
+    "sent_resolved": 32,
+    "sent_total": 65
+  }
+}

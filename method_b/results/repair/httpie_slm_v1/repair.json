@@ -1,0 +1,436 @@
+{
+  "codebase": "/Users/hseera/Desktop/slms-for-smells/data/external/httpie",
+  "condition": "slm",
+  "scan_before": "results/httpie_7b_v3.json",
+  "findings_sent": 59,
+  "files_edited": 26,
+  "edits": [
+    {
+      "file": "httpie/cli/argparser.py",
+      "findings": 5,
+      "latency_s": 14.25,
+      "tokens_in": 6610,
+      "tokens_out": 6207,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 609
+    },
+    {
+      "file": "httpie/cli/argtypes.py",
+      "findings": 1,
+      "latency_s": 5.8,
+      "tokens_in": 2373,
+      "tokens_out": 2208,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 78
+    },
+    {
+      "file": "httpie/cli/definition.py",
+      "findings": 2,
+      "latency_s": 16.52,
+      "tokens_in": 8079,
+      "tokens_out": 8012,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 706
+    },
+    {
+      "file": "httpie/cli/nested_json/interpret.py",
+      "findings": 2,
+      "latency_s": 3.51,
+      "tokens_in": 1522,
+      "tokens_out": 1301,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 113
+    },
+    {
+      "file": "httpie/cli/nested_json/parse.py",
+      "findings": 2,
+      "latency_s": 4.29,
+      "tokens_in": 1843,
+      "tokens_out": 1574,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 140
+    },
+    {
+      "file": "httpie/cli/options.py",
+      "findings": 1,
+      "latency_s": 5.7,
+      "tokens_in": 2353,
+      "tokens_out": 2332,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 147
+    },
+    {
+      "file": "httpie/cli/requestitems.py",
+      "findings": 2,
+      "latency_s": 5.95,
+      "tokens_in": 2469,
+      "tokens_out": 2387,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 193
+    },
+    {
+      "file": "httpie/cli/utils.py",
+      "findings": 1,
+      "latency_s": 3.26,
+      "tokens_in": 875,
+      "tokens_out": 593,
+      "format_retries": 0,
+      "status": "unchanged",
+      "public_names_removed": [],
+      "lines_changed": 0
+    },
+    {
+      "file": "httpie/client.py",
+      "findings": 5,
+      "latency_s": 10.08,
+      "tokens_in": 4578,
+      "tokens_out": 4358,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 453
+    },
+    {
+      "file": "httpie/config.py",
+      "findings": 1,
+      "latency_s": 6.67,
+      "tokens_in": 1734,
+      "tokens_out": 1566,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 54
+    },
+    {
+      "file": "httpie/core.py",
+      "findings": 5,
+      "latency_s": 7.91,
+      "tokens_in": 3166,
+      "tokens_out": 2924,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 294
+    },
+    {
+      "file": "httpie/downloads.py",
+      "findings": 4,
+      "latency_s": 8.36,
+      "tokens_in": 3625,
+      "tokens_out": 3481,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 376
+    },
+    {
+      "file": "httpie/internal/update_warnings.py",
+      "findings": 1,
+      "latency_s": 4.52,
+      "tokens_in": 1733,
+      "tokens_out": 1505,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 120
+    },
+    {
+      "file": "httpie/manager/tasks/plugins.py",
+      "findings": 1,
+      "latency_s": 6.14,
+      "tokens_in": 2461,
+      "tokens_out": 2245,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 135
+    },
+    {
+      "file": "httpie/manager/tasks/sessions.py",
+      "findings": 1,
+      "latency_s": 4.6,
+      "tokens_in": 1067,
+      "tokens_out": 796,
+      "format_retries": 0,
+      "status": "unchanged",
+      "public_names_removed": [],
+      "lines_changed": 0
+    },
+    {
+      "file": "httpie/models.py",
+      "findings": 2,
+      "latency_s": 5.53,
+      "tokens_in": 2111,
+      "tokens_out": 1911,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 213
+    },
+    {
+      "file": "httpie/output/formatters/colors.py",
+      "findings": 2,
+      "latency_s": 12.67,
+      "tokens_in": 4378,
+      "tokens_out": 4122,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 257
+    },
+    {
+      "file": "httpie/output/lexers/http.py",
+      "findings": 1,
+      "latency_s": 7.0,
+      "tokens_in": 1386,
+      "tokens_out": 975,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 103
+    },
+    {
+      "file": "httpie/output/lexers/metadata.py",
+      "findings": 1,
+      "latency_s": 9.15,
+      "tokens_in": 1086,
+      "tokens_out": 646,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 75
+    },
+    {
+      "file": "httpie/output/ui/rich_help.py",
+      "findings": 2,
+      "latency_s": 5.32,
+      "tokens_in": 2194,
+      "tokens_out": 1975,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 164
+    },
+    {
+      "file": "httpie/output/ui/rich_progress.py",
+      "findings": 1,
+      "latency_s": 4.03,
+      "tokens_in": 1375,
+      "tokens_out": 1146,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 137
+    },
+    {
+      "file": "httpie/output/writer.py",
+      "findings": 6,
+      "latency_s": 6.29,
+      "tokens_in": 2408,
+      "tokens_out": 2389,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 283
+    },
+    {
+      "file": "httpie/sessions.py",
+      "findings": 3,
+      "latency_s": 8.93,
+      "tokens_in": 2963,
+      "tokens_out": 2733,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 315
+    },
+    {
+      "file": "httpie/ssl_.py",
+      "findings": 2,
+      "latency_s": 3.65,
+      "tokens_in": 1658,
+      "tokens_out": 1204,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 124
+    },
+    {
+      "file": "httpie/status.py",
+      "findings": 2,
+      "latency_s": 2.68,
+      "tokens_in": 685,
+      "tokens_out": 560,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 60
+    },
+    {
+      "file": "httpie/uploads.py",
+      "findings": 5,
+      "latency_s": 7.3,
+      "tokens_in": 2690,
+      "tokens_out": 2853,
+      "format_retries": 0,
+      "status": "repaired",
+      "public_names_removed": [],
+      "lines_changed": 192
+    }
+  ],
+  "repair_s": 180.4,
+  "llm": {
+    "model": "gemini-3.5-flash-lite",
+    "calls": 26,
+    "tokens_in": 67422,
+    "tokens_out": 62003
+  },
+  "tests": {
+    "fixed_set": 987,
+    "still_passing": 0,
+    "pass_rate": 0.0,
+    "newly_failing": [
+      "tests.test_auth::test_auth_plugin_netrc_parse[basic-/basic-auth/httpie/password]",
+      "tests.test_auth::test_auth_plugin_netrc_parse[digest-/digest-auth/auth/httpie/password]",
+      "tests.test_auth::test_basic_auth[http]",
+      "tests.test_auth::test_basic_auth[https]",
+      "tests.test_auth::test_bearer_auth[http-long_tokenlong_tokenlong_tokenlong_tokenlong_token]",
+      "tests.test_auth::test_bearer_auth[http-token_1]",
+      "tests.test_auth::test_bearer_auth[http-user:style]",
+      "tests.test_auth::test_bearer_auth[https-long_tokenlong_tokenlong_tokenlong_tokenlong_token]",
+      "tests.test_auth::test_bearer_auth[https-token_1]",
+      "tests.test_auth::test_bearer_auth[https-user:style]",
+      "tests.test_auth::test_credentials_in_url[http]",
+      "tests.test_auth::test_credentials_in_url[https]",
+      "tests.test_auth::test_credentials_in_url_auth_flag_has_priority[http]",
+      "tests.test_auth::test_credentials_in_url_auth_flag_has_priority[https]",
+      "tests.test_auth::test_digest_auth[http---auth-type]",
+      "tests.test_auth::test_digest_auth[http--A]",
+      "tests.test_auth::test_digest_auth[https---auth-type]",
+      "tests.test_auth::test_digest_auth[https--A]",
+      "tests.test_auth::test_ignore_netrc[http]",
+      "tests.test_auth::test_ignore_netrc[https]",
+      "tests.test_auth::test_ignore_netrc_null_auth",
+      "tests.test_auth::test_ignore_netrc_together_with_auth",
+      "tests.test_auth::test_ignore_netrc_with_auth_type_resulting_in_missing_auth",
+      "tests.test_auth::test_missing_auth",
+      "tests.test_auth::test_netrc[http]",
+      "tests.test_auth::test_netrc[https]",
+      "tests.test_auth::test_only_username_in_url[username:@example.org]",
+      "tests.test_auth::test_only_username_in_url[username@example.org]",
+      "tests.test_auth::test_password_prompt",
+      "tests.test_auth_plugins::test_auth_plugin_parse_auth_false",
+      "tests.test_auth_plugins::test_auth_plugin_prompt_password_false",
+      "tests.test_auth_plugins::test_auth_plugin_require_auth_false",
+      "tests.test_auth_plugins::test_auth_plugin_require_auth_false_and_auth_provided",
+      "tests.test_binary.TestBinaryRequestData::test_binary_file_form",
+      "tests.test_binary.TestBinaryRequestData::test_binary_file_path",
+      "tests.test_binary.TestBinaryRequestData::test_binary_stdin",
+      "tests.test_binary.TestBinaryResponseData::test_binary_included_and_correct_when_suitable",
+      "tests.test_binary.TestBinaryResponseData::test_binary_suppresses_when_not_terminal_but_pretty",
+      "tests.test_binary.TestBinaryResponseData::test_binary_suppresses_when_terminal",
+      "tests.test_cli.TestArgumentParser::test_guess_when_method_not_set",
+      "tests.test_cli.TestArgumentParser::test_guess_when_method_set_and_valid",
+      "tests.test_cli.TestArgumentParser::test_guess_when_method_set_but_invalid_and_data_field",
+      "tests.test_cli.TestArgumentParser::test_guess_when_method_set_but_invalid_and_header_field",
+      "tests.test_cli.TestArgumentParser::test_guess_when_method_set_but_invalid_and_item_exists",
+      "tests.test_cli.TestItemParsing::test_backslash_before_non_special_character_does_not_escape[path=c:\\\\windows-path-=-c:\\\\windows]",
+      "tests.test_cli.TestItemParsing::test_backslash_before_non_special_character_does_not_escape[path=c:\\\\windows\\\\-path-=-c:\\\\windows\\\\]",
+      "tests.test_cli.TestItemParsing::test_backslash_before_non_special_character_does_not_escape[path\\\\==c:\\\\windows-path=-=-c:\\\\windows]",
+      "tests.test_cli.TestItemParsing::test_escape_longsep",
+      "tests.test_cli.TestItemParsing::test_escape_separator",
+      "tests.test_cli.TestItemParsing::test_invalid_items"
+    ],
+    "summary": {
+      "tests": 0,
+      "passed": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "recheck": "static",
+  "smells": {
+    "candidates": {
+      "data_clumps": {
+        "before": 10,
+        "after": 14,
+        "resolved": 4,
+        "persisted": 6,
+        "introduced": 8
+      },
+      "duplicated_logic": {
+        "before": 14,
+        "after": 26,
+        "resolved": 1,
+        "persisted": 13,
+        "introduced": 13
+      },
+      "flag_argument": {
+        "before": 15,
+        "after": 19,
+        "resolved": 4,
+        "persisted": 11,
+        "introduced": 8
+      },
+      "long_method": {
+        "before": 21,
+        "after": 7,
+        "resolved": 17,
+        "persisted": 4,
+        "introduced": 3
+      },
+      "long_parameter_list": {
+        "before": 3,
+        "after": 4,
+        "resolved": 0,
+        "persisted": 3,
+        "introduced": 1
+      },
+      "magic_numbers": {
+        "before": 9,
+        "after": 6,
+        "resolved": 5,
+        "persisted": 4,
+        "introduced": 2
+      },
+      "message_chains": {
+        "before": 21,
+        "after": 25,
+        "resolved": 6,
+        "persisted": 15,
+        "introduced": 10
+      },
+      "primitive_obsession": {
+        "before": 4,
+        "after": 4,
+        "resolved": 1,
+        "persisted": 3,
+        "introduced": 1
+      },
+      "_total": {
+        "before": 97,
+        "after": 105,
+        "resolved": 38,
+        "persisted": 59,
+        "introduced": 46
+      }
+    },
+    "sent_resolved": 34,
+    "sent_total": 59
+  }
+}

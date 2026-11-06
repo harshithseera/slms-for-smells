@@ -1,0 +1,100 @@
+--- a/httpie/internal/update_warnings.py
++++ b/httpie/internal/update_warnings.py
+@@ -54,16 +54,25 @@
+ 
+ def fetch_updates(env: Environment, lazy: bool = True):
+     if lazy:
+-        spawn_daemon('fetch_updates')
++        _fetch_updates_lazy()
+     else:
+-        _fetch_updates(env)
++        _fetch_updates_eager(env)
++
++
++def _fetch_updates_lazy():
++    spawn_daemon('fetch_updates')
++
++
++def _fetch_updates_eager(env: Environment):
++    _fetch_updates(env)
+ 
+ 
+ def maybe_fetch_updates(env: Environment) -> None:
+     if env.config.get('disable_update_warnings'):
+         return None
+ 
+-    data = _read_data_error_free(env.config.version_info_file)
++    version_info_file = env.config.version_info_file
++    data = _read_data_error_free(version_info_file)
+ 
+     if data:
+         current_date = datetime.now()
+@@ -88,6 +97,11 @@
+         return suppress(BaseException)
+ 
+ 
++def _run_with_suppress_context(env: Environment, func: Callable[[Environment], None]) -> None:
++    with _get_suppress_context(env):
++        func(env)
++
++
+ def _update_checker(
+     func: Callable[[Environment], None]
+ ) -> Callable[[Environment], None]:
+@@ -95,11 +109,8 @@
+     auto updates etc.)"""
+ 
+     def wrapper(env: Environment) -> None:
+-        with _get_suppress_context(env):
+-            func(env)
+-
+-        with _get_suppress_context(env):
+-            maybe_fetch_updates(env)
++        _run_with_suppress_context(env, func)
++        _run_with_suppress_context(env, maybe_fetch_updates)
+ 
+     return wrapper
+ 
+@@ -107,14 +118,14 @@
+ def _get_update_status(env: Environment) -> Optional[str]:
+     """If there is a new update available, return the warning text.
+     Otherwise just return None."""
+-    file = env.config.version_info_file
+-    if not file.exists():
++    version_info_file = env.config.version_info_file
++    if not version_info_file.exists():
+         return None
+ 
+     with _get_suppress_context(env):
+         # If the user quickly spawns multiple httpie processes
+         # we don't want to end in a race.
+-        with open_with_lockfile(file) as stream:
++        with open_with_lockfile(version_info_file) as stream:
+             version_info = json.load(stream)
+ 
+         available_channels = version_info['last_released_versions']
+@@ -142,7 +153,7 @@
+     if env.config.get('disable_update_warnings'):
+         return None
+ 
+-    file = env.config.version_info_file
++    version_info_file = env.config.version_info_file
+     update_status = _get_update_status(env)
+ 
+     if not update_status:
+@@ -150,7 +161,7 @@
+ 
+     # If the user quickly spawns multiple httpie processes
+     # we don't want to end in a race.
+-    with open_with_lockfile(file) as stream:
++    with open_with_lockfile(version_info_file) as stream:
+         version_info = json.load(stream)
+ 
+     # We don't want to spam the user with too many warnings,
+@@ -167,5 +178,5 @@
+     env.log_error(update_status, level=LogLevel.INFO)
+     version_info['last_warned_date'] = current_date.isoformat()
+ 
+-    with open_with_lockfile(file, 'w') as stream:
++    with open_with_lockfile(version_info_file, 'w') as stream:
+         json.dump(version_info, stream)

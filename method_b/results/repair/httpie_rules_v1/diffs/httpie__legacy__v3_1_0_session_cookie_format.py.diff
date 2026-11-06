@@ -1,0 +1,9 @@
+--- a/httpie/legacy/v3_1_0_session_cookie_format.py
++++ b/httpie/legacy/v3_1_0_session_cookie_format.py
+@@ -1,5 +1,6 @@
+ import argparse
+ from typing import Any, Type, List, Dict, TYPE_CHECKING
++from httpie.legacy.v3_2_0_session_header_format import post_process as _v3_2_0_post_process
+ 
+ if TYPE_CHECKING:
+     from httpie.sessions import Session

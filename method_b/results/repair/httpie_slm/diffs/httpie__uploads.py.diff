@@ -1,0 +1,292 @@
+--- a/httpie/uploads.py
++++ b/httpie/uploads.py
+@@ -3,6 +3,7 @@
+ import zlib
+ import functools
+ import threading
++from dataclasses import dataclass
+ from typing import Any, Callable, IO, Iterable, Optional, Tuple, Union, TYPE_CHECKING
+ from urllib.parse import urlencode
+ 
+@@ -15,6 +16,13 @@
+ from .context import Environment
+ from .cli.dicts import MultipartRequestDataDict, RequestDataDict
+ from .compat import is_windows
++
++
++@dataclass
++class UploadContext:
++    env: Environment
++    chunked: bool = False
++    content_length_header_value: Optional[int] = None
+ 
+ 
+ class ChunkedStream:
+@@ -143,6 +151,61 @@
+     return as_bytes(file.read())
+ 
+ 
++def _prepare_chunked_file_for_upload(
++    env: Environment,
++    file: Union[IO, 'MultipartEncoder'],
++    callback: CallbackT,
++    content_length_header_value: Optional[int] = None,
++) -> ChunkedStream:
++    read_event = threading.Event()
++    if not super_len(file):
++        if is_stdin(file):
++            observe_stdin_for_data_thread(env, file, read_event)
++
++        if content_length_header_value is None:
++            file = _read_file_with_selectors(file, read_event)
++    else:
++        file.read = _wrap_function_with_callback(
++            file.read,
++            callback
++        )
++
++    from requests_toolbelt import MultipartEncoder
++    if isinstance(file, MultipartEncoder):
++        return ChunkedMultipartUploadStream(
++            encoder=file,
++            event=read_event,
++        )
++    else:
++        return ChunkedUploadStream(
++            stream=file,
++            callback=callback,
++            event=read_event
++        )
++
++
++def _prepare_non_chunked_file_for_upload(
++    env: Environment,
++    file: Union[IO, 'MultipartEncoder'],
++    callback: CallbackT,
++    content_length_header_value: Optional[int] = None,
++) -> Union[bytes, IO]:
++    read_event = threading.Event()
++    if not super_len(file):
++        if is_stdin(file):
++            observe_stdin_for_data_thread(env, file, read_event)
++
++        if content_length_header_value is None:
++            file = _read_file_with_selectors(file, read_event)
++    else:
++        file.read = _wrap_function_with_callback(
++            file.read,
++            callback
++        )
++
++    return file
++
++
+ def _prepare_file_for_upload(
+     env: Environment,
+     file: Union[IO, 'MultipartEncoder'],
+@@ -150,42 +213,65 @@
+     chunked: bool = False,
+     content_length_header_value: Optional[int] = None,
+ ) -> Union[bytes, IO, ChunkedStream]:
+-    read_event = threading.Event()
+-    if not super_len(file):
+-        if is_stdin(file):
+-            observe_stdin_for_data_thread(env, file, read_event)
+-
+-        # Zero-length -> assume stdin.
+-        if content_length_header_value is None and not chunked:
+-            # Read the whole stdin to determine `Content-Length`.
+-            #
+-            # TODO: Instead of opt-in --chunked, consider making
+-            #   `Transfer-Encoding: chunked` for STDIN opt-out via
+-            #   something like --no-chunked.
+-            #   This would be backwards-incompatible so wait until v3.0.0.
+-            #
+-            file = _read_file_with_selectors(file, read_event)
+-    else:
+-        file.read = _wrap_function_with_callback(
+-            file.read,
+-            callback
+-        )
+-
+     if chunked:
+-        from requests_toolbelt import MultipartEncoder
+-        if isinstance(file, MultipartEncoder):
+-            return ChunkedMultipartUploadStream(
+-                encoder=file,
+-                event=read_event,
+-            )
+-        else:
+-            return ChunkedUploadStream(
+-                stream=file,
+-                callback=callback,
+-                event=read_event
+-            )
+-    else:
+-        return file
++        return _prepare_chunked_file_for_upload(
++            env=env,
++            file=file,
++            callback=callback,
++            content_length_header_value=content_length_header_value,
++        )
++    else:
++        return _prepare_non_chunked_file_for_upload(
++            env=env,
++            file=file,
++            callback=callback,
++            content_length_header_value=content_length_header_value,
++        )
++
++
++def _prepare_offline_request_body(raw_body: Any) -> Union[bytes, IO]:
++    is_file_like = hasattr(raw_body, 'read')
++    if isinstance(raw_body, (bytes, str)):
++        body = as_bytes(raw_body)
++    elif isinstance(raw_body, RequestDataDict):
++        body = as_bytes(urlencode(raw_body, doseq=True))
++    else:
++        body = raw_body
++
++    if is_file_like:
++        return as_bytes(raw_body.read())
++    else:
++        return body
++
++
++def _prepare_online_request_body(
++    raw_body: Any,
++    body_read_callback: CallbackT,
++    upload_context: UploadContext,
++) -> Union[bytes, IO, 'MultipartEncoder', ChunkedStream]:
++    is_file_like = hasattr(raw_body, 'read')
++    if isinstance(raw_body, (bytes, str)):
++        body = as_bytes(raw_body)
++    elif isinstance(raw_body, RequestDataDict):
++        body = as_bytes(urlencode(raw_body, doseq=True))
++    else:
++        body = raw_body
++
++    if is_file_like:
++        return _prepare_file_for_upload(
++            upload_context.env,
++            body,
++            chunked=upload_context.chunked,
++            callback=body_read_callback,
++            content_length_header_value=upload_context.content_length_header_value
++        )
++    elif upload_context.chunked:
++        return ChunkedUploadStream(
++            stream=iter([body]),
++            callback=body_read_callback
++        )
++    else:
++        return body
+ 
+ 
+ def prepare_request_body(
+@@ -196,35 +282,19 @@
+     chunked: bool = False,
+     content_length_header_value: Optional[int] = None,
+ ) -> Union[bytes, IO, 'MultipartEncoder', ChunkedStream]:
+-    is_file_like = hasattr(raw_body, 'read')
+-    if isinstance(raw_body, (bytes, str)):
+-        body = as_bytes(raw_body)
+-    elif isinstance(raw_body, RequestDataDict):
+-        body = as_bytes(urlencode(raw_body, doseq=True))
+-    else:
+-        body = raw_body
+-
++    upload_context = UploadContext(
++        env=env,
++        chunked=chunked,
++        content_length_header_value=content_length_header_value,
++    )
+     if offline:
+-        if is_file_like:
+-            return as_bytes(raw_body.read())
+-        else:
+-            return body
+-
+-    if is_file_like:
+-        return _prepare_file_for_upload(
+-            env,
+-            body,
+-            chunked=chunked,
+-            callback=body_read_callback,
+-            content_length_header_value=content_length_header_value
+-        )
+-    elif chunked:
+-        return ChunkedUploadStream(
+-            stream=iter([body]),
+-            callback=body_read_callback
+-        )
+-    else:
+-        return body
++        return _prepare_offline_request_body(raw_body)
++    else:
++        return _prepare_online_request_body(
++            raw_body=raw_body,
++            body_read_callback=body_read_callback,
++            upload_context=upload_context,
++        )
+ 
+ 
+ def get_multipart_data_and_content_type(
+@@ -249,10 +319,7 @@
+     return data, content_type
+ 
+ 
+-def compress_request(
+-    request: requests.PreparedRequest,
+-    always: bool,
+-):
++def _compress_request_body(request: requests.PreparedRequest) -> bytes:
+     deflater = zlib.compressobj()
+     if isinstance(request.body, str):
+         body_bytes = request.body.encode()
+@@ -262,8 +329,40 @@
+         body_bytes = request.body
+     deflated_data = deflater.compress(body_bytes)
+     deflated_data += deflater.flush()
++    return deflated_data
++
++
++def _apply_compression(request: requests.PreparedRequest, deflated_data: bytes) -> None:
++    request.body = deflated_data
++    request.headers['Content-Encoding'] = 'deflate'
++    request.headers['Content-Length'] = str(len(deflated_data))
++
++
++def _compress_request_always(request: requests.PreparedRequest):
++    deflated_data = _compress_request_body(request)
++    _apply_compression(request, deflated_data)
++
++
++def _compress_request_conditional(request: requests.PreparedRequest):
++    deflater = zlib.compressobj()
++    if isinstance(request.body, str):
++        body_bytes = request.body.encode()
++    elif hasattr(request.body, 'read'):
++        body_bytes = request.body.read()
++    else:
++        body_bytes = request.body
++    deflated_data = deflater.compress(body_bytes)
++    deflated_data += deflater.flush()
+     is_economical = len(deflated_data) < len(body_bytes)
+-    if is_economical or always:
+-        request.body = deflated_data
+-        request.headers['Content-Encoding'] = 'deflate'
+-        request.headers['Content-Length'] = str(len(deflated_data))
++    if is_economical:
++        _apply_compression(request, deflated_data)
++
++
++def compress_request(
++    request: requests.PreparedRequest,
++    always: bool,
++):
++    if always:
++        _compress_request_always(request)
++    else:
++        _compress_request_conditional(request)

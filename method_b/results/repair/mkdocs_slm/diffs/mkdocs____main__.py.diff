@@ -1,0 +1,49 @@
+--- a/mkdocs/__main__.py
++++ b/mkdocs/__main__.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ import logging
+ import os
+ import shutil
+@@ -23,6 +24,15 @@
+         colorama.init()
+ 
+ log = logging.getLogger(__name__)
++
++
++@dataclass
++class DeploymentOptions:
++    message: str | None
++    force: bool
++    no_history: bool
++    ignore_version: bool
++    shell: bool
+ 
+ 
+ def _showwarning(message, category, filename, lineno, file=None, line=None):
+@@ -315,13 +325,20 @@
+         build.build(cfg, dirty=not clean)
+     finally:
+         cfg.plugins.on_shutdown()
+-    gh_deploy.gh_deploy(
+-        cfg,
++    options = DeploymentOptions(
+         message=message,
+         force=force,
+         no_history=no_history,
+         ignore_version=ignore_version,
+         shell=shell,
++    )
++    gh_deploy.gh_deploy(
++        cfg,
++        message=options.message,
++        force=options.force,
++        no_history=options.no_history,
++        ignore_version=options.ignore_version,
++        shell=options.shell,
+     )
+ 
+ 

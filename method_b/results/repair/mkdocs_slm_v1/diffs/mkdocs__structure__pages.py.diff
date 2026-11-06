@@ -1,0 +1,303 @@
+--- a/mkdocs/structure/pages.py
++++ b/mkdocs/structure/pages.py
+@@ -1,5 +1,6 @@
+ from __future__ import annotations
+ 
++import dataclasses
+ import enum
+ import logging
+ import posixpath
+@@ -30,6 +31,31 @@
+ 
+ 
+ log = logging.getLogger(__name__)
++
++
++@dataclasses.dataclass
++class _ParsedURL:
++    scheme: str
++    netloc: str
++    path: str
++    query: str
++    anchor: str
++    original_url: str
++
++    @classmethod
++    def from_url(cls, url: str) -> _ParsedURL:
++        scheme, netloc, path, query, anchor = urlsplit(url)
++        return cls(
++            scheme=scheme,
++            netloc=netloc,
++            path=urlunquote(path),
++            query=query,
++            anchor=anchor,
++            original_url=url,
++        )
++
++    def unsplit(self, path: str | None = None) -> str:
++        return urlunsplit(('', '', path if path is not None else self.path, self.query, self.anchor))
+ 
+ 
+ class Page(StructureItem):
+@@ -182,18 +208,20 @@
+             self.edit_url = None
+             return
+ 
+-        if edit_uri_template:
+-            noext = posixpath.splitext(src_uri)[0]
+-            file_edit_uri = edit_uri_template.format(path=src_uri, path_noext=noext)
+-        else:
++        def _get_file_edit_uri() -> str:
++            if edit_uri_template:
++                noext = posixpath.splitext(src_uri)[0]
++                return edit_uri_template.format(path=src_uri, path_noext=noext)
+             assert edit_uri is not None and edit_uri.endswith('/')
+-            file_edit_uri = edit_uri + src_uri
+-
+-        if repo_url:
+-            # Ensure urljoin behavior is correct
+-            if not file_edit_uri.startswith(('?', '#')) and not repo_url.endswith('/'):
+-                repo_url += '/'
+-        else:
++            return edit_uri + src_uri
++
++        file_edit_uri = _get_file_edit_uri()
++
++        def _adjust_repo_url() -> str | None:
++            if repo_url:
++                if not file_edit_uri.startswith(('?', '#')) and not repo_url.endswith('/'):
++                    return repo_url + '/'
++                return repo_url
+             try:
+                 parsed_url = urlsplit(file_edit_uri)
+                 if not parsed_url.scheme or not parsed_url.netloc:
+@@ -202,8 +230,10 @@
+                     )
+             except ValueError as e:
+                 log.warning(f"edit_uri: {file_edit_uri!r} is not a valid URL: {e}")
+-
+-        self.edit_url = urljoin(repo_url or '', file_edit_uri)
++            return None
++
++        final_repo_url = _adjust_repo_url()
++        self.edit_url = urljoin(final_repo_url or '', file_edit_uri)
+ 
+     def read_source(self, config: MkDocsConfig) -> None:
+         source = config.plugins.on_page_read_source(page=self, config=config)
+@@ -379,34 +409,23 @@
+         )
+ 
+     @classmethod
+-    def _possible_target_uris(
+-        cls, file: File, path: str, use_directory_urls: bool, suggest_absolute: bool = False
++    def _possible_target_uris_with_directory_urls(
++        cls, file: File, path: str, target_uri: str
+     ) -> Iterator[str]:
+-        """First yields the resolved file uri for the link, then proceeds to yield guesses for possible mistakes."""
+-        target_uri = cls._target_uri(file.src_uri, path)
+         yield target_uri
+-
+         if posixpath.normpath(path) == '.':
+-            # Explicitly link to current file.
+             yield file.src_uri
+             return
+         tried = {target_uri}
+-
+         prefixes = [target_uri, cls._target_uri(file.url, path)]
+         if prefixes[0] == prefixes[1]:
+             prefixes.pop()
+ 
+-        suffixes: list[Callable[[str], str]] = []
+-        if use_directory_urls:
+-            suffixes.append(lambda p: p)
++        suffixes: list[Callable[[str], str]] = [lambda p: p]
+         if not posixpath.splitext(target_uri)[-1]:
+             suffixes.append(lambda p: posixpath.join(p, 'index.md'))
+             suffixes.append(lambda p: posixpath.join(p, 'README.md'))
+-        if (
+-            not target_uri.endswith('.')
+-            and not path.endswith('.md')
+-            and (use_directory_urls or not path.endswith('/'))
+-        ):
++        if not target_uri.endswith('.') and not path.endswith('.md'):
+             suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
+ 
+         for pref in prefixes:
+@@ -416,57 +435,95 @@
+                     yield guess
+                     tried.add(guess)
+ 
+-    def path_to_url(self, url: str) -> str:
+-        scheme, netloc, path, query, anchor = urlsplit(url)
+-
+-        absolute_link = None
+-        warning_level, warning = 0, ''
+-
+-        # Ignore URLs unless they are a relative link to a source file.
+-        if scheme or netloc:  # External link.
+-            return url
+-        elif url.startswith(('/', '\\')):  # Absolute link.
++    @classmethod
++    def _possible_target_uris_without_directory_urls(
++        cls, file: File, path: str, target_uri: str
++    ) -> Iterator[str]:
++        yield target_uri
++        if posixpath.normpath(path) == '.':
++            yield file.src_uri
++            return
++        tried = {target_uri}
++        prefixes = [target_uri, cls._target_uri(file.url, path)]
++        if prefixes[0] == prefixes[1]:
++            prefixes.pop()
++
++        suffixes: list[Callable[[str], str]] = []
++        if not posixpath.splitext(target_uri)[-1]:
++            suffixes.append(lambda p: posixpath.join(p, 'index.md'))
++            suffixes.append(lambda p: posixpath.join(p, 'README.md'))
++        if not target_uri.endswith('.') and not path.endswith('.md') and not path.endswith('/'):
++            suffixes.append(lambda p: _removesuffix(p, '.html') + '.md')
++
++        for pref in prefixes:
++            for suf in suffixes:
++                guess = posixpath.normpath(suf(pref))
++                if guess not in tried and not guess.startswith('../'):
++                    yield guess
++                    tried.add(guess)
++
++    @classmethod
++    def _possible_target_uris(
++        cls, file: File, path: str, use_directory_urls: bool, suggest_absolute: bool = False
++    ) -> Iterator[str]:
++        """First yields the resolved file uri for the link, then proceeds to yield guesses for possible mistakes."""
++        target_uri = cls._target_uri(file.src_uri, path)
++        if use_directory_urls:
++            yield from cls._possible_target_uris_with_directory_urls(file, path, target_uri)
++        else:
++            yield from cls._possible_target_uris_without_directory_urls(file, path, target_uri)
++
++    def _check_early_return_url(self, parsed: _ParsedURL) -> str | None:
++        if parsed.scheme or parsed.netloc:
++            return parsed.original_url
++        if parsed.original_url.startswith(('/', '\\')):
+             absolute_link = self.config.validation.links.absolute_links
+             if absolute_link is not _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS:
+-                warning_level = absolute_link
+-                warning = f"Doc file '{self.file.src_uri}' contains an absolute link '{url}', it was left as is."
+-        elif AMP_SUBSTITUTE in url:  # AMP_SUBSTITUTE is used internally by Markdown only for email.
+-            return url
+-        elif not path:  # Self-link containing only query or anchor.
+-            if anchor:
+-                # Register that the page links to itself with an anchor.
+-                self.links_to_anchors.setdefault(self.file, {}).setdefault(anchor, url)
+-            return url
+-
+-        path = urlunquote(path)
+-        # Determine the filepath of the target.
++                self._abs_link_warning_cached = (absolute_link, f"Doc file '{self.file.src_uri}' contains an absolute link '{parsed.original_url}', it was left as is.")
++            else:
++                self._abs_link_warning_cached = (0, '')
++            return None
++        if AMP_SUBSTITUTE in parsed.original_url:
++            return parsed.original_url
++        if not parsed.path:
++            if parsed.anchor:
++                self.links_to_anchors.setdefault(self.file, {}).setdefault(parsed.anchor, parsed.original_url)
++            return parsed.original_url
++        return None
++
++    def path_to_url(self, url: str) -> str:
++        parsed = _ParsedURL.from_url(url)
++        self._abs_link_warning_cached = (0, '')
++        early_result = self._check_early_return_url(parsed)
++        if early_result is not None:
++            return early_result
++
++        absolute_link = self.config.validation.links.absolute_links
++        warning_level, warning = self._abs_link_warning_cached
++
+         possible_target_uris = self._possible_target_uris(
+-            self.file, path, self.config.use_directory_urls
++            self.file, parsed.path, self.config.use_directory_urls
+         )
+ 
+         if warning:
+-            # For absolute path (already has a warning), the primary lookup path should be preserved as a tip option.
+-            target_uri = url
++            target_uri = parsed.original_url
+             target_file = None
+         else:
+-            # Validate that the target exists in files collection.
+             target_uri = next(possible_target_uris)
+             target_file = self.files.get_file_from_path(target_uri)
+ 
+         if target_file is None and not warning:
+-            # Primary lookup path had no match, definitely produce a warning, just choose which one.
+-            if not posixpath.splitext(path)[-1] and absolute_link is None:
+-                # No '.' in the last part of a path indicates path does not point to a file.
++            if not posixpath.splitext(parsed.path)[-1] and absolute_link is None:
+                 warning_level = self.config.validation.links.unrecognized_links
+                 warning = (
+-                    f"Doc file '{self.file.src_uri}' contains an unrecognized relative link '{url}', "
++                    f"Doc file '{self.file.src_uri}' contains an unrecognized relative link '{parsed.original_url}', "
+                     f"it was left as is."
+                 )
+             else:
+-                target = f" '{target_uri}'" if target_uri != url.lstrip('/') else ""
++                target = f" '{target_uri}'" if target_uri != parsed.original_url.lstrip('/') else ""
+                 warning_level = self.config.validation.links.not_found
+                 warning = (
+-                    f"Doc file '{self.file.src_uri}' contains a link '{url}', "
++                    f"Doc file '{self.file.src_uri}' contains a link '{parsed.original_url}', "
+                     f"but the target{target} is not found among documentation files."
+                 )
+ 
+@@ -474,33 +531,31 @@
+             if self.file.inclusion.is_excluded():
+                 warning_level = min(logging.INFO, warning_level)
+ 
+-            # There was no match, so try to guess what other file could've been intended.
+             if warning_level > logging.DEBUG:
+                 suggest_url = ''
+                 for path in possible_target_uris:
+                     if self.files.get_file_from_path(path) is not None:
+-                        if anchor and path == self.file.src_uri:
++                        if parsed.anchor and path == self.file.src_uri:
+                             path = ''
+                         elif absolute_link is _AbsoluteLinksValidationValue.RELATIVE_TO_DOCS:
+                             path = '/' + path
+                         else:
+                             path = utils.get_relative_url(path, self.file.src_uri)
+-                        suggest_url = urlunsplit(('', '', path, query, anchor))
++                        suggest_url = parsed.unsplit(path)
+                         break
+                 else:
+-                    if '@' in url and '.' in url and '/' not in url:
+-                        suggest_url = f'mailto:{url}'
++                    if '@' in parsed.original_url and '.' in parsed.original_url and '/' not in parsed.original_url:
++                        suggest_url = f'mailto:{parsed.original_url}'
+                 if suggest_url:
+                     warning += f" Did you mean '{suggest_url}'?"
+             log.log(warning_level, warning)
+-            return url
++            return parsed.original_url
+ 
+         assert target_uri is not None
+         assert target_file is not None
+ 
+-        if anchor:
+-            # Register that this page links to the target file with an anchor.
+-            self.links_to_anchors.setdefault(target_file, {}).setdefault(anchor, url)
++        if parsed.anchor:
++            self.links_to_anchors.setdefault(target_file, {}).setdefault(parsed.anchor, parsed.original_url)
+ 
+         if target_file.inclusion.is_excluded():
+             if self.file.inclusion.is_excluded():
+@@ -513,7 +568,7 @@
+             )
+             log.log(warning_level, warning)
+         path = utils.get_relative_url(target_file.url, self.file.url)
+-        return urlunsplit(('', '', path, query, anchor))
++        return parsed.unsplit(path)
+ 
+     def _register(self, md: markdown.Markdown) -> None:
+         md.treeprocessors.register(self, "relpath", 0)

@@ -1,0 +1,165 @@
+--- a/mkdocs/commands/build.py
++++ b/mkdocs/commands/build.py
+@@ -146,13 +146,25 @@
+ 
+ def _populate_page(page: Page, config: MkDocsConfig, files: Files, dirty: bool = False) -> None:
+     """Read page content from docs_dir and render Markdown."""
++    if dirty:
++        _populate_page_if_dirty(page, config, files)
++    else:
++        _populate_page_if_not_dirty(page, config, files)
++
++
++def _populate_page_if_dirty(page: Page, config: MkDocsConfig, files: Files) -> None:
++    if not page.file.is_modified():
++        return
++    _populate_page_common(page, config, files)
++
++
++def _populate_page_if_not_dirty(page: Page, config: MkDocsConfig, files: Files) -> None:
++    _populate_page_common(page, config, files)
++
++
++def _populate_page_common(page: Page, config: MkDocsConfig, files: Files) -> None:
+     config._current_page = page
+     try:
+-        # When --dirty is used, only read the page if the file has been modified since the
+-        # previous build of the output.
+-        if dirty and not page.file.is_modified():
+-            return
+-
+         # Run the `pre_page` plugin event
+         page = config.plugins.on_pre_page(page, config=config, files=files)
+ 
+@@ -192,62 +204,103 @@
+     excluded: bool = False,
+ ) -> None:
+     """Pass a Page to theme template and write output to site_dir."""
++    if dirty and not page.file.is_modified():
++        return
++
++    if excluded:
++        _build_page_excluded(page, config, doc_files, nav, env)
++    else:
++        _build_page_normal(page, config, doc_files, nav, env)
++
++
++def _build_page_excluded(
++    page: Page,
++    config: MkDocsConfig,
++    doc_files: Sequence[File],
++    nav: Navigation,
++    env: jinja2.Environment,
++) -> None:
+     config._current_page = page
+     try:
+-        # When --dirty is used, only build the page if the file has been modified since the
+-        # previous build of the output.
+-        if dirty and not page.file.is_modified():
+-            return
+-
+         log.debug(f"Building page {page.file.src_uri}")
+-
+-        # Activate page. Signals to theme that this is the current page.
+         page.active = True
+-
+         context = get_context(nav, doc_files, config, page)
+-
+-        # Allow 'template:' override in md source files.
+         template = env.get_template(page.meta.get('template', 'main.html'))
+-
+-        # Run `page_context` plugin events.
+         context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
+-
+-        if excluded:
+-            page.content = (
+-                '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
+-                'DRAFT'
+-                '</div>' + (page.content or '')
+-            )
+-
+-        # Render the template.
++        page.content = (
++            '<div class="mkdocs-draft-marker" title="This page will not be included into the built site.">'
++            'DRAFT'
++            '</div>' + (page.content or '')
++        )
+         output = template.render(context)
+-
+-        # Run `post_page` plugin events.
+         output = config.plugins.on_post_page(output, page=page, config=config)
+-
+-        # Write the output file.
+         if output.strip():
+             utils.write_file(
+                 output.encode('utf-8', errors='xmlcharrefreplace'), page.file.abs_dest_path
+             )
+         else:
+             log.info(f"Page skipped: '{page.file.src_uri}'. Generated empty output.")
+-
+     except Exception as e:
+         message = f"Error building page '{page.file.src_uri}':"
+-        # Prevent duplicated the error message because it will be printed immediately afterwards.
+         if not isinstance(e, BuildError):
+             message += f" {e}"
+         log.error(message)
+         raise
+     finally:
+-        # Deactivate page
+         page.active = False
+         config._current_page = None
+ 
+ 
++def _build_page_normal(
++    page: Page,
++    config: MkDocsConfig,
++    doc_files: Sequence[File],
++    nav: Navigation,
++    env: jinja2.Environment,
++) -> None:
++    config._current_page = page
++    try:
++        log.debug(f"Building page {page.file.src_uri}")
++        page.active = True
++        context = get_context(nav, doc_files, config, page)
++        template = env.get_template(page.meta.get('template', 'main.html'))
++        context = config.plugins.on_page_context(context, page=page, config=config, nav=nav)
++        output = template.render(context)
++        output = config.plugins.on_post_page(output, page=page, config=config)
++        if output.strip():
++            utils.write_file(
++                output.encode('utf-8', errors='xmlcharrefreplace'), page.file.abs_dest_path
++            )
++        else:
++            log.info(f"Page skipped: '{page.file.src_uri}'. Generated empty output.")
++    except Exception as e:
++        message = f"Error building page '{page.file.src_uri}':"
++        if not isinstance(e, BuildError):
++            message += f" {e}"
++        log.error(message)
++        raise
++    finally:
++        page.active = False
++        config._current_page = None
++
++
+ def build(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+     """Perform a full site build."""
++    if dirty:
++        build_dirty(config, serve_url=serve_url)
++    else:
++        build_clean(config, serve_url=serve_url)
++
++
++def build_clean(config: MkDocsConfig, *, serve_url: str | None = None) -> None:
++    _build_core(config, serve_url=serve_url, dirty=False)
++
++
++def build_dirty(config: MkDocsConfig, *, serve_url: str | None = None) -> None:
++    _build_core(config, serve_url=serve_url, dirty=True)
++
++
++def _build_core(config: MkDocsConfig, *, serve_url: str | None = None, dirty: bool = False) -> None:
+     logger = logging.getLogger('mkdocs')
+ 
+     # Add CountHandler for strict mode

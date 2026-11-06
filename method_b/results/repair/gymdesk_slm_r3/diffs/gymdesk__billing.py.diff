@@ -1,0 +1,65 @@
+--- a/gymdesk/billing.py
++++ b/gymdesk/billing.py
+@@ -1,12 +1,20 @@
+ """Membership fees, invoices and late fees."""
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ from datetime import date
+ 
+ from gymdesk.models import Payment
+ 
+ PLAN_PRICES = {"basic": 29.0, "plus": 49.0, "premium": 79.0}
+ EUR_RATES = {"EUR": 1.0, "GBP": 0.86, "USD": 1.08}
++
++
++@dataclass
++class OverdueDetails:
++    due_date: date
++    grace_days: int
++    paid_date: date
+ 
+ 
+ def monthly_fee(plan: str) -> float:
+@@ -16,14 +24,18 @@
+         raise ValueError(f"unknown plan {plan!r}") from None
+ 
+ 
++def _calculate_adjusted_total(payments: list[Payment], rebate: float, vat: float) -> float:
++    acc = 0.0
++    for p in payments:
++        if p.amount <= 0:
++            continue
++        acc += p.amount * (1 - rebate)
++    acc = acc * (1 + vat)
++    return round(acc, 2)
++
++
+ def invoice_total(payments_due: list[Payment], discount_rate: float, tax_rate: float) -> float:
+-    total = 0.0
+-    for item in payments_due:
+-        if item.amount <= 0:
+-            continue
+-        total += item.amount * (1 - discount_rate)
+-    total = total * (1 + tax_rate)
+-    return round(total, 2)
++    return _calculate_adjusted_total(payments_due, discount_rate, tax_rate)
+ 
+ 
+ def format_amount(amount: float, currency: str) -> str:
+@@ -41,11 +53,13 @@
+ 
+ 
+ def days_overdue(due_date: date, paid_date: date, grace_days: int) -> int:
+-    return max(0, (paid_date - due_date).days - grace_days)
++    details = OverdueDetails(due_date=due_date, grace_days=grace_days, paid_date=paid_date)
++    return max(0, (details.paid_date - details.due_date).days - details.grace_days)
+ 
+ 
+ def compute_late_fee(member_id: str, amount: float, due_date: date, paid_date: date, daily_rate: float,
+                      grace_days: int, cap: float, currency: str) -> dict:
+-    days_late = days_overdue(due_date, paid_date, grace_days)
++    details = OverdueDetails(due_date=due_date, grace_days=grace_days, paid_date=paid_date)
++    days_late = days_overdue(details.due_date, details.paid_date, details.grace_days)
+     fee = 0.0 if days_late <= 0 else min(days_late * daily_rate * amount, cap)
+     return {"member_id": member_id, "fee": round(fee, 2), "currency": currency}

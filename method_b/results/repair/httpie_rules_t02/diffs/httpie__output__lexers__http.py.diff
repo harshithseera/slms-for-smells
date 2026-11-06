@@ -1,0 +1,121 @@
+--- a/httpie/output/lexers/http.py
++++ b/httpie/output/lexers/http.py
+@@ -1,24 +1,26 @@
+ import re
+ import pygments
++from pygments.lexer import RegexLexer, bygroups
++from pygments.token import Name, Number, Text, Keyword, Operator, String
+ from httpie.output.lexers.common import precise
+ 
+ RE_STATUS_LINE = re.compile(r'(\d{3})( +)?(.+)?')
+ 
+ STATUS_TYPES = {
+-    '1': pygments.token.Number.HTTP.INFO,
+-    '2': pygments.token.Number.HTTP.OK,
+-    '3': pygments.token.Number.HTTP.REDIRECT,
+-    '4': pygments.token.Number.HTTP.CLIENT_ERR,
+-    '5': pygments.token.Number.HTTP.SERVER_ERR,
++    '1': Number.HTTP.INFO,
++    '2': Number.HTTP.OK,
++    '3': Number.HTTP.REDIRECT,
++    '4': Number.HTTP.CLIENT_ERR,
++    '5': Number.HTTP.SERVER_ERR,
+ }
+ 
+ RESPONSE_TYPES = {
+-    'GET': pygments.token.Name.Function.HTTP.GET,
+-    'HEAD': pygments.token.Name.Function.HTTP.HEAD,
+-    'POST': pygments.token.Name.Function.HTTP.POST,
+-    'PUT': pygments.token.Name.Function.HTTP.PUT,
+-    'PATCH': pygments.token.Name.Function.HTTP.PATCH,
+-    'DELETE': pygments.token.Name.Function.HTTP.DELETE,
++    'GET': Name.Function.HTTP.GET,
++    'HEAD': Name.Function.HTTP.HEAD,
++    'POST': Name.Function.HTTP.POST,
++    'PUT': Name.Function.HTTP.PUT,
++    'PATCH': Name.Function.HTTP.PATCH,
++    'DELETE': Name.Function.HTTP.DELETE,
+ }
+ 
+ 
+@@ -31,12 +33,12 @@
+     status_type = precise(
+         lexer,
+         STATUS_TYPES.get(status_code[0]),
+-        pygments.token.Number
++        Number
+     )
+ 
+-    groups = pygments.lexer.bygroups(
++    groups = bygroups(
+         status_type,
+-        pygments.token.Text,
++        Text,
+         status_type
+     )
+     yield from groups(lexer, status_match, ctx)
+@@ -46,12 +48,12 @@
+     response_type = precise(
+         lexer,
+         RESPONSE_TYPES.get(match.group()),
+-        pygments.token.Name.Function
++        Name.Function
+     )
+     yield match.start(), response_type, match.group()
+ 
+ 
+-class SimplifiedHTTPLexer(pygments.lexer.RegexLexer):
++class SimplifiedHTTPLexer(RegexLexer):
+     """Simplified HTTP lexer for Pygments.
+ 
+     It only operates on headers and provides a stronger contrast between
+@@ -67,31 +69,31 @@
+         'root': [
+             # Request-Line
+             (r'([A-Z]+)( +)([^ ]+)( +)(HTTP)(/)(\d+\.\d+)',
+-             pygments.lexer.bygroups(
++             bygroups(
+                  request_method,
+-                 pygments.token.Text,
+-                 pygments.token.Name.Namespace,
+-                 pygments.token.Text,
+-                 pygments.token.Keyword.Reserved,
+-                 pygments.token.Operator,
+-                 pygments.token.Number
++                 Text,
++                 Name.Namespace,
++                 Text,
++                 Keyword.Reserved,
++                 Operator,
++                 Number
+              )),
+             # Response Status-Line
+             (r'(HTTP)(/)(\d+\.\d+)( +)(.+)',
+-             pygments.lexer.bygroups(
+-                 pygments.token.Keyword.Reserved,  # 'HTTP'
+-                 pygments.token.Operator,  # '/'
+-                 pygments.token.Number,  # Version
+-                 pygments.token.Text,
++             bygroups(
++                 Keyword.Reserved,  # 'HTTP'
++                 Operator,  # '/'
++                 Number,  # Version
++                 Text,
+                  http_response_type,  # Status code and Reason
+              )),
+             # Header
+-            (r'(.*?)( *)(:)( *)(.+)', pygments.lexer.bygroups(
+-                pygments.token.Name.Attribute,  # Name
+-                pygments.token.Text,
+-                pygments.token.Operator,  # Colon
+-                pygments.token.Text,
+-                pygments.token.String  # Value
++            (r'(.*?)( *)(:)( *)(.+)', bygroups(
++                Name.Attribute,  # Name
++                Text,
++                Operator,  # Colon
++                Text,
++                String  # Value
+             ))
+         ]
+     }

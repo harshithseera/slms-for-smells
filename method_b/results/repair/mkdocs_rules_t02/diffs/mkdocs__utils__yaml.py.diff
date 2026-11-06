@@ -1,0 +1,22 @@
+--- a/mkdocs/utils/yaml.py
++++ b/mkdocs/utils/yaml.py
+@@ -96,14 +96,17 @@
+             )
+         super().__init__(config, suffix)
+ 
+-    def value(self) -> str:
++    def _get_src_path(self) -> str:
+         current_page = self.config._current_page
+         if current_page is None:
+             raise exceptions.ConfigurationError(
+                 "The current file is not set for the '!relative' tag. "
+                 "It cannot be used in this context; the intended usage is within `markdown_extensions`."
+             )
+-        return os.path.dirname(os.path.join(self.config.docs_dir, current_page.file.src_path))
++        return current_page.file.src_path
++
++    def value(self) -> str:
++        return os.path.dirname(os.path.join(self.config.docs_dir, self._get_src_path()))
+ 
+ 
+ def get_yaml_loader(loader=yaml.Loader, config: MkDocsConfig | None = None):

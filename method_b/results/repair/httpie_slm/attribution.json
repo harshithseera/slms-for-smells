@@ -1,0 +1,210 @@
+{
+  "run": "/Users/hseera/Desktop/slms-for-smells/method_b/results/repair/httpie_slm",
+  "fixed_set": 987,
+  "files": [
+    {
+      "file": "httpie/cli/argparser.py",
+      "findings": 5,
+      "still_passing": 985,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "tests.test_auth::test_auth_plugin_netrc_parse[basic-/basic-auth/httpie/password]",
+        "tests.test_auth::test_auth_plugin_netrc_parse[digest-/digest-auth/auth/httpie/password]"
+      ]
+    },
+    {
+      "file": "httpie/cli/argtypes.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/definition.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/nested_json/interpret.py",
+      "findings": 2,
+      "still_passing": 976,
+      "broken": 11,
+      "loads": true,
+      "examples": [
+        "tests.test_json::test_nested_json_errors[input_json14-expected_error14]",
+        "tests.test_json::test_nested_json_errors[input_json15-expected_error15]",
+        "tests.test_json::test_nested_json_errors[input_json16-expected_error16]",
+        "tests.test_json::test_nested_json_errors[input_json17-expected_error17]",
+        "tests.test_json::test_nested_json_errors[input_json18-expected_error18]"
+      ]
+    },
+    {
+      "file": "httpie/cli/nested_json/parse.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/options.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/cli/requestitems.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/client.py",
+      "findings": 5,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/config.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/core.py",
+      "findings": 5,
+      "still_passing": 983,
+      "broken": 4,
+      "loads": true,
+      "examples": [
+        "tests.test_exit_status::test_3xx_check_status_exits_3_and_stderr_when_stdout_redirected",
+        "tests.test_output.TestQuietFlag::test_quiet_quiet_with_check_status_non_zero_pipe",
+        "tests.test_output.TestQuietFlag::test_quiet_with_check_status_non_zero",
+        "tests.test_output.TestQuietFlag::test_quiet_with_check_status_non_zero_pipe"
+      ]
+    },
+    {
+      "file": "httpie/downloads.py",
+      "findings": 4,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/internal/update_warnings.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/manager/tasks/plugins.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/models.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/formatters/colors.py",
+      "findings": 2,
+      "still_passing": 974,
+      "broken": 13,
+      "loads": true,
+      "examples": [
+        "tests.test_output.TestColors::test_get_lexer[application/foo+json-False-None-JSON]",
+        "tests.test_output.TestColors::test_get_lexer[application/json+foo-False-None-JSON]",
+        "tests.test_output.TestColors::test_get_lexer[application/json-False-None-JSON]",
+        "tests.test_output.TestColors::test_get_lexer[application/json-foo-False-None-JSON]",
+        "tests.test_output.TestColors::test_get_lexer[application/vnd.comverge.grid+hal+json-False-None-JSON]"
+      ]
+    },
+    {
+      "file": "httpie/output/ui/rich_help.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/ui/rich_progress.py",
+      "findings": 1,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/output/writer.py",
+      "findings": 6,
+      "still_passing": 985,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "tests.test_stream::test_auto_streaming[extras0-3]",
+        "tests.test_stream::test_auto_streaming[extras1-3]"
+      ]
+    },
+    {
+      "file": "httpie/sessions.py",
+      "findings": 3,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/ssl_.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/status.py",
+      "findings": 2,
+      "still_passing": 987,
+      "broken": 0,
+      "loads": true,
+      "examples": []
+    },
+    {
+      "file": "httpie/uploads.py",
+      "findings": 5,
+      "still_passing": 985,
+      "broken": 2,
+      "loads": true,
+      "examples": [
+        "tests.test_uploads::test_chunked_stdin",
+        "tests.test_uploads::test_chunked_stdin_multiple_chunks"
+      ]
+    }
+  ],
+  "files_safe": 16,
+  "files_breaking": 6
+}
